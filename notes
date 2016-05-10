@@ -1,3 +1,8 @@
+TEST FLAIL + GOLEM
+TEST ↑↑→→↑↑←←↑↑→→↑↑←← from far beneath a skeleton
+TEST prevpos = (1, 1), curpos = (2, 2) from all directions
+TEST curpos in ((1, 2), (2, 1)) for inter-quarant variation
+
 
 1. move towards the player
 2. avoid walls
@@ -5,29 +10,49 @@
 4. keep the same direction
 5. tie-break using the rules below
 
-coordinates are (cross-axis, main-axis)
+coordinates are (y, x)
 
+(cdy, cdx): distance to the player
+(pdy, pdx): distance to the player’s previous position
+
+abs(cdy) == 1 && cdx < 0: left
+abs(cdx) == 1: vert
+abs(cdy) == 1 && cdx > 0: right
+
+.X.X.
+X...X
+..@..
+X...X
+.X.X.
+
+prevpos:
 tracking: left
-2, 2: y ≤ 0 ? right : vert
+1, 1: test me!
+-2, 1: y > 0 ? vert : right
+ 2, 1: y > 0 ? vert : right
+y, 1: vert
 
 tracking: right
-2, 2: left
+1, 1: test me!
+2, 1: left
+y, 1: vert
 
-tracking: vert
-2, 2: y > 0 ? vert : right
-2, x: right
+tracking: vert (right)
+1, 1: test me!
+-1, 2: y > 0 ? vert : right
+ 1, 2: y > 0 ? vert : right
+1, x: right
 
-tracking: vert
-2, x: left
+tracking: vert (left)
+1, 1: test me!
+1, x: left
 
 common:
-1, x: left
-y, 1: vert
+-1, x: left
+y, ±1: vert
 1, x: right
-leap: u-turn
 ...
-y, 2: vert
-y, x: u-turn
+default: u-turn
 
 # switch iff dx == 1 or (dx == 2 and no_leap and (abs(dy) > 2 or (abs(dy) == 2 and y > 0)))
 

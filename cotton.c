@@ -2,6 +2,8 @@
 #include <stdlib.h>
 
 #define LENGTH(array) (sizeof(array) / sizeof(*(array)))
+#define SIGN(x) (((x) > 0) - ((x) < 0))
+#define ABS(x)  ((x) < 0 ? -(x) : (x))
 #define uint unsigned long
 
 typedef struct entity {
@@ -17,15 +19,10 @@ typedef struct entity {
 
 static Entity *board[32][32];
 static Entity entities[32];
+static int prev_y;
+static int prev_x;
 
-static void display(void) {
-	for (uint y = 0; y < LENGTH(board); ++y) {
-		for (uint x = 0; x < LENGTH(*board); ++x) {
-			putchar(board[y][x] ? '@' : '.');
-		}
-		putchar('\n');
-	}
-}
+static void display();
 
 static void rm_ent(Entity *e) {
 	Entity **prev;
@@ -38,23 +35,31 @@ static void add_ent(Entity *e) {
 	board[e->y][e->x] = e;
 }
 
-static void move_ent(Entity *e, int dy, int dx) {
+static void move_ent(Entity *e) {
 	rm_ent(e);
-	e->y += dy;
-	e->x += dx;
+	e->y += e->dy;
+	e->x += e->dx;
 	add_ent(e);
+}
+
+static int can_move(Entity *e, int dy, int dx) {
+	return board[e->y + dy][e->x + dx] == NULL;
 }
 
 static void player_input(Entity *this) {
 	display();
 	switch (getchar()) {
-		case 'e': move_ent(this,  0, -1); break;
-		case 'f': move_ent(this,  1,  0); break;
-		case 'i': move_ent(this,  0,  1); break;
-		case 'j': move_ent(this, -1,  0); break;
-		default: break;
+		case 'e': this->dy =  0; this->dx = -1; break;
+		case 'f': this->dy =  1; this->dx =  0; break;
+		case 'i': this->dy =  0; this->dx =  1; break;
+		case 'j': this->dy = -1; this->dx =  0; break;
+		default: return;
 	}
-	printf("\033[H\033[2J");
+	if (can_move(this, this->dy, this->dx)) {
+		prev_y = this->y;
+		prev_x = this->x;
+		move_ent(this);
+	}
 }
 
 static void basic_seek(Entity *this) {
@@ -66,21 +71,53 @@ static void basic_seek(Entity *this) {
 	Entity *player = entities;
 	int dy = player->y - this->y;
 	int dx = player->x - this->x;
+	int pdy = prev_y - this->y;
+	int pdx = prev_x - this->x;
 
-	if (!dy) {
-		this->dy = 0;
-		this->dx = 1;
-	} else if (!dx) {
-		this->dy = 1;
-		this->dx = 0;
-	}
-	if (this->dy * dy < 0) this->dy *= -1;
-	if (this->dx * dx < 0) this->dx *= -1;
-	// printf("%d %d\n", this->dy, this->dx);
+	int vertical =
+		// #1: move towards the player
+		dy == 0 ? 0 :
+		dx == 0 ? 1 :
 
-	if (!board[this->y + this->dy][this->x + this->dx]) {
-		move_ent(this, this->dy, this->dx);
+		// #2: avoid obstacles
+		!can_move(this, SIGN(dy), 0) ? 0 :
+		!can_move(this, 0, SIGN(dx)) ? 1 :
+	
+		// #3: move towards the player’s previous position
+		pdy == 0 ? 0 :
+		pdx == 0 ? 1 :
+
+		// #4: keep moving in the same direction
+		this->dx * dx > 0 ? 0 :
+		this->dy * dy > 0 ? 1 :
+
+		// #5: weird priority rules
+		ABS(dy) == 1 && dx < 0 ? 0 :
+		ABS(dx) == 1 ? 1 :
+		ABS(dy) == 1 ? 0 :
+
+		// #6: TODO
+
+		// #7: keep moving along the same axis
+		!!this->dy;
+
+	this->dy = vertical ? SIGN(dy) : 0;
+	this->dx = vertical ? 0 : SIGN(dx);
+
+	if (can_move(this, this->dy, this->dx)) {
+		move_ent(this);
 		this->state = 1;
+	}
+}
+
+static void display(void) {
+	printf("\033[H\033[2J");
+	for (uint y = 0; y < LENGTH(board); ++y) {
+		for (uint x = 0; x < LENGTH(*board); ++x) {
+			Entity *e = board[y][x];
+			putchar(e ? e->act == player_input ? '@' : e->act == basic_seek ? 'Z' : '+' : '.');
+		}
+		putchar('\n');
 	}
 }
 
