@@ -1,0 +1,59 @@
+
+1. move towards the player
+2. avoid walls
+3. move towards the player’s previous position (ignored if the player moved more than one tile!)
+4. keep the same direction
+5. tie-break using the rules below
+
+coordinates are (cross-axis, main-axis)
+
+tracking: left
+y, 1: vert
+1, x: right
+2, 2: leap || y ≤ 0 ? right : vert
+y, 2: leap ? right : vert
+y, x: right
+
+tracking: right
+1, x: left
+y, 1: vert
+2, 2: left
+y, 2: leap ? left : vert
+y, x: left
+
+tracking: up
+1, y: down
+x, 1: right
+2, 2: leap || y > 0 ? down : right
+x, 2: leap ? down : right
+x, y: down
+
+tracking: up
+x, 1: left
+1, y: down
+x, 2: leap ? down : left
+x, y: down
+
+tracking: down
+1, y: up
+x, 1: right
+2, 2: leap || y > 0 ? up : right
+x, 2: leap ? up : right
+x, y: up
+
+tracking: down
+x, 1: left
+1, y: up
+x, 2: leap ? up : left
+x, y: up
+
+# switch iff dx == 1 or (dx == 2 and no_leap and (abs(dy) > 2 or (abs(dy) == 2 and y > 0)))
+
+blueblimp: I think the way it goes is, unless blocked or it would move
+   the monster farther from you, basicseek prefers to keep using the same axis;
+   and there is a special case saying that if the player's current or previous
+   position, projected on the monster's line of movement, is the same as the
+   monster's position, then the monster prefers to switch axis if it can
+
+blueblimp: hm, there seems to be a special case where if the player moved more
+   than 1 tile, then the player's previous position is ignored
