@@ -1,27 +1,65 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #define LENGTH(array) ((int) (sizeof(array) / sizeof(*(array))))
 #define SIGN(x) (((x) > 0) - ((x) < 0))
 #define ABS(x)  ((x) < 0 ? -(x) : (x))
+#define WALL()  (&(Entity) {.class = WALL})
+#define CLASS(e) (class_infos[e->class])
+
+// At minima, we need:
+// 4 bits for hp
+// 2 bits for direction
+// 4 bits for beat delay (10 for sarcophagi)
+// 1 (2?) bit(s) for aggro/active status
 
 typedef struct entity {
 	struct entity *next;
-	int x;
-	int y;
-	int hp;
-	int dx;
-	int dy;
-	int state;
-	void (*act) (struct entity*);
+	uint8_t class;
+	uint8_t x;
+	uint8_t y;
+	uint8_t hp;
+	int8_t dx;
+	int8_t dy;
+	uint16_t state;
 } Entity;
+
+static void player_input(struct entity*);
+static void basic_seek(struct entity*);
+
+typedef enum class {
+	PLAYER,
+	SKELETON,
+	WALL,
+} Class;
+
+static struct {
+	uint16_t max_hp;
+	uint16_t beat_delay;
+	int32_t glyph;
+	void (*act) (struct entity*);
+} class_infos[256] = {
+	[PLAYER]   = { 1, 0, '@', player_input },
+	[SKELETON] = { 1, 1, 'Z', basic_seek },
+	[WALL]     = { 0, 0, '+', NULL },
+};
 
 static Entity *board[32][32];
 static Entity entities[32];
 static int prev_y;
 static int prev_x;
 
-static void display();
+static void display(void) {
+	printf("\033[H\033[2J");
+	for (int y = 0; y < LENGTH(board); ++y) {
+		for (int x = 0; x < LENGTH(*board); ++x) {
+			Entity *e = board[y][x];
+			putchar(e ? CLASS(e).glyph : '.');
+		}
+		putchar('\n');
+	}
+}
 
 static void rm_ent(Entity *e) {
 	Entity **prev;
@@ -105,34 +143,23 @@ static void basic_seek(Entity *this) {
 
 	if (can_move(this, this->dy, this->dx)) {
 		move_ent(this);
-		this->state = 1;
-	}
-}
-
-static void display(void) {
-	printf("\033[H\033[2J");
-	for (int y = 0; y < LENGTH(board); ++y) {
-		for (int x = 0; x < LENGTH(*board); ++x) {
-			Entity *e = board[y][x];
-			putchar(e ? e->act == player_input ? '@' : e->act == basic_seek ? 'Z' : '+' : '.');
-		}
-		putchar('\n');
+		this->state = CLASS(this).beat_delay;
 	}
 }
 
 int main(void) {
 	system("stty -echo -icanon eol \1");
-	entities[0] = (Entity) {.x = 16, .y = 16, .hp = 1, .act = player_input};
-	entities[1] = (Entity) {.x = 4,  .y = 4,  .dx = 1, .hp = 1, .act = basic_seek};
+	entities[0] = (Entity) {.class = PLAYER, .x = 16, .y = 16, .hp = 1};
+	entities[1] = (Entity) {.class = SKELETON, .x = 4,  .y = 4, .dx = 1, .hp = 1};
 
 	for (int x = 10; x < 30; ++x)
-		board[10][x] = &(Entity) {.hp = 0};
+		board[10][x] = WALL();
 
 	for (int i = 0; i < LENGTH(board); ++i) {
-		board[0][i] = &(Entity) {.hp = 0};
-		board[i][0] = &(Entity) {.hp = 0};
-		board[LENGTH(board) - 1][i] = &(Entity) {.hp = 0};
-		board[i][LENGTH(board) - 1] = &(Entity) {.hp = 0};
+		board[0][i] = WALL();
+		board[i][0] = WALL();
+		board[LENGTH(board) - 1][i] = WALL();
+		board[i][LENGTH(board) - 1] = WALL();
 	}
 
 	for (Entity *e = entities; e->hp; ++e)
@@ -140,6 +167,6 @@ int main(void) {
 
 	for (Entity *e = entities;; ++e) {
 		e = e->hp ? e : entities;
-		e->act(e);
+		CLASS(e).act(e);
 	}
 }
