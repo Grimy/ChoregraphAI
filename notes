@@ -8,44 +8,26 @@
 coordinates are (cross-axis, main-axis)
 
 tracking: left
-y, 1: vert
-1, x: right
-2, 2: leap || y ≤ 0 ? right : vert
-y, 2: leap ? right : vert
-y, x: right
+2, 2: y ≤ 0 ? right : vert
 
 tracking: right
+2, 2: left
+
+tracking: vert
+2, 2: y > 0 ? vert : right
+2, x: right
+
+tracking: vert
+2, x: left
+
+common:
 1, x: left
 y, 1: vert
-2, 2: left
-y, 2: leap ? left : vert
-y, x: left
-
-tracking: up
-1, y: down
-x, 1: right
-2, 2: leap || y > 0 ? down : right
-x, 2: leap ? down : right
-x, y: down
-
-tracking: up
-x, 1: left
-1, y: down
-x, 2: leap ? down : left
-x, y: down
-
-tracking: down
-1, y: up
-x, 1: right
-2, 2: leap || y > 0 ? up : right
-x, 2: leap ? up : right
-x, y: up
-
-tracking: down
-x, 1: left
-1, y: up
-x, 2: leap ? up : left
-x, y: up
+1, x: right
+leap: u-turn
+...
+y, 2: vert
+y, x: u-turn
 
 # switch iff dx == 1 or (dx == 2 and no_leap and (abs(dy) > 2 or (abs(dy) == 2 and y > 0)))
 
