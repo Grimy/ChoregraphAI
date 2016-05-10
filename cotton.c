@@ -1,10 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define LENGTH(array) (sizeof(array) / sizeof(*(array)))
+#define LENGTH(array) ((int) (sizeof(array) / sizeof(*(array))))
 #define SIGN(x) (((x) > 0) - ((x) < 0))
 #define ABS(x)  ((x) < 0 ? -(x) : (x))
-#define uint unsigned long
 
 typedef struct entity {
 	struct entity *next;
@@ -112,8 +111,8 @@ static void basic_seek(Entity *this) {
 
 static void display(void) {
 	printf("\033[H\033[2J");
-	for (uint y = 0; y < LENGTH(board); ++y) {
-		for (uint x = 0; x < LENGTH(*board); ++x) {
+	for (int y = 0; y < LENGTH(board); ++y) {
+		for (int x = 0; x < LENGTH(*board); ++x) {
 			Entity *e = board[y][x];
 			putchar(e ? e->act == player_input ? '@' : e->act == basic_seek ? 'Z' : '+' : '.');
 		}
@@ -127,7 +126,14 @@ int main(void) {
 	entities[1] = (Entity) {.x = 4,  .y = 4,  .dx = 1, .hp = 1, .act = basic_seek};
 
 	for (int x = 10; x < 30; ++x)
-		board[10][x] = &(Entity) { .y = 10, .x = x };
+		board[10][x] = &(Entity) {.hp = 0};
+
+	for (int i = 0; i < LENGTH(board); ++i) {
+		board[0][i] = &(Entity) {.hp = 0};
+		board[i][0] = &(Entity) {.hp = 0};
+		board[LENGTH(board) - 1][i] = &(Entity) {.hp = 0};
+		board[i][LENGTH(board) - 1] = &(Entity) {.hp = 0};
+	}
 
 	for (Entity *e = entities; e->hp; ++e)
 		add_ent(e);
