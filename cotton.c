@@ -2,11 +2,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <libxml/xmlreader.h>
 
 #define LENGTH(array) ((int) (sizeof(array) / sizeof(*(array))))
 #define SIGN(x) (((x) > 0) - ((x) < 0))
 #define ABS(x)  ((x) < 0 ? -(x) : (x))
 #define CLASS(e) (class_infos[e->class])
+#define SPAWN_Y 9
+#define SPAWN_X 26
 
 // At minima, we need:
 // 4 bits for hp
@@ -16,7 +19,7 @@
 
 typedef enum class {
 	PLAYER,
-	SKELETON,
+	SKELETON = 4,
 	WALL,
 } Class;
 
@@ -43,16 +46,35 @@ static struct {
 } class_infos[256] = {
 	[PLAYER]   = { 1, 0, '@', 9999, player_input },
 	[SKELETON] = { 1, 1, 'Z', 1001, basic_seek },
+	[6]        = { 1, 1, 'a',    1, basic_seek },
+	[44]       = { 1, 1, 'A',    1, basic_seek },
+	[45]       = { 1, 1, 'B',    1, basic_seek },
+	[46]       = { 1, 1, 'C',    1, basic_seek },
+	[48]       = { 1, 1, 'D',    1, basic_seek },
+	[51]       = { 1, 1, 'E',    1, basic_seek },
+	[52]       = { 1, 1, 'F',    1, basic_seek },
+	[53]       = { 1, 1, 'G',    1, basic_seek },
+	[56]       = { 1, 1, 'H',    1, basic_seek },
+	[57]       = { 1, 1, 'I',    1, basic_seek },
+	[59]       = { 1, 1, 'J',    1, basic_seek },
+	[62]       = { 1, 1, 'K',    1, basic_seek },
+	[63]       = { 1, 1, 'L',    1, basic_seek },
+	[66]       = { 1, 1, 'M',    1, basic_seek },
+	[67]       = { 1, 1, 'N',    1, basic_seek },
+	[68]       = { 1, 1, 'O',    1, basic_seek },
+	[88]       = { 1, 1, 'P',    1, basic_seek },
+	[148]      = { 1, 1, 'O',    1, basic_seek },
 	[WALL]     = { 0, 0, '+',    0, NULL },
 };
 
 static Entity *board[32][32];
-static Entity entities[32];
+static Entity entities[128];
+
 static int prev_y;
 static int prev_x;
 
 static void display(void) {
-	printf("\033[H\033[2J");
+	// printf("\033[H\033[2J");
 	for (int y = 0; y < LENGTH(board); ++y) {
 		for (int x = 0; x < LENGTH(*board); ++x) {
 			Entity *e = board[y][x];
@@ -151,30 +173,58 @@ static void basic_seek(Entity *this) {
 	}
 }
 
-static void spawn(Class class, uint8_t y, uint8_t x) {
+static void spawn(uint8_t class, uint8_t y, uint8_t x) {
 	Entity *e;
-	uint32_t prio = class_infos[class].priority;
-
-	for (e = entities; e->hp && CLASS(e).priority >= prio; ++e);
-	memmove(e + 1, e, 16);
+	// uint32_t prio = class_infos[class].priority;
+	// for (e = entities; e->hp && CLASS(e).priority >= prio; ++e);
+	for (e = entities; e->hp; ++e);
 	*e = (Entity) {.class = (uint8_t) class, .y = y, .x = x, .hp = class_infos[class].max_hp};
 	add_ent(e);
 }
 
-int main(void) {
-	system("stty -echo -icanon eol \1");
-	spawn(PLAYER, 16, 16);
-	spawn(SKELETON, 4, 4);
+static int xml_attr(xmlTextReaderPtr xml, const char* attr) {
+	char* value = (char*) xmlTextReaderGetAttribute(xml, (xmlChar*) (attr));
+	int result = atoi(value);
+	free(value);
+	return result;
+}
 
-	for (uint8_t x = 10; x < 30; ++x)
-		spawn(WALL, 10, x);
-
-	for (uint8_t i = 0; i < LENGTH(board); ++i) {
-		spawn(WALL, 0, i);
-		spawn(WALL, i, 0);
-		spawn(WALL, LENGTH(board) - 1, i);
-		spawn(WALL, i, LENGTH(board) - 1);
+static void process_node(xmlTextReaderPtr xml) {
+	const char *name = (char*) xmlTextReaderConstName(xml);
+	if (!strcmp(name, "tile") || !strcmp(name, "trap")) {
+		// printf("%d %d %d\n", xml_attr(xml, "type"), xml_attr(xml, "y"), xml_attr(xml, "x"));
+	} else if (!strcmp(name, "enemy")) {
+		printf("%d %d %d\n", xml_attr(xml, "type"), xml_attr(xml, "y"), xml_attr(xml, "x"));
+		spawn((uint8_t) xml_attr(xml, "type"), (uint8_t) xml_attr(xml, "y") + SPAWN_Y, (uint8_t) xml_attr(xml, "x") + SPAWN_X);
 	}
+}
+
+static void parse_xml(void) {
+	LIBXML_TEST_VERSION;
+	xmlTextReaderPtr xml = xmlReaderForFile("LUNGEBARD.xml", NULL, 0);
+	if (xml == NULL)
+		exit(1);
+	while (xmlTextReaderRead(xml) == 1) {
+		if (xmlTextReaderNodeType(xml) != 1)
+			continue;
+		process_node(xml);
+	}
+	xmlFreeTextReader(xml);
+}
+
+int main(void) {
+	spawn(PLAYER, SPAWN_Y, SPAWN_X);
+	parse_xml();
+	// if (!prev_x)
+		// return 0;
+	system("stty -echo -icanon eol \1");
+
+	// for (uint8_t i = 0; i < LENGTH(board); ++i) {
+		// spawn(WALL, 0, i);
+		// spawn(WALL, i, 0);
+		// spawn(WALL, LENGTH(board) - 1, i);
+		// spawn(WALL, i, LENGTH(board) - 1);
+	// }
 
 	for (Entity *e = entities; entities->hp; ++e) {
 		e = e->hp ? e : entities;
