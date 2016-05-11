@@ -1,11 +1,11 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define LENGTH(array) ((int) (sizeof(array) / sizeof(*(array))))
 #define SIGN(x) (((x) > 0) - ((x) < 0))
 #define ABS(x)  ((x) < 0 ? -(x) : (x))
-#define WALL()  (&(Entity) {.class = WALL})
 #define CLASS(e) (class_infos[e->class])
 
 // At minima, we need:
@@ -13,6 +13,12 @@
 // 2 bits for direction
 // 4 bits for beat delay (10 for sarcophagi)
 // 1 (2?) bit(s) for aggro/active status
+
+typedef enum class {
+	PLAYER,
+	SKELETON,
+	WALL,
+} Class;
 
 typedef struct entity {
 	struct entity *next;
@@ -28,21 +34,16 @@ typedef struct entity {
 static void player_input(struct entity*);
 static void basic_seek(struct entity*);
 
-typedef enum class {
-	PLAYER,
-	SKELETON,
-	WALL,
-} Class;
-
 static struct {
-	uint16_t max_hp;
-	uint16_t beat_delay;
-	int32_t glyph;
+	uint8_t max_hp;
+	uint8_t beat_delay;
+	int16_t glyph;
+	uint32_t priority;
 	void (*act) (struct entity*);
 } class_infos[256] = {
-	[PLAYER]   = { 1, 0, '@', player_input },
-	[SKELETON] = { 1, 1, 'Z', basic_seek },
-	[WALL]     = { 0, 0, '+', NULL },
+	[PLAYER]   = { 1, 0, '@', 9999, player_input },
+	[SKELETON] = { 1, 1, 'Z', 1001, basic_seek },
+	[WALL]     = { 0, 0, '+',    0, NULL },
 };
 
 static Entity *board[32][32];
@@ -90,6 +91,7 @@ static void player_input(Entity *this) {
 		case 'f': this->dy =  1; this->dx =  0; break;
 		case 'i': this->dy =  0; this->dx =  1; break;
 		case 'j': this->dy = -1; this->dx =  0; break;
+		case 't': this->hp = 0; return;
 		default: return;
 	}
 	if (can_move(this, this->dy, this->dx)) {
@@ -132,10 +134,12 @@ static void basic_seek(Entity *this) {
 		ABS(dy) == 1 && dx < 0 ? 0 :
 		ABS(dx) == 1 ? 1 :
 		ABS(dy) == 1 ? 0 :
+		// dx == -2 && ABS(dy) == 2 ? 0 :
+		// dx == 2 && ABS(dy) == 2 ? y > 0 :
+		ABS(pdy) == 1 ? 0 :
+		ABS(pdx) == 1 ? 1 :
 
-		// #6: TODO
-
-		// #7: keep moving along the same axis
+		// #6: keep moving along the same axis
 		!!this->dy;
 
 	this->dy = vertical ? SIGN(dy) : 0;
@@ -147,25 +151,32 @@ static void basic_seek(Entity *this) {
 	}
 }
 
+static void spawn(Class class, uint8_t y, uint8_t x) {
+	Entity *e;
+	uint32_t prio = class_infos[class].priority;
+
+	for (e = entities; e->hp && CLASS(e).priority >= prio; ++e);
+	memmove(e + 1, e, 16);
+	*e = (Entity) {.class = (uint8_t) class, .y = y, .x = x, .hp = class_infos[class].max_hp};
+	add_ent(e);
+}
+
 int main(void) {
 	system("stty -echo -icanon eol \1");
-	entities[0] = (Entity) {.class = PLAYER, .x = 16, .y = 16, .hp = 1};
-	entities[1] = (Entity) {.class = SKELETON, .x = 4,  .y = 4, .dx = 1, .hp = 1};
+	spawn(PLAYER, 16, 16);
+	spawn(SKELETON, 4, 4);
 
-	for (int x = 10; x < 30; ++x)
-		board[10][x] = WALL();
+	for (uint8_t x = 10; x < 30; ++x)
+		spawn(WALL, 10, x);
 
-	for (int i = 0; i < LENGTH(board); ++i) {
-		board[0][i] = WALL();
-		board[i][0] = WALL();
-		board[LENGTH(board) - 1][i] = WALL();
-		board[i][LENGTH(board) - 1] = WALL();
+	for (uint8_t i = 0; i < LENGTH(board); ++i) {
+		spawn(WALL, 0, i);
+		spawn(WALL, i, 0);
+		spawn(WALL, LENGTH(board) - 1, i);
+		spawn(WALL, i, LENGTH(board) - 1);
 	}
 
-	for (Entity *e = entities; e->hp; ++e)
-		add_ent(e);
-
-	for (Entity *e = entities;; ++e) {
+	for (Entity *e = entities; entities->hp; ++e) {
 		e = e->hp ? e : entities;
 		CLASS(e).act(e);
 	}
