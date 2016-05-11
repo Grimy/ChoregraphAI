@@ -5,5 +5,5 @@ CFLAGS += -Weverything -Werror -Wno-c++-compat
 # CFLAGS += -Ofast -fno-asynchronous-unwind-tables
 CFLAGS += -O1 -ggdb -fsanitize=address,leak,undefined
 
-.PHONY: default
-default: cotton
+cotton: cotton.c monsters.c ui.c xml.c
+	$(CC) $(CFLAGS) -o $@ $<
