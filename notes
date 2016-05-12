@@ -1,5 +1,4 @@
-TEST two mobs moving on a spike trap in the same turn
-READ about aggro/activation NecroScience
+IMPLEMENT Z4 digging
 
 1. move towards the player
 2. avoid obstacles
@@ -7,6 +6,16 @@ READ about aggro/activation NecroScience
 4. keep moving in the same direction
 5. a few special cases listed below
 6. keep moving along the same axis
+
+← > ↑ > ↓ > →
+
+↓↓....←←
+↓↓....←←
+........
+...@....
+←.......
+↑↑....←←
+↑↑....←←
 
 blueblimp: I think the way it goes is, unless blocked or it would move
    the monster farther from you, basicseek prefers to keep using the same axis;

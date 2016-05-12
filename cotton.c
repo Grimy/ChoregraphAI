@@ -9,14 +9,47 @@
 #define CLASS(e) (class_infos[(e)->class])
 #define SPAWN_Y 9
 #define SPAWN_X 26
+#define player entities
 
 enum {
-	PLAYER = 1,
-	SKELETON = 4,
-	BLACK_BAT = 6,
-	SPIDER = 62,
+	SKELETON = 3,
+	BLUE_BAT = 6,
+	MONKEY = 9,
+
+	BOMBER = 44,
+	DIGGER,
+	BLACK_BAT,
+	ARMADILDO,
+	BLADENOVICE,
+	BLADEMASTER,
+	GHOUL,
+	OOZE_GOLEM,
+	HARPY,
+	LICH_1,
+	LICH_2,
+	LICH_3,
+	CONF_MONKEY,
+	TELE_MONKEY,
+	PIXIE,
+	SARCO_1,
+	SARCO_2,
+	SARCO_3,
+	SPIDER,
+	WARLOCK_1,
+	WARLOCK_2,
+	MUMMY,
+	GARGOYLE_1,
+	GARGOYLE_2,
+	GARGOYLE_3,
+	GARGOYLE_4,
+	GARGOYLE_5,
+	GARGOYLE_6,
+
 	SHOPKEEPER = 88,
 	BLUE_DRAGON = 148,
+	MOMMY = 155,
+
+	PLAYER,
 	TRAP,
 	DIRT,
 	STONE,
@@ -28,9 +61,11 @@ typedef struct entity {
 	uint8_t x;
 	uint8_t y;
 	int8_t hp;
-	int8_t dx;
-	int8_t dy;
-	uint16_t state;
+	unsigned delay: 4;
+	int dx: 2;
+	int dy: 2;
+	unsigned aggro: 1;
+	int : 23;
 } Entity;
 
 typedef struct class {
@@ -62,24 +97,6 @@ static void add_ent(Entity *e) {
 	board[e->y][e->x] = e;
 }
 
-static int has_wall(int y, int x) {
-	for (Entity *e = board[y][x]; e; e = e->next)
-		if (e->class == DIRT)
-			return 1;
-	return 0;
-}
-
-static void move_ent(Entity *e) {
-	rm_ent(e);
-	e->y += e->dy;
-	e->x += e->dx;
-	add_ent(e);
-}
-
-static int can_move(Entity *e, int dy, int dx) {
-	return board[e->y + dy][e->x + dx] == NULL;
-}
-
 static void spawn(uint8_t class, uint8_t y, uint8_t x) {
 	Entity *e;
 	for (e = entities; e->class; ++e);
@@ -91,8 +108,8 @@ static void spawn(uint8_t class, uint8_t y, uint8_t x) {
 #include "xml.c"
 
 static int compare_priorities(const void *a, const void *b) {
-	uint32_t pa = CLASS((Entity*) a).priority;
-	uint32_t pb = CLASS((Entity*) b).priority;
+	uint32_t pa = CLASS((const Entity*) a).priority;
+	uint32_t pb = CLASS((const Entity*) b).priority;
 	return (pb > pa) - (pb < pa);
 }
 
@@ -103,6 +120,20 @@ int main(void) {
 	qsort(entities, LENGTH(entities), sizeof(*entities), compare_priorities);
 	for (Entity *e = entities; CLASS(e).priority; ++e)
 		add_ent(e);
-	for (Entity *e = entities; entities->hp; e = CLASS(e + 1).priority ? e + 1 : entities)
+	for (Entity *e = entities; player->hp; e = CLASS(e + 1).priority ? e + 1 : entities) {
+		if (e->hp <= 0)
+			continue;
+		if (!e->aggro) {
+			int dy = player->y - e->y;
+			int dx = player->x - e->x;
+			// TODO: aggro when player is in sight
+			if (!e->aggro && dy * dy + dx * dx > 9)
+				continue;
+		}
+		if (e->delay) {
+			e->delay--;
+			continue;
+		}
 		CLASS(e).act(e);
+	}
 }
