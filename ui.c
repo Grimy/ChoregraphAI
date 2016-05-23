@@ -1,8 +1,30 @@
 static int has_wall(int y, int x) {
+	if (y >= LENGTH(board) || x >= LENGTH(*board))
+		return 0;
 	for (Entity *e = board[y][x]; e; e = e->next)
 		if (e->class == DIRT)
 			return 1;
 	return 0;
+}
+
+static int los(double y, double x) {
+	double dy = y - player->y;
+	double dx = x - player->x;
+	for (double i = 0; i < 1; i += .01) {
+		int ty = (int) (y - i * dy + .50);
+		int tx = (int) (x - i * dx + .50);
+		if (has_wall(ty, tx))
+			return 0;
+	}
+	return 1;
+}
+
+static int can_see(int y, int x) {
+	return los(y - .55, x - .55)
+		|| los(y - .55, x + .55)
+		|| los(y + .55, x - .55)
+		|| los(y + .55, x + .55)
+		|| los(y, x);
 }
 
 static void display_wall(int y, int x) {
