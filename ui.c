@@ -8,14 +8,43 @@ static int has_wall(int y, int x) {
 }
 
 static int los(double y, double x) {
-	double dy = y - player->y;
-	double dx = x - player->x;
-	for (double i = 0; i < 1; i += .01) {
-		int ty = (int) (y - i * dy + .50);
-		int tx = (int) (x - i * dx + .50);
-		if (has_wall(ty, tx))
+	// printf("Player: %d %d\n", player->y, player->x);
+	// printf("Destination: %f %f\n", y, x);
+	double dy = player->y - y;
+	double dx = player->x - x;
+	int cy = (int) (y + .5);
+	int cx = (int) (x + .5);
+	double error = -(cy - y) * dx + (cx - x) * dy;
+	while (cy != player->y || cx != player->x) {
+		// printf("%f %d %d\n", error, cy, cx);
+		if (has_wall(cy, cx))
 			return 0;
+		if (SIGN(dx) == 0) {
+			cy += SIGN(dy);
+			continue;
+		}
+		if (SIGN(dy) == 0) {
+			cx += SIGN(dx);
+			continue;
+		}
+		double err_y = ABS(error - SIGN(dy) * dx);
+		double err_x = ABS(error + SIGN(dx) * dy);
+		// printf("errors: %f %f %d\n", err_y, err_x, ABS(err_y - err_x) < .001);
+		if (ABS(err_y - err_x) < .001) {
+			if (has_wall(cy + SIGN(dy), cx) || has_wall(cy, cx + SIGN(dx)))
+				return 0;
+			cy += SIGN(dy);
+			cx += SIGN(dx);
+			error += SIGN(dx) * dy - SIGN(dy) * dx;
+		} else if (err_x < err_y) {
+			cx += SIGN(dx);
+			error += SIGN(dx) * dy;
+		} else {
+			cy += SIGN(dy);
+			error -= SIGN(dy) * dx;
+		}
 	}
+	// printf("Tile is visible!\n");
 	return 1;
 }
 
@@ -36,12 +65,12 @@ static void display_wall(int y, int x) {
 }
 
 static void display_board(void) {
-	// printf("\033[H\033[2J");
+	printf("\033[H\033[2J");
 	for (int y = 0; y < LENGTH(board); ++y) {
 		for (int x = 0; x < LENGTH(*board); ++x) {
 			Entity *e = board[y][x];
 			if (!e)
-				putchar('.');
+				putchar(can_see(y, x) ? '.' : ' ');
 			else if (e->class == DIRT)
 				display_wall(y, x);
 			else

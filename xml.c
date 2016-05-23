@@ -9,7 +9,6 @@ static int xml_attr(xmlTextReaderPtr xml, char* attr) {
 
 static void process_node(xmlTextReaderPtr xml) {
 	const char *name = (const char*) xmlTextReaderConstName(xml);
-	printf("%s\n", name);
 	if (strcmp(name, "trap") && strcmp(name, "tile") && strcmp(name, "enemy"))
 		return;
 	uint8_t type = (uint8_t) xml_attr(xml, "type");
@@ -25,7 +24,7 @@ static void process_node(xmlTextReaderPtr xml) {
 
 static void parse_xml(void) {
 	LIBXML_TEST_VERSION;
-	xmlTextReaderPtr xml = xmlReaderForFile("LUNGEBARD.xml", NULL, 0);
+	xmlTextReaderPtr xml = xmlReaderForFile("LOSTEST.xml", NULL, 0);
 	if (xml == NULL)
 		exit(1);
 	while (xmlTextReaderRead(xml) == 1)
