@@ -83,8 +83,8 @@ static Entity stone_wall = { .class = STONE };
 __extension__ static Entity *board[32][32] = { [0 ... 31] = { [0 ... 31] = &stone_wall } };
 static Entity entities[256];
 
-static int prev_y;
-static int prev_x;
+static int prev_y, prev_x;
+static int dy, dx;
 
 static void rm_ent(Entity *e) {
 	Entity **prev;
@@ -123,9 +123,9 @@ int main(void) {
 	for (Entity *e = entities; player->hp; e = CLASS(e + 1).priority ? e + 1 : entities) {
 		if (e->hp <= 0)
 			continue;
+		dy = player->y - e->y;
+		dx = player->x - e->x;
 		if (!e->aggro) {
-			int dy = player->y - e->y;
-			int dx = player->x - e->x;
 			// TODO: aggro when player is in sight
 			if (!e->aggro && dy * dy + dx * dx > 9)
 				continue;

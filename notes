@@ -1,5 +1,7 @@
 IMPLEMENT Z4 digging
+INVESTIGATE line-of-sight algorithms
 
+basic seek:
 1. move towards the player
 2. avoid obstacles
 3. move towards the player’s previous position (ignored if the player moved more than one tile!)
@@ -7,7 +9,12 @@ IMPLEMENT Z4 digging
 5. a few special cases listed below
 6. keep moving along the same axis
 
-← > ↑ > ↓ > →
+1. move to a square with line of sight
+2. move as close as possible to the player (L1 distance)
+3. avoid moving in a straight line
+4. ← > ↑ > ↓ > →
+
+
 
 ↓↓....←←
 ↓↓....←←

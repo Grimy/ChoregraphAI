@@ -92,7 +92,11 @@ static void basic_seek(Entity *this) {
 }
 
 static void diagonal_seek(Entity *this) {
-	(void) this;
+	int dy = player->y - this->y;
+	int dx = player->x - this->x;
+	this->dy = dy ? SIGN(dy) : 1;
+	this->dx = dx ? SIGN(dx) : 1;
+	// TODO add obstacle avoiding logic
 }
 
 static void bat(Entity *this) {
