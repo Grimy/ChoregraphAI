@@ -24,7 +24,7 @@ static void process_node(xmlTextReaderPtr xml) {
 
 static void parse_xml(void) {
 	LIBXML_TEST_VERSION;
-	xmlTextReaderPtr xml = xmlReaderForFile("LUNGEBARD.xml", NULL, 0);
+	xmlTextReaderPtr xml = xmlReaderForFile("SCIENCE.xml", NULL, 0);
 	if (xml == NULL)
 		exit(1);
 	while (xmlTextReaderRead(xml) == 1)

@@ -13,9 +13,6 @@ static void attack_player(Entity *attacker) {
 }
 
 static void basic_seek(Entity *this) {
-	int pdy = player->prev_y - this->y;
-	int pdx = player->prev_x - this->x;
-
 	int vertical =
 		// #1: move towards the player
 		dx == 0 ? 1 :
@@ -26,23 +23,18 @@ static void basic_seek(Entity *this) {
 		!can_move(this, 0, SIGN(dx)) ? 1 :
 	
 		// #3: move towards the player’s previous position
-		player->prev_y == this->y ? 0 :
-		player->prev_x == this->x ? 1 :
+		this->y == player->prev_y ? 0 :
+		this->x == player->prev_x ? 1 :
 
-		// #4: keep moving in the same direction
-		this->dx * dx > 0 ? 0 :
-		this->dy * dy > 0 ? 1 :
+		// #4: if prevpos aligns with the player’s curpos or prevpos,
+		// move into the direction of the alignment (modulo a bug)
+		this->prev_y == player->y && dx < 0 ? 0 :
+		this->prev_x == player->x ? 1 :
+		this->prev_y == player->y ? 0 :
+		this->prev_y == player->prev_y ? dx > 0 && player->x > SPAWN_X :
+		this->prev_x == player->prev_x ? 1 :
 
-		// #5: special cases
-		ABS(dy) == 1 && dx < 0 ? 0 :
-		ABS(dx) == 1 ? 1 :
-		ABS(dy) == 1 ? 0 :
-		ABS(dy) == 2 && dx == -2 ? 0 :
-		ABS(dy) == 2 && dx == 2 ? player->x > SPAWN_X :
-		ABS(pdy) == 1 ? 0 :
-		ABS(pdx) == 1 ? 1 :
-
-		// #6: keep moving along the same axis
+		// #5: keep moving along the same axis
 		!!this->dy;
 
 	this->dy = vertical ? SIGN(dy) : 0;
