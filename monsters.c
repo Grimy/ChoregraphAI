@@ -12,8 +12,8 @@ static void attack_player(Entity *attacker) {
 	}
 }
 
-static void basic_seek(Entity *this) {
-	int vertical =
+static Point basic_seek(Entity *this) {
+	this->vertical =
 		// #1: move towards the player
 		dx == 0 ? 1 :
 		dy == 0 ? 0 :
@@ -35,36 +35,39 @@ static void basic_seek(Entity *this) {
 		this->prev_x == player->prev_x ? 1 :
 
 		// #5: keep moving along the same axis
-		!!this->dy;
+		this->vertical;
 
-	this->dy = vertical ? SIGN(dy) : 0;
-	this->dx = vertical ? 0 : SIGN(dx);
+	return (Point) {this->vertical ? SIGN(dy) : 0, this->vertical ? 0 : SIGN(dx)};
 }
 
-static void diagonal_seek(Entity *this) {
-	this->dy = dy ? SIGN(dy) : can_move(this, 1, SIGN(dx)) ? 1 : -1;
-	this->dx = dx ? SIGN(dx) : can_move(this, SIGN(dy), 1) ? 1 : -1;
+static Point diagonal_seek(Entity *this) {
+	return (Point) {
+		dy ? SIGN(dy) : can_move(this, 1, SIGN(dx)) ? 1 : -1,
+		dx ? SIGN(dx) : can_move(this, SIGN(dy), 1) ? 1 : -1,
+	};
 }
 
-static void bat(Entity *this) {
+static Point bat(Entity *this) {
 	int rng = rand();
+	Point p;
 	for (int i = 0; i < 4; ++i) {
-		this->dy = (int[]) {0, 0, 1, -1} [(rng + i) & 3];
-		this->dx = (int[]) {1, -1, 0, 0} [(rng + i) & 3];
-		if (can_move(this, this->dy, this->dx))
+		p = (Point[]) {{0, 1}, {0, -1}, {1, 0}, {-1, 0}} [(rng + i) & 3];
+		if (can_move(this, p.y, p.x))
 			break;
 	}
+	return p;
 }
 
-static void black_bat(Entity *this) {
+static Point black_bat(Entity *this) {
 	if (ABS(dy) + ABS(dx) == 1)
-		this->dy = dy, this->dx = dx;
+		return (Point) {(int8_t) dy, (int8_t) dx};
 	else
-		bat(this);
+		return bat(this);
 }
 
-static void green_slime(Entity *this) {
+static Point green_slime(Entity *this) {
 	(void) this;
+	return (Point) {0, 0};
 }
 
 static Class class_infos[256] = {

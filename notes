@@ -1,7 +1,6 @@
 TODO:
 * Z4 digging
 * Harpies
-* Update basic_seek to use the monster’s prevpos
 * Return coordinates instead of modifying the object in-place
 
 

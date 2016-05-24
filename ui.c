@@ -22,13 +22,13 @@ static void display_board(void) {
 	}
 }
 
-static void player_input(Entity *this) {
+static Point player_input(Entity *this) {
 	switch (getchar()) {
-		case 'e': this->dy =  0; this->dx = -1; break;
-		case 'f': this->dy =  1; this->dx =  0; break;
-		case 'i': this->dy =  0; this->dx =  1; break;
-		case 'j': this->dy = -1; this->dx =  0; break;
+		case 'e': return (Point) { 0, -1}; break;
+		case 'f': return (Point) { 1,  0}; break;
+		case 'i': return (Point) { 0,  1}; break;
+		case 'j': return (Point) {-1,  0}; break;
 		case 't': this->hp = 0; break;
-		default:  this->dy = 0; this->dx = 0; break;
 	}
+	return (Point) {0, 0};
 }

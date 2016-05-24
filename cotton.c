@@ -44,6 +44,11 @@ enum {
 	STONE,
 };
 
+typedef struct point {
+	int8_t y;
+	int8_t x;
+} Point;
+
 typedef struct entity {
 	struct entity *next;
 	uint8_t class;
@@ -53,10 +58,9 @@ typedef struct entity {
 	int8_t prev_y;
 	int8_t hp;
 	unsigned delay: 4;
-	int dx: 2;
-	int dy: 2;
 	unsigned aggro: 1;
-	int : 7;
+	unsigned vertical: 1;
+	unsigned: 10;
 } Entity;
 
 typedef struct class {
@@ -64,7 +68,7 @@ typedef struct class {
 	uint8_t beat_delay;
 	int16_t glyph;
 	uint32_t priority;
-	void (*act) (struct entity*);
+	Point (*act) (struct entity*);
 } Class;
 
 static Class class_infos[256];
@@ -141,16 +145,16 @@ static void hit(Entity *e) {
 
 static void player_turn(Entity *this) {
 	display_board();
-	player_input(this);
-	
-	Entity *dest = board[this->y + this->dy][this->x + this->dx];
+	Point p = player_input(this);
+
+	Entity *dest = board[this->y + p.y][this->x + p.x];
 
 	if (dest == NULL)
-		move_ent(this, this->y + this->dy, this->x + this->dx);
+		move_ent(this, this->y + p.y, this->x + p.x);
 	else if (dest->class < PLAYER)
 		hit(dest);
 	else if (dest->class == DIRT)
-		board[this->y + this->dy][this->x + this->dx] = NULL;
+		board[this->y + p.y][this->x + p.x] = NULL;
 }
 
 static void enemy_turn(Entity *e) {
@@ -163,15 +167,15 @@ static void enemy_turn(Entity *e) {
 		e->delay--;
 		return;
 	}
-	CLASS(e).act(e);
-	if (!(can_move(e, e->dy, e->dx)))
+	Point p = CLASS(e).act(e);
+	if (!(can_move(e, p.y, p.x)))
 		return;
 	e->delay = CLASS(e).beat_delay;
-	Entity *dest = board[e->y + e->dy][e->x + e->dx];
+	Entity *dest = board[e->y + p.y][e->x + p.x];
 	if (dest && dest->class == PLAYER)
 		attack_player(e);
 	else
-		move_ent(e, e->y + e->dy, e->x + e->dx);
+		move_ent(e, e->y + p.y, e->x + p.x);
 }
 
 static void do_beat(void) {
