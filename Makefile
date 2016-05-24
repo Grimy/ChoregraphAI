@@ -5,5 +5,5 @@ CFLAGS += -Weverything -Werror -Wno-unknown-warning-option -Wno-c++-compat -Wno-
 # CFLAGS += -Ofast -fno-asynchronous-unwind-tables
 CFLAGS += -O1 -ggdb -fsanitize=address,leak,undefined
 
-cotton: cotton.c monsters.c ui.c xml.c
+cotton: cotton.c monsters.c los.c ui.c xml.c
 	$(CC) $(CFLAGS) -o $@ $<

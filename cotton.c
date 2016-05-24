@@ -20,30 +20,19 @@ enum {
 	DIGGER,
 	BLACK_BAT,
 	ARMADILDO,
-	BLADENOVICE,
-	BLADEMASTER,
+	BLADENOVICE, BLADEMASTER,
 	GHOUL,
 	OOZE_GOLEM,
 	HARPY,
-	LICH_1,
-	LICH_2,
-	LICH_3,
+	LICH_1, LICH_2, LICH_3,
 	CONF_MONKEY,
 	TELE_MONKEY,
 	PIXIE,
-	SARCO_1,
-	SARCO_2,
-	SARCO_3,
+	SARCO_1, SARCO_2, SARCO_3,
 	SPIDER,
-	WARLOCK_1,
-	WARLOCK_2,
+	WARLOCK_1, WARLOCK_2,
 	MUMMY,
-	GARGOYLE_1,
-	GARGOYLE_2,
-	GARGOYLE_3,
-	GARGOYLE_4,
-	GARGOYLE_5,
-	GARGOYLE_6,
+	GARGOYLE_1, GARGOYLE_2, GARGOYLE_3, GARGOYLE_4, GARGOYLE_5, GARGOYLE_6,
 
 	SHOPKEEPER = 88,
 	BLUE_DRAGON = 148,
@@ -58,10 +47,10 @@ enum {
 typedef struct entity {
 	struct entity *next;
 	uint8_t class;
-	uint8_t x;
-	uint8_t y;
-	uint8_t prev_x;
-	uint8_t prev_y;
+	int8_t x;
+	int8_t y;
+	int8_t prev_x;
+	int8_t prev_y;
 	int8_t hp;
 	unsigned delay: 4;
 	int dx: 2;
@@ -87,21 +76,32 @@ static Entity entities[256];
 
 static int dy, dx;
 
+// Remove an entity from the board
 static void rm_ent(Entity *e) {
 	Entity **prev;
 	for (prev = &board[e->y][e->x]; *prev != e; prev = &(*prev)->next);
 	*prev = e->next;
 }
 
+// Add an entity to the board
 static void add_ent(Entity *e) {
 	e->next = board[e->y][e->x];
 	board[e->y][e->x] = e;
 }
 
-static void spawn(uint8_t class, uint8_t y, uint8_t x) {
+static void move_ent(Entity *e, int8_t y, int8_t x) {
+	rm_ent(e);
+	e->prev_y = e->y;
+	e->prev_x = e->x;
+	e->y = y;
+	e->x = x;
+	add_ent(e);
+}
+
+static void spawn(uint8_t class, int8_t y, int8_t x) {
 	Entity *e;
 	for (e = entities; e->class; ++e);
-	*e = (Entity) {.class = (uint8_t) class, .y = y, .x = x, .hp = class_infos[class].max_hp};
+	*e = (Entity) {.class = class, .y = y, .x = x, .hp = class_infos[class].max_hp};
 }
 
 static int has_wall(int y, int x) {
@@ -111,6 +111,10 @@ static int has_wall(int y, int x) {
 		if (e->class == DIRT)
 			return 1;
 	return 0;
+}
+
+static void knockback(Entity *e) {
+	e->delay = 1;
 }
 
 #include "los.c"
@@ -124,6 +128,34 @@ static int compare_priorities(const void *a, const void *b) {
 	return (pb > pa) - (pb < pa);
 }
 
+static void enemy_turn(Entity *e) {
+	dy = player->y - e->y;
+	dx = player->x - e->x;
+	e->aggro = e->aggro || can_see(e->y, e->x);
+	if (!e->aggro && dy * dy + dx * dx > 9)
+		return;
+	if (e->delay) {
+		e->delay--;
+		return;
+	}
+	CLASS(e).act(e);
+	if (!(can_move(e, e->dy, e->dx)))
+		return;
+	e->delay = CLASS(e).beat_delay;
+	Entity *dest = board[e->y + e->dy][e->x + e->dx];
+	if (dest && dest->class == PLAYER)
+		attack_player(e);
+	else
+		move_ent(e, e->y + e->dy, e->x + e->dx);
+}
+
+static void do_beat(void) {
+	player_turn(player);
+	for (Entity *e = entities + 1; CLASS(e).priority; ++e)
+		if (e->hp > 0)
+			enemy_turn(e);
+}
+
 int main(void) {
 	system("stty -echo -icanon eol \1");
 	parse_xml();
@@ -131,18 +163,6 @@ int main(void) {
 	qsort(entities, LENGTH(entities), sizeof(*entities), compare_priorities);
 	for (Entity *e = entities; CLASS(e).priority; ++e)
 		add_ent(e);
-	for (Entity *e = entities; player->hp; e = CLASS(e + 1).priority ? e + 1 : entities) {
-		if (e->hp <= 0)
-			continue;
-		dy = player->y - e->y;
-		dx = player->x - e->x;
-		e->aggro = e->aggro || can_see(e->y, e->x);
-		if (!e->aggro && dy * dy + dx * dx > 9)
-			continue;
-		if (e->delay) {
-			e->delay--;
-			continue;
-		}
-		CLASS(e).act(e);
-	}
+	while (player->hp)
+		do_beat();
 }

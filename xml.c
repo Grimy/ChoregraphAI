@@ -12,8 +12,8 @@ static void process_node(xmlTextReaderPtr xml) {
 	if (strcmp(name, "trap") && strcmp(name, "tile") && strcmp(name, "enemy"))
 		return;
 	uint8_t type = (uint8_t) xml_attr(xml, "type");
-	uint8_t y = (uint8_t) xml_attr(xml, "y") + SPAWN_Y;
-	uint8_t x = (uint8_t) xml_attr(xml, "x") + SPAWN_X;
+	int8_t y = (int8_t) xml_attr(xml, "y") + SPAWN_Y;
+	int8_t x = (int8_t) xml_attr(xml, "x") + SPAWN_X;
 	if (!strcmp(name, "trap"))
 		spawn(TRAP, y, x);
 	else if (!strcmp(name, "tile"))
