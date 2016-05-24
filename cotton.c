@@ -44,11 +44,6 @@ enum {
 	STONE,
 };
 
-typedef struct point {
-	int8_t y;
-	int8_t x;
-} Point;
-
 typedef struct entity {
 	struct entity *next;
 	uint8_t class;
@@ -68,7 +63,7 @@ typedef struct class {
 	uint8_t beat_delay;
 	int16_t glyph;
 	uint32_t priority;
-	Point (*act) (struct entity*);
+	void (*act) (struct entity*);
 } Class;
 
 static Class class_infos[256];
@@ -79,6 +74,13 @@ __extension__ static Entity *board[32][32] = { [0 ... 31] = { [0 ... 31] = &ston
 static Entity entities[256];
 
 static int dy, dx;
+
+// Creates a new entity and adds it to the list
+static void spawn(uint8_t class, int8_t y, int8_t x) {
+	static int entity_count = 0;
+	Entity e = {.class = class, .y = y, .x = x, .hp = class_infos[class].max_hp};
+	entities[entity_count++] = e;
+}
 
 // Remove an entity from the board
 static void rm_ent(Entity *e) {
@@ -102,12 +104,6 @@ static void move_ent(Entity *e, int8_t y, int8_t x) {
 	add_ent(e);
 }
 
-static void spawn(uint8_t class, int8_t y, int8_t x) {
-	Entity *e;
-	for (e = entities; e->class; ++e);
-	*e = (Entity) {.class = class, .y = y, .x = x, .hp = class_infos[class].max_hp};
-}
-
 static int has_wall(int y, int x) {
 	if (y >= LENGTH(board) || x >= LENGTH(*board))
 		return 0;
@@ -121,18 +117,33 @@ static void knockback(Entity *e) {
 	e->delay = 1;
 }
 
-#include "los.c"
-#include "ui.c"
-#include "monsters.c"
-#include "xml.c"
-
-static int compare_priorities(const void *a, const void *b) {
-	uint32_t pa = CLASS((const Entity*) a).priority;
-	uint32_t pb = CLASS((const Entity*) b).priority;
-	return (pb > pa) - (pb < pa);
+static int can_move(Entity *e, int dy, int dx) {
+	Entity *dest = board[e->y + dy][e->x + dx];
+	return dest == NULL || dest->class == PLAYER;
 }
 
-static void hit(Entity *e) {
+static void attack_player(Entity *attacker) {
+	if (attacker->class == CONF_MONKEY) {
+		attacker->hp = 0;
+		rm_ent(attacker);
+	} else {
+		player->hp = 0;
+	}
+}
+
+static int move_enemy(Entity *e, int8_t y, int8_t x) {
+	if (!(can_move(e, y, x)))
+		return 0;
+	e->delay = CLASS(e).beat_delay;
+	Entity *dest = board[e->y + y][e->x + x];
+	if (dest && dest->class == PLAYER)
+		attack_player(e);
+	else
+		move_ent(e, e->y + y, e->x + x);
+	return 1;
+}
+
+static void attack_enemy(Entity *e) {
 	e->hp -= 1;
 	if (e->hp <= 0) {
 		rm_ent(e);
@@ -143,18 +154,25 @@ static void hit(Entity *e) {
 	}
 }
 
-static void player_turn(Entity *this) {
-	display_board();
-	Point p = player_input(this);
-
-	Entity *dest = board[this->y + p.y][this->x + p.x];
-
+static void move_player(Entity *this, int8_t y, int8_t x) {
+	Entity *dest = board[this->y + y][this->x + x];
 	if (dest == NULL)
-		move_ent(this, this->y + p.y, this->x + p.x);
+		move_ent(this, this->y + y, this->x + x);
 	else if (dest->class < PLAYER)
-		hit(dest);
+		attack_enemy(dest);
 	else if (dest->class == DIRT)
-		board[this->y + p.y][this->x + p.x] = NULL;
+		board[this->y + y][this->x + x] = NULL;
+}
+
+#include "los.c"
+#include "ui.c"
+#include "monsters.c"
+#include "xml.c"
+
+static int compare_priorities(const void *a, const void *b) {
+	uint32_t pa = CLASS((const Entity*) a).priority;
+	uint32_t pb = CLASS((const Entity*) b).priority;
+	return (pb > pa) - (pb < pa);
 }
 
 static void enemy_turn(Entity *e) {
@@ -167,15 +185,7 @@ static void enemy_turn(Entity *e) {
 		e->delay--;
 		return;
 	}
-	Point p = CLASS(e).act(e);
-	if (!(can_move(e, p.y, p.x)))
-		return;
-	e->delay = CLASS(e).beat_delay;
-	Entity *dest = board[e->y + p.y][e->x + p.x];
-	if (dest && dest->class == PLAYER)
-		attack_player(e);
-	else
-		move_ent(e, e->y + p.y, e->x + p.x);
+	CLASS(e).act(e);
 }
 
 static void do_beat(void) {

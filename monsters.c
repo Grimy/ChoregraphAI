@@ -1,18 +1,4 @@
-static int can_move(Entity *e, int dy, int dx) {
-	Entity *dest = board[e->y + dy][e->x + dx];
-	return dest == NULL || dest->class == PLAYER;
-}
-
-static void attack_player(Entity *attacker) {
-	if (attacker->class == CONF_MONKEY) {
-		attacker->hp = 0;
-		rm_ent(attacker);
-	} else {
-		player->hp = 0;
-	}
-}
-
-static Point basic_seek(Entity *this) {
+static void basic_seek(Entity *this) {
 	this->vertical =
 		// #1: move towards the player
 		dx == 0 ? 1 :
@@ -37,37 +23,35 @@ static Point basic_seek(Entity *this) {
 		// #5: keep moving along the same axis
 		this->vertical;
 
-	return (Point) {this->vertical ? SIGN(dy) : 0, this->vertical ? 0 : SIGN(dx)};
+	move_enemy(this, this->vertical ? SIGN(dy) : 0, this->vertical ? 0 : SIGN(dx));
 }
 
-static Point diagonal_seek(Entity *this) {
-	return (Point) {
+static void diagonal_seek(Entity *this) {
+	move_enemy(
+		this,
 		dy ? SIGN(dy) : can_move(this, 1, SIGN(dx)) ? 1 : -1,
-		dx ? SIGN(dx) : can_move(this, SIGN(dy), 1) ? 1 : -1,
-	};
+		dx ? SIGN(dx) : can_move(this, SIGN(dy), 1) ? 1 : -1
+	);
 }
 
-static Point bat(Entity *this) {
+static void bat(Entity *this) {
+	static const int8_t bat_y[4] = {0, 0,  1, -1};
+	static const int8_t bat_x[4] = {1, -1, 0, 0};
 	int rng = rand();
-	Point p;
-	for (int i = 0; i < 4; ++i) {
-		p = (Point[]) {{0, 1}, {0, -1}, {1, 0}, {-1, 0}} [(rng + i) & 3];
-		if (can_move(this, p.y, p.x))
-			break;
-	}
-	return p;
+	for (int i = 0; i < 4; ++i)
+		if (move_enemy(this, bat_y[(rng + i) & 3], bat_x[(rng + i) & 3]))
+			return;
 }
 
-static Point black_bat(Entity *this) {
+static void black_bat(Entity *this) {
 	if (ABS(dy) + ABS(dx) == 1)
-		return (Point) {(int8_t) dy, (int8_t) dx};
+		attack_player(this);
 	else
-		return bat(this);
+		bat(this);
 }
 
-static Point green_slime(Entity *this) {
+static void green_slime(Entity *this) {
 	(void) this;
-	return (Point) {0, 0};
 }
 
 static Class class_infos[256] = {

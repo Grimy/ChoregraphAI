@@ -1,7 +1,10 @@
 TODO:
+* Check beat delay of fully surrounded bat
 * Z4 digging
 * Harpies
-* Return coordinates instead of modifying the object in-place
+* Bombs
+* Monster digging
+* Naming consistency: {player,monster}_{turn,can_move,move,attack}
 
 
 basic seek:
