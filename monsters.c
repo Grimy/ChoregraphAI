@@ -4,6 +4,8 @@ static int is_free(Entity *e) {
 
 static void move_ent(Entity *e) {
 	rm_ent(e);
+	e->prev_y = e->y;
+	e->prev_x = e->x;
 	e->y += e->dy;
 	e->x += e->dx;
 	add_ent(e);
@@ -37,8 +39,6 @@ static void player_turn(Entity *this) {
 	Entity *dest = board[this->y + this->dy][this->x + this->dx];
 
 	if (dest == NULL) {
-		prev_y = this->y;
-		prev_x = this->x;
 		move_ent(this);
 	} else if (dest->class < PLAYER) {
 		dest->hp -= 1;
@@ -50,10 +50,8 @@ static void player_turn(Entity *this) {
 }
 
 static void basic_seek(Entity *this) {
-	int dy = player->y - this->y;
-	int dx = player->x - this->x;
-	int pdy = prev_y - this->y;
-	int pdx = prev_x - this->x;
+	int pdy = player->prev_y - this->y;
+	int pdx = player->prev_x - this->x;
 
 	int vertical =
 		// #1: move towards the player
@@ -65,8 +63,8 @@ static void basic_seek(Entity *this) {
 		!is_free(board[this->y][this->x + SIGN(dx)]) ? 1 :
 	
 		// #3: move towards the player’s previous position
-		pdy == 0 ? 0 :
-		pdx == 0 ? 1 :
+		player->prev_y == this->y ? 0 :
+		player->prev_x == this->x ? 1 :
 
 		// #4: keep moving in the same direction
 		this->dx * dx > 0 ? 0 :
@@ -92,8 +90,6 @@ static void basic_seek(Entity *this) {
 }
 
 static void diagonal_seek(Entity *this) {
-	int dy = player->y - this->y;
-	int dx = player->x - this->x;
 	this->dy = dy ? SIGN(dy) : 1;
 	this->dx = dx ? SIGN(dx) : 1;
 	// TODO add obstacle avoiding logic
@@ -110,8 +106,6 @@ static void bat(Entity *this) {
 }
 
 static void black_bat(Entity *this) {
-	int dy = player->y - this->y;
-	int dx = player->x - this->x;
 	if (dy * dy + dx * dx == 1)
 		attack_player(this);
 	else

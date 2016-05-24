@@ -8,7 +8,7 @@
 #define ABS(x)  ((x) < 0 ? -(x) : (x))
 #define CLASS(e) (class_infos[(e)->class])
 #define SPAWN_Y 9
-#define SPAWN_X 26
+#define SPAWN_X 23
 #define player entities
 
 enum {
@@ -60,12 +60,14 @@ typedef struct entity {
 	uint8_t class;
 	uint8_t x;
 	uint8_t y;
+	uint8_t prev_x;
+	uint8_t prev_y;
 	int8_t hp;
 	unsigned delay: 4;
 	int dx: 2;
 	int dy: 2;
 	unsigned aggro: 1;
-	int : 23;
+	int : 7;
 } Entity;
 
 typedef struct class {
@@ -83,7 +85,6 @@ static Entity stone_wall = { .class = STONE };
 __extension__ static Entity *board[32][32] = { [0 ... 31] = { [0 ... 31] = &stone_wall } };
 static Entity entities[256];
 
-static int prev_y, prev_x;
 static int dy, dx;
 
 static void rm_ent(Entity *e) {
@@ -103,6 +104,16 @@ static void spawn(uint8_t class, uint8_t y, uint8_t x) {
 	*e = (Entity) {.class = (uint8_t) class, .y = y, .x = x, .hp = class_infos[class].max_hp};
 }
 
+static int has_wall(int y, int x) {
+	if (y >= LENGTH(board) || x >= LENGTH(*board))
+		return 0;
+	for (Entity *e = board[y][x]; e; e = e->next)
+		if (e->class == DIRT)
+			return 1;
+	return 0;
+}
+
+#include "los.c"
 #include "ui.c"
 #include "monsters.c"
 #include "xml.c"
@@ -125,11 +136,9 @@ int main(void) {
 			continue;
 		dy = player->y - e->y;
 		dx = player->x - e->x;
-		if (!e->aggro) {
-			// TODO: aggro when player is in sight
-			if (!e->aggro && dy * dy + dx * dx > 9)
-				continue;
-		}
+		e->aggro = e->aggro || can_see(e->y, e->x);
+		if (!e->aggro && dy * dy + dx * dx > 9)
+			continue;
 		if (e->delay) {
 			e->delay--;
 			continue;
