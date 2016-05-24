@@ -128,6 +128,31 @@ static int compare_priorities(const void *a, const void *b) {
 	return (pb > pa) - (pb < pa);
 }
 
+static void hit(Entity *e) {
+	e->hp -= 1;
+	if (e->hp <= 0) {
+		rm_ent(e);
+		if (e->class == WARLOCK_1 || e->class == WARLOCK_2)
+			move_ent(player, e->y, e->x);
+	} else if (CLASS(e).beat_delay == 0) {
+		knockback(e);
+	}
+}
+
+static void player_turn(Entity *this) {
+	display_board();
+	player_input(this);
+	
+	Entity *dest = board[this->y + this->dy][this->x + this->dx];
+
+	if (dest == NULL)
+		move_ent(this, this->y + this->dy, this->x + this->dx);
+	else if (dest->class < PLAYER)
+		hit(dest);
+	else if (dest->class == DIRT)
+		board[this->y + this->dy][this->x + this->dx] = NULL;
+}
+
 static void enemy_turn(Entity *e) {
 	dy = player->y - e->y;
 	dx = player->x - e->x;

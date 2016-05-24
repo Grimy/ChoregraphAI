@@ -12,25 +12,6 @@ static void attack_player(Entity *attacker) {
 	}
 }
 
-static void player_turn(Entity *this) {
-	display_board();
-	player_input(this);
-	
-	Entity *dest = board[this->y + this->dy][this->x + this->dx];
-
-	if (dest == NULL) {
-		move_ent(this, this->y + this->dy, this->x + this->dx);
-	} else if (dest->class < PLAYER) {
-		dest->hp -= 1;
-		if (dest->hp <= 0)
-			rm_ent(dest);
-		else if (CLASS(dest).beat_delay == 0)
-			knockback(dest);
-	} else if (dest->class == DIRT) {
-		board[this->y + this->dy][this->x + this->dx] = NULL;
-	}
-}
-
 static void basic_seek(Entity *this) {
 	int pdy = player->prev_y - this->y;
 	int pdx = player->prev_x - this->x;
