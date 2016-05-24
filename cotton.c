@@ -83,25 +83,25 @@ static void spawn(uint8_t class, int8_t y, int8_t x) {
 }
 
 // Remove an entity from the board
-static void rm_ent(Entity *e) {
+static void ent_rm(Entity *e) {
 	Entity **prev;
 	for (prev = &board[e->y][e->x]; *prev != e; prev = &(*prev)->next);
 	*prev = e->next;
 }
 
 // Add an entity to the board
-static void add_ent(Entity *e) {
+static void ent_add(Entity *e) {
 	e->next = board[e->y][e->x];
 	board[e->y][e->x] = e;
 }
 
-static void move_ent(Entity *e, int8_t y, int8_t x) {
-	rm_ent(e);
+static void ent_move(Entity *e, int8_t y, int8_t x) {
+	ent_rm(e);
 	e->prev_y = e->y;
 	e->prev_x = e->x;
 	e->y = y;
 	e->x = x;
-	add_ent(e);
+	ent_add(e);
 }
 
 static int has_wall(int y, int x) {
@@ -122,44 +122,44 @@ static int can_move(Entity *e, int dy, int dx) {
 	return dest == NULL || dest->class == PLAYER;
 }
 
-static void attack_player(Entity *attacker) {
+static void monster_attack(Entity *attacker) {
 	if (attacker->class == CONF_MONKEY) {
 		attacker->hp = 0;
-		rm_ent(attacker);
+		ent_rm(attacker);
 	} else {
 		player->hp = 0;
 	}
 }
 
-static int move_enemy(Entity *e, int8_t y, int8_t x) {
+static int monster_move(Entity *e, int8_t y, int8_t x) {
 	if (!(can_move(e, y, x)))
 		return 0;
 	e->delay = CLASS(e).beat_delay;
 	Entity *dest = board[e->y + y][e->x + x];
 	if (dest && dest->class == PLAYER)
-		attack_player(e);
+		monster_attack(e);
 	else
-		move_ent(e, e->y + y, e->x + x);
+		ent_move(e, e->y + y, e->x + x);
 	return 1;
 }
 
-static void attack_enemy(Entity *e) {
+static void player_attack(Entity *e) {
 	e->hp -= 1;
 	if (e->hp <= 0) {
-		rm_ent(e);
+		ent_rm(e);
 		if (e->class == WARLOCK_1 || e->class == WARLOCK_2)
-			move_ent(player, e->y, e->x);
+			ent_move(player, e->y, e->x);
 	} else if (CLASS(e).beat_delay == 0) {
 		knockback(e);
 	}
 }
 
-static void move_player(Entity *this, int8_t y, int8_t x) {
+static void player_move(Entity *this, int8_t y, int8_t x) {
 	Entity *dest = board[this->y + y][this->x + x];
 	if (dest == NULL)
-		move_ent(this, this->y + y, this->x + x);
+		ent_move(this, this->y + y, this->x + x);
 	else if (dest->class < PLAYER)
-		attack_enemy(dest);
+		player_attack(dest);
 	else if (dest->class == DIRT)
 		board[this->y + y][this->x + x] = NULL;
 }
@@ -169,13 +169,7 @@ static void move_player(Entity *this, int8_t y, int8_t x) {
 #include "monsters.c"
 #include "xml.c"
 
-static int compare_priorities(const void *a, const void *b) {
-	uint32_t pa = CLASS((const Entity*) a).priority;
-	uint32_t pb = CLASS((const Entity*) b).priority;
-	return (pb > pa) - (pb < pa);
-}
-
-static void enemy_turn(Entity *e) {
+static void monster_turn(Entity *e) {
 	dy = player->y - e->y;
 	dx = player->x - e->x;
 	e->aggro = e->aggro || can_see(e->y, e->x);
@@ -192,7 +186,13 @@ static void do_beat(void) {
 	player_turn(player);
 	for (Entity *e = entities + 1; CLASS(e).priority; ++e)
 		if (e->hp > 0)
-			enemy_turn(e);
+			monster_turn(e);
+}
+
+static int compare_priorities(const void *a, const void *b) {
+	uint32_t pa = CLASS((const Entity*) a).priority;
+	uint32_t pb = CLASS((const Entity*) b).priority;
+	return (pb > pa) - (pb < pa);
 }
 
 int main(void) {
@@ -201,7 +201,7 @@ int main(void) {
 	spawn(PLAYER, SPAWN_Y, SPAWN_X);
 	qsort(entities, LENGTH(entities), sizeof(*entities), compare_priorities);
 	for (Entity *e = entities; CLASS(e).priority; ++e)
-		add_ent(e);
+		ent_add(e);
 	while (player->hp)
 		do_beat();
 }

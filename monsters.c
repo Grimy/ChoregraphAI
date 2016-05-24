@@ -23,11 +23,11 @@ static void basic_seek(Entity *this) {
 		// #5: keep moving along the same axis
 		this->vertical;
 
-	move_enemy(this, this->vertical ? SIGN(dy) : 0, this->vertical ? 0 : SIGN(dx));
+	monster_move(this, this->vertical ? SIGN(dy) : 0, this->vertical ? 0 : SIGN(dx));
 }
 
 static void diagonal_seek(Entity *this) {
-	move_enemy(
+	monster_move(
 		this,
 		dy ? SIGN(dy) : can_move(this, 1, SIGN(dx)) ? 1 : -1,
 		dx ? SIGN(dx) : can_move(this, SIGN(dy), 1) ? 1 : -1
@@ -39,13 +39,13 @@ static void bat(Entity *this) {
 	static const int8_t bat_x[4] = {1, -1, 0, 0};
 	int rng = rand();
 	for (int i = 0; i < 4; ++i)
-		if (move_enemy(this, bat_y[(rng + i) & 3], bat_x[(rng + i) & 3]))
+		if (monster_move(this, bat_y[(rng + i) & 3], bat_x[(rng + i) & 3]))
 			return;
 }
 
 static void black_bat(Entity *this) {
 	if (ABS(dy) + ABS(dx) == 1)
-		attack_player(this);
+		monster_attack(this);
 	else
 		bat(this);
 }

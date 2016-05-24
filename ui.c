@@ -25,10 +25,10 @@ static void display_board(void) {
 static void player_turn(Entity *this) {
 	display_board();
 	switch (getchar()) {
-		case 'e': move_player(this,  0, -1); break;
-		case 'f': move_player(this,  1,  0); break;
-		case 'i': move_player(this,  0,  1); break;
-		case 'j': move_player(this, -1,  0); break;
+		case 'e': player_move(this,  0, -1); break;
+		case 'f': player_move(this,  1,  0); break;
+		case 'i': player_move(this,  0,  1); break;
+		case 'j': player_move(this, -1,  0); break;
 		case 't': this->hp = 0; break;
 		default: break;
 	}
