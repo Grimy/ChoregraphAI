@@ -34,6 +34,8 @@ static void diagonal_seek(Entity *this) {
 	);
 }
 
+// static void moore_seek(Entity *this)
+
 static void bat(Entity *this) {
 	static const int8_t bat_y[4] = {0, 0,  1, -1};
 	static const int8_t bat_x[4] = {1, -1, 0, 0};

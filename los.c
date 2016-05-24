@@ -3,31 +3,26 @@ static int los(double y, double x) {
 	double dx = player->x - x;
 	int cy = (int) (y + .5);
 	int cx = (int) (x + .5);
-	double error = -(cy - y) * dx + (cx - x) * dy;
+	// double error = -(cy - y) * dx + (cx - x) * dy;
+	double error = 0;
+	if (dx * (cx - x) > 0 &&
+		dy * (cy - y) > 0 &&
+		has_wall(cy, cx))
+		return 0;
 	while (cy != player->y || cx != player->x) {
-		if (has_wall(cy, cx))
-			return 0;
-		if (SIGN(dx) == 0) {
-			cy += SIGN(dy);
-			continue;
-		}
-		if (SIGN(dy) == 0) {
-			cx += SIGN(dx);
-			continue;
-		}
 		double err_y = ABS(error - SIGN(dy) * dx);
 		double err_x = ABS(error + SIGN(dx) * dy);
-		if (ABS(err_y - err_x) < .001) {
-			if (has_wall(cy + SIGN(dy), cx) || has_wall(cy, cx + SIGN(dx)))
+		int old_cx = cx;
+		if (err_x < err_y + .001) {
+			cx += SIGN(dx);
+			if (has_wall(cy, cx))
 				return 0;
-			cy += SIGN(dy);
-			cx += SIGN(dx);
-			error += SIGN(dx) * dy - SIGN(dy) * dx;
-		} else if (err_x < err_y) {
-			cx += SIGN(dx);
 			error += SIGN(dx) * dy;
-		} else {
+		}
+		if (err_y < err_x + .001) {
 			cy += SIGN(dy);
+			if (has_wall(cy, cx) || has_wall(cy, old_cx))
+				return 0;
 			error -= SIGN(dy) * dx;
 		}
 	}
