@@ -2,6 +2,7 @@ TODO:
 * Check beat delay of fully surrounded bat
 * Z4 digging
 * Harpies
+* Blademasters: check whether tracking direction is independent from lunge
 * Bombs (+test priority)
 * Monster digging
 * Test basic seek some more

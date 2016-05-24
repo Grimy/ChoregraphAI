@@ -5,5 +5,12 @@ CFLAGS += -Weverything -Werror -Wno-unknown-warning-option -Wno-c++-compat -Wno-
 # CFLAGS += -Ofast -fno-asynchronous-unwind-tables
 CFLAGS += -O1 -ggdb -fsanitize=address,leak,undefined
 
-cotton: cotton.c monsters.c los.c ui.c xml.c
-	$(CC) $(CFLAGS) -o $@ $<
+a.out: cotton.c monsters.c los.c ui.c xml.c
+	$(CC) $(CFLAGS) $<
+
+rtl.expand: cotton
+	gcc -fdump-rtl-expand=$@ -I/usr/include/libxml2 -S cotton.c >/dev/null
+	rm cotton.s
+
+graph: rtl.expand
+	egypt --omit ent_add,ent_rm,ent_move,can_move $< | dot -Tpng | feh -FZ -

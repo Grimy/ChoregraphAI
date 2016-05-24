@@ -55,7 +55,8 @@ typedef struct entity {
 	unsigned delay: 4;
 	unsigned aggro: 1;
 	unsigned vertical: 1;
-	unsigned: 10;
+	unsigned state: 2;
+	unsigned: 8;
 } Entity;
 
 typedef struct class {
@@ -113,17 +114,13 @@ static int has_wall(int y, int x) {
 	return 0;
 }
 
-static void knockback(Entity *e) {
-	e->delay = 1;
-}
-
 static int can_move(Entity *e, int dy, int dx) {
 	Entity *dest = board[e->y + dy][e->x + dx];
 	return dest == NULL || dest->class == PLAYER;
 }
 
 static void monster_attack(Entity *attacker) {
-	if (attacker->class == CONF_MONKEY) {
+	if (attacker->class == CONF_MONKEY || attacker->class == PIXIE) {
 		attacker->hp = 0;
 		ent_rm(attacker);
 	} else {
@@ -143,7 +140,17 @@ static int monster_move(Entity *e, int8_t y, int8_t x) {
 	return 1;
 }
 
+static void knockback(Entity *e) {
+	e->delay = 1;
+	monster_move(e, SIGN(e->y - player->y), SIGN(e->x - player->x));
+}
+
 static void player_attack(Entity *e) {
+	if ((e->class == BLADENOVICE || e->class == BLADEMASTER) && e->state < 2) {
+		knockback(e);
+		e->state = 1;
+		return;
+	}
 	e->hp -= 1;
 	if (e->hp <= 0) {
 		ent_rm(e);
