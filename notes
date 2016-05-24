@@ -2,9 +2,9 @@ TODO:
 * Check beat delay of fully surrounded bat
 * Z4 digging
 * Harpies
-* Bombs
+* Bombs (+test priority)
 * Monster digging
-* Naming consistency: {player,monster}_{turn,can_move,move,attack}
+* Test basic seek some more
 
 
 basic seek:

@@ -154,14 +154,14 @@ static void player_attack(Entity *e) {
 	}
 }
 
-static void player_move(Entity *this, int8_t y, int8_t x) {
-	Entity *dest = board[this->y + y][this->x + x];
+static void player_move(int8_t y, int8_t x) {
+	Entity *dest = board[player->y + y][player->x + x];
 	if (dest == NULL)
-		ent_move(this, this->y + y, this->x + x);
+		ent_move(player, player->y + y, player->x + x);
 	else if (dest->class < PLAYER)
 		player_attack(dest);
 	else if (dest->class == DIRT)
-		board[this->y + y][this->x + x] = NULL;
+		board[player->y + y][player->x + x] = NULL;
 }
 
 #include "los.c"
@@ -183,7 +183,7 @@ static void monster_turn(Entity *e) {
 }
 
 static void do_beat(void) {
-	player_turn(player);
+	player_turn();
 	for (Entity *e = entities + 1; CLASS(e).priority; ++e)
 		if (e->hp > 0)
 			monster_turn(e);

@@ -22,14 +22,14 @@ static void display_board(void) {
 	}
 }
 
-static void player_turn(Entity *this) {
+static void player_turn() {
 	display_board();
 	switch (getchar()) {
-		case 'e': player_move(this,  0, -1); break;
-		case 'f': player_move(this,  1,  0); break;
-		case 'i': player_move(this,  0,  1); break;
-		case 'j': player_move(this, -1,  0); break;
-		case 't': this->hp = 0; break;
+		case 'e': player_move( 0, -1); break;
+		case 'f': player_move( 1,  0); break;
+		case 'i': player_move( 0,  1); break;
+		case 'j': player_move(-1,  0); break;
+		case 't': player->hp = 0; break;
 		default: break;
 	}
 }
