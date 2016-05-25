@@ -22,9 +22,9 @@ static void process_node(xmlTextReaderPtr xml) {
 		spawn(type, y, x);
 }
 
-static void parse_xml(void) {
+static void parse_xml(char *file) {
 	LIBXML_TEST_VERSION;
-	xmlTextReaderPtr xml = xmlReaderForFile("SCIENCE.xml", NULL, 0);
+	xmlTextReaderPtr xml = xmlReaderForFile(file, NULL, 0);
 	if (xml == NULL)
 		exit(1);
 	while (xmlTextReaderRead(xml) == 1)

@@ -202,9 +202,11 @@ static int compare_priorities(const void *a, const void *b) {
 	return (pb > pa) - (pb < pa);
 }
 
-int main(void) {
+int main(int argc, char **argv) {
 	system("stty -echo -icanon eol \1");
-	parse_xml();
+	if (argc != 2)
+		exit(argc);
+	parse_xml(argv[1]);
 	spawn(PLAYER, SPAWN_Y, SPAWN_X);
 	qsort(entities, LENGTH(entities), sizeof(*entities), compare_priorities);
 	for (Entity *e = entities; CLASS(e).priority; ++e)
