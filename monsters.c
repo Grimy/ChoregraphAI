@@ -77,7 +77,7 @@ static void spike_trap(Entity *this) {
 
 static void nop() {}
 
-static Class class_infos[256] = {
+static ClassInfos class_infos[256] = {
 	[PLAYER]      = { 1, 0, '@',  99999999, NULL },
 	[TRAP]        = { 1, 0, '^',         1, spike_trap },
 	[SKELETON]    = { 1, 1, 'Z',  10101202, basic_seek },

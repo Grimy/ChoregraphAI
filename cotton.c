@@ -13,7 +13,7 @@
 #define SPAWN_X 24
 #define player entities
 
-enum {
+typedef enum __attribute__((__packed__)) {
 	SKELETON = 3,
 	BLUE_BAT = 6,
 	MONKEY = 9,
@@ -45,11 +45,11 @@ enum {
 	OOZE,
 	FLOOR,
 	WALL,
-};
+} Class;
 
 typedef struct entity {
 	struct entity *next;
-	uint8_t class;
+	Class class;
 	int8_t x;
 	int8_t y;
 	int8_t prev_x;
@@ -62,15 +62,15 @@ typedef struct entity {
 	unsigned: 8;
 } Entity;
 
-typedef struct class {
+typedef struct {
 	int8_t max_hp;
 	uint8_t beat_delay;
 	int16_t glyph;
 	uint32_t priority;
 	void (*act) (struct entity*);
-} Class;
+} ClassInfos;
 
-static Class class_infos[256];
+static ClassInfos class_infos[256];
 
 __extension__
 static Entity board[32][32] = {[0 ... 31] = {[0 ... 31] = {.class = WALL, .hp = 5}}};
