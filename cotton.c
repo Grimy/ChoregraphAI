@@ -163,10 +163,24 @@ static void player_attack(Entity *e) {
 	}
 }
 
+static void zone4_dig(Entity *e) {
+	if (e->hp == 1 || e->hp == 2)
+		e->class = FLOOR;
+}
+
 static void player_dig(Entity *wall) {
+	if (wall->class != WALL)
+		return;
 	int dig = board[player->y][player->x].class == OOZE ? 0 : 2;
-	if (dig >= wall->hp)
-		wall->class = FLOOR;
+	if (dig < wall->hp)
+		return;
+	wall->class = FLOOR;
+	if (wall->hp == 1 || wall->hp == 2) {
+		zone4_dig(wall - 1);
+		zone4_dig(wall + 1);
+		zone4_dig(wall - LENGTH(*board));
+		zone4_dig(wall + LENGTH(*board));
+	}
 }
 
 static void player_move(int8_t y, int8_t x) {
