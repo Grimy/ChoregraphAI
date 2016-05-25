@@ -7,6 +7,14 @@ static int xml_attr(xmlTextReaderPtr xml, char* attr) {
 	return result;
 }
 
+static uint8_t class_of(uint8_t type) {
+	if (type >= 100)
+		return DIRT;
+	if (type == 17)
+		return OOZE;
+	return FLOOR;
+}
+
 static void process_node(xmlTextReaderPtr xml) {
 	const char *name = (const char*) xmlTextReaderConstName(xml);
 	if (strcmp(name, "trap") && strcmp(name, "tile") && strcmp(name, "enemy"))
@@ -17,7 +25,7 @@ static void process_node(xmlTextReaderPtr xml) {
 	if (!strcmp(name, "trap"))
 		spawn(TRAP, y, x);
 	else if (!strcmp(name, "tile"))
-		board[y][x] = type >= 100 ? &dirt_wall : NULL;
+		board[y][x].class = class_of(type);
 	else
 		spawn(type, y, x);
 }

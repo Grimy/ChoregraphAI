@@ -71,8 +71,6 @@ static void nop() {}
 
 static Class class_infos[256] = {
 	[PLAYER]      = { 1, 0, '@',  99999999, NULL },
-	[DIRT]        = { 0, 0, '+',         0, NULL },
-	[STONE]       = { 0, 0, ' ',         0, NULL },
 	[TRAP]        = { 0, 0, '^',         1, nop },
 	[SKELETON]    = { 1, 1, 'Z',  10101202, basic_seek },
 	[BLUE_BAT]    = { 1, 1, 'B',  10101202, bat },

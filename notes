@@ -9,6 +9,7 @@ TO TEST:
 * Spiders: is it basic_seek inside walls? is it diagonal_seek outside?
 * Bomb priority
 * Basic seek edge cases
+* Dig catacomb with Pick-axe + shovel
 
 
 Harpies:

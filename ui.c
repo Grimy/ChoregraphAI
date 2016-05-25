@@ -6,18 +6,27 @@ static void display_wall(int y, int x) {
 	printf("%3.3s", &"╳───│┌┐┬│└┘┴│├┤┼"[3*glyph]);
 }
 
+static void display_tile(int y, int x) {
+	Entity e = board[y][x];
+	if (e.class == OOZE)
+		printf("[42m");
+	if (e.next)
+		putchar(CLASS(e.next).glyph);
+	else if (!can_see(y, x))
+		putchar(' ');
+	else if (e.class == DIRT)
+		display_wall(y, x);
+	else
+		putchar('.');
+	if (e.class == OOZE)
+		printf("[m");
+}
+
 static void display_board(void) {
 	printf("\033[H\033[2J");
 	for (int y = 0; y < LENGTH(board); ++y) {
-		for (int x = 0; x < LENGTH(*board); ++x) {
-			Entity *e = board[y][x];
-			if (!e)
-				putchar(can_see(y, x) ? '.' : ' ');
-			else if (e->class == DIRT)
-				can_see(y, x) ? display_wall(y, x) : (void) putchar(' ');
-			else
-				putchar(CLASS(e).glyph);
-		}
+		for (int x = 0; x < LENGTH(*board); ++x)
+			display_tile(y, x);
 		putchar('\n');
 	}
 }

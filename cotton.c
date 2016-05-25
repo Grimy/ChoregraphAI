@@ -6,6 +6,8 @@
 #define LENGTH(array) ((int) (sizeof(array) / sizeof(*(array))))
 #define SIGN(x) (((x) > 0) - ((x) < 0))
 #define ABS(x)  ((x) < 0 ? -(x) : (x))
+
+#define IS_WALL(tile) ((tile).class >= DIRT)
 #define CLASS(e) (class_infos[(e)->class])
 #define SPAWN_Y 9
 #define SPAWN_X 23
@@ -40,6 +42,8 @@ enum {
 
 	PLAYER,
 	TRAP,
+	OOZE,
+	FLOOR,
 	DIRT,
 	STONE,
 };
@@ -69,9 +73,7 @@ typedef struct class {
 
 static Class class_infos[256];
 
-static Entity dirt_wall = { .class = DIRT };
-static Entity stone_wall = { .class = STONE };
-__extension__ static Entity *board[32][32] = { [0 ... 31] = { [0 ... 31] = &stone_wall } };
+__extension__ static Entity board[32][32];
 static Entity entities[256];
 
 static int dy, dx;
@@ -85,15 +87,15 @@ static void spawn(uint8_t class, int8_t y, int8_t x) {
 
 // Remove an entity from the board
 static void ent_rm(Entity *e) {
-	Entity **prev;
-	for (prev = &board[e->y][e->x]; *prev != e; prev = &(*prev)->next);
-	*prev = e->next;
+	Entity *prev;
+	for (prev = &board[e->y][e->x]; prev->next != e; prev = prev->next);
+	prev->next = e->next;
 }
 
 // Add an entity to the board
 static void ent_add(Entity *e) {
-	e->next = board[e->y][e->x];
-	board[e->y][e->x] = e;
+	e->next = board[e->y][e->x].next;
+	board[e->y][e->x].next = e;
 }
 
 static void ent_move(Entity *e, int8_t y, int8_t x) {
@@ -108,15 +110,12 @@ static void ent_move(Entity *e, int8_t y, int8_t x) {
 static int has_wall(int y, int x) {
 	if (y >= LENGTH(board) || x >= LENGTH(*board))
 		return 0;
-	for (Entity *e = board[y][x]; e; e = e->next)
-		if (e->class == DIRT)
-			return 1;
-	return 0;
+	return IS_WALL(board[y][x]);
 }
 
 static int can_move(Entity *e, int dy, int dx) {
-	Entity *dest = board[e->y + dy][e->x + dx];
-	return dest == NULL || dest->class == PLAYER;
+	Entity dest = board[e->y + dy][e->x + dx];
+	return !IS_WALL(dest) && (dest.next == NULL || dest.next == player);
 }
 
 static void monster_attack(Entity *attacker) {
@@ -132,8 +131,8 @@ static int monster_move(Entity *e, int8_t y, int8_t x) {
 	if (!(can_move(e, y, x)))
 		return 0;
 	e->delay = CLASS(e).beat_delay;
-	Entity *dest = board[e->y + y][e->x + x];
-	if (dest && dest->class == PLAYER)
+	Entity dest = board[e->y + y][e->x + x];
+	if (dest.next == player)
 		monster_attack(e);
 	else
 		ent_move(e, e->y + y, e->x + x);
@@ -146,6 +145,10 @@ static void knockback(Entity *e) {
 }
 
 static void player_attack(Entity *e) {
+	if (board[player->y][player->x].class == OOZE)
+		return;
+	if (e->class == OOZE_GOLEM)
+		board[player->y][player->x].class = OOZE;
 	if ((e->class == BLADENOVICE || e->class == BLADEMASTER) && e->state < 2) {
 		knockback(e);
 		e->state = 1;
@@ -161,14 +164,20 @@ static void player_attack(Entity *e) {
 	}
 }
 
+static void player_dig(Entity *wall) {
+	if (board[player->y][player->x].class == OOZE)
+		return;
+	wall->class = FLOOR;
+}
+
 static void player_move(int8_t y, int8_t x) {
-	Entity *dest = board[player->y + y][player->x + x];
-	if (dest == NULL)
+	Entity *dest = &board[player->y + y][player->x + x];
+	if (dest->next)
+		player_attack(dest->next);
+	else if (IS_WALL(*dest))
+		player_dig(dest);
+	else
 		ent_move(player, player->y + y, player->x + x);
-	else if (dest->class < PLAYER)
-		player_attack(dest);
-	else if (dest->class == DIRT)
-		board[player->y + y][player->x + x] = NULL;
 }
 
 #include "los.c"
