@@ -1,8 +1,8 @@
 static void basic_seek(Entity *this) {
 	this->vertical =
 		// #1: move towards the player
-		dx == 0 ? 1 :
 		dy == 0 ? 0 :
+		dx == 0 ? 1 :
 
 		// #2: avoid obstacles
 		!can_move(this, SIGN(dy), 0) ? 0 :

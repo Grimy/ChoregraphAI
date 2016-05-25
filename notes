@@ -3,9 +3,11 @@ TO CODE:
 * Harpies
 * Bombs
 * Monster digging
+* Consider distinguishing Tile vs Entity
 
 TO TEST:
 * Blademasters: is it a knockback or a move away?
+* diagonal seek with wall between monster and player?
 * Spiders: is it basic_seek inside walls? is it diagonal_seek outside?
 * Bomb priority
 * Basic seek edge cases

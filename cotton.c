@@ -7,10 +7,9 @@
 #define SIGN(x) (((x) > 0) - ((x) < 0))
 #define ABS(x)  ((x) < 0 ? -(x) : (x))
 
-#define IS_WALL(tile) ((tile).class >= DIRT)
 #define CLASS(e) (class_infos[(e)->class])
 #define SPAWN_Y 9
-#define SPAWN_X 23
+#define SPAWN_X 24
 #define player entities
 
 enum {
@@ -44,8 +43,7 @@ enum {
 	TRAP,
 	OOZE,
 	FLOOR,
-	DIRT,
-	STONE,
+	WALL,
 };
 
 typedef struct entity {
@@ -73,7 +71,8 @@ typedef struct class {
 
 static Class class_infos[256];
 
-__extension__ static Entity board[32][32];
+__extension__
+static Entity board[32][32] = {[0 ... 31] = {[0 ... 31] = {.class = WALL, .hp = 5}}};
 static Entity entities[256];
 
 static int dy, dx;
@@ -107,15 +106,9 @@ static void ent_move(Entity *e, int8_t y, int8_t x) {
 	ent_add(e);
 }
 
-static int has_wall(int y, int x) {
-	if (y >= LENGTH(board) || x >= LENGTH(*board))
-		return 0;
-	return IS_WALL(board[y][x]);
-}
-
 static int can_move(Entity *e, int dy, int dx) {
 	Entity dest = board[e->y + dy][e->x + dx];
-	return !IS_WALL(dest) && (dest.next == NULL || dest.next == player);
+	return dest.class != WALL && (dest.next == NULL || dest.next == player);
 }
 
 static void monster_attack(Entity *attacker) {
@@ -165,16 +158,16 @@ static void player_attack(Entity *e) {
 }
 
 static void player_dig(Entity *wall) {
-	if (board[player->y][player->x].class == OOZE)
-		return;
-	wall->class = FLOOR;
+	int dig = board[player->y][player->x].class == OOZE ? 0 : 2;
+	if (dig >= wall->hp)
+		wall->class = FLOOR;
 }
 
 static void player_move(int8_t y, int8_t x) {
 	Entity *dest = &board[player->y + y][player->x + x];
 	if (dest->next)
 		player_attack(dest->next);
-	else if (IS_WALL(*dest))
+	else if (dest->class == WALL)
 		player_dig(dest);
 	else
 		ent_move(player, player->y + y, player->x + x);
@@ -212,14 +205,13 @@ static int compare_priorities(const void *a, const void *b) {
 }
 
 int main(int argc, char **argv) {
-	system("stty -echo -icanon eol \1");
 	if (argc != 2)
 		exit(argc);
-	parse_xml(argv[1]);
-	spawn(PLAYER, SPAWN_Y, SPAWN_X);
+	xml_parse(argv[1]);
 	qsort(entities, LENGTH(entities), sizeof(*entities), compare_priorities);
 	for (Entity *e = entities; CLASS(e).priority; ++e)
 		ent_add(e);
+	system("stty -echo -icanon eol \1");
 	while (player->hp)
 		do_beat();
 }

@@ -7,15 +7,15 @@ static int xml_attr(xmlTextReaderPtr xml, char* attr) {
 	return result;
 }
 
-static uint8_t class_of(uint8_t type) {
+static Entity xml_tile(uint8_t type) {
 	if (type >= 100)
-		return DIRT;
-	if (type == 17)
-		return OOZE;
-	return FLOOR;
+		return (Entity) {.class = WALL, .hp = 1};
+	else if (type == 17)
+		return (Entity) {.class = OOZE};
+	return (Entity) {.class = FLOOR};
 }
 
-static void process_node(xmlTextReaderPtr xml) {
+static void xml_process_node(xmlTextReaderPtr xml) {
 	const char *name = (const char*) xmlTextReaderConstName(xml);
 	if (strcmp(name, "trap") && strcmp(name, "tile") && strcmp(name, "enemy"))
 		return;
@@ -25,18 +25,19 @@ static void process_node(xmlTextReaderPtr xml) {
 	if (!strcmp(name, "trap"))
 		spawn(TRAP, y, x);
 	else if (!strcmp(name, "tile"))
-		board[y][x].class = class_of(type);
+		board[y][x] = xml_tile(type);
 	else
 		spawn(type, y, x);
 }
 
-static void parse_xml(char *file) {
+static void xml_parse(char *file) {
 	LIBXML_TEST_VERSION;
 	xmlTextReaderPtr xml = xmlReaderForFile(file, NULL, 0);
 	if (xml == NULL)
 		exit(1);
 	while (xmlTextReaderRead(xml) == 1)
 		if (xmlTextReaderNodeType(xml) == 1)
-			process_node(xml);
+			xml_process_node(xml);
 	xmlFreeTextReader(xml);
+	spawn(PLAYER, SPAWN_Y, SPAWN_X);
 }
