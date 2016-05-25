@@ -34,7 +34,10 @@ static void diagonal_seek(Entity *this) {
 	);
 }
 
-// static void moore_seek(Entity *this)
+static void moore_seek(Entity *this) {
+	(void) this;
+	// TODO
+}
 
 static void bat(Entity *this) {
 	static const int8_t bat_y[4] = {0, 0,  1, -1};
@@ -78,25 +81,43 @@ static void spike_trap(Entity *this) {
 static void nop() {}
 
 static ClassInfos class_infos[256] = {
-	[PLAYER]      = { 1, 0, '@',  99999999, NULL },
-	[TRAP]        = { 1, 0, '^',         1, spike_trap },
 	[SKELETON]    = { 1, 1, 'Z',  10101202, basic_seek },
 	[BLUE_BAT]    = { 1, 1, 'B',  10101202, bat },
-	[SPIDER]      = { 1, 1, 's',  10401202, basic_seek },
-	[SHOPKEEPER]  = { 9, 9, '@',  99999997, nop },
-	[BLUE_DRAGON] = { 6, 1, 'D',  99999997, basic_seek },
+	[MONKEY]      = { 1, 0, 'M',  10004101, basic_seek },
+
 	[BOMBER]      = { 1, 1, 'G',  99999998, diagonal_seek },
 	[DIGGER]      = { 1, 1, 'G',  10101201, basic_seek },
 	[BLACK_BAT]   = { 1, 0, 'B',  10401120, black_bat },
+	[ARMADILDO]   = { 3, 0, 'q',  10303104, nop },
 	[BLADENOVICE] = { 1, 1, 'b',  99999995, parry },
+	[BLADEMASTER] = { 2, 1, 'b',  99999996, parry },
+	[GHOUL]       = { 1, 0, 'W',  10301102, moore_seek },
 	[OOZE_GOLEM]  = { 5, 3, '\'', 20510407, basic_seek },
 	[HARPY]       = { 1, 1, 'h',  10301203, basic_seek },
 	[LICH_1]      = { 1, 1, 'L',  10404202, basic_seek },
-	[CONF_MONKEY] = { 1, 0, 'M',  10004103, basic_seek },
-	[TELE_MONKEY] = { 2, 0, 'M',  10004101, basic_seek },
+	[LICH_2]      = { 2, 1, 'L',  10404302, basic_seek },
+	[LICH_3]      = { 3, 1, 'L',  10404402, basic_seek },
+	[CONF_MONKEY] = { 1, 0, 'Y',  10004103, basic_seek },
+	[TELE_MONKEY] = { 2, 0, 'Y',  10002103, basic_seek },
+	[PIXIE]       = { 1, 0, 'n',  10401102, basic_seek },
 	[SARCO_1]     = { 1, 9, '|',  10101805, nop },
-	[WARLOCK_1]   = { 1, 1, 'w',         1, basic_seek },
-	[GARGOYLE_1]  = { 1, 1, 'g',         1, basic_seek },
-	[GARGOYLE_2]  = { 1, 1, 'g',         1, basic_seek },
-	[GARGOYLE_3]  = { 1, 1, 'g',         1, basic_seek },
+	[SARCO_2]     = { 2, 9, '|',  10102910, nop },
+	[SARCO_3]     = { 3, 9, '|',  10103915, nop },
+	[SPIDER]      = { 1, 1, 's',  10401202, basic_seek },
+	[WARLOCK_1]   = { 1, 1, 'w',  10401202, basic_seek },
+	[WARLOCK_2]   = { 2, 1, 'w',  10401302, basic_seek },
+	[MUMMY]       = { 1, 1, 'M',  30201103, moore_seek },
+	[GARGOYLE_1]  = { 1, 1, 'g',  10401102, nop },
+	[GARGOYLE_2]  = { 1, 1, 'g',  10401102, nop },
+	[GARGOYLE_3]  = { 1, 1, 'g',  10401102, nop },
+	[GARGOYLE_4]  = { 1, 1, 'g',  10401102, nop },
+	[GARGOYLE_5]  = { 1, 1, 'g',  10401102, nop },
+	[GARGOYLE_6]  = { 1, 1, 'g',  10401102, nop },
+
+	[SHOPKEEPER]  = { 9, 9, '@',  99999997, nop },
+	[BLUE_DRAGON] = { 6, 1, 'D',  99999997, basic_seek },
+	[MOMMY]       = { 6, 3, '@',  30405215, basic_seek },
+
+	[PLAYER]      = { 1, 0, '@',       ~0u, NULL },
+	[TRAP]        = { 1, 0, '^',         1, spike_trap },
 };
