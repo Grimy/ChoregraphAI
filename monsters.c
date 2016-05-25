@@ -27,16 +27,23 @@ static void basic_seek(Entity *this) {
 }
 
 static void diagonal_seek(Entity *this) {
-	monster_move(
-		this,
-		dy ? SIGN(dy) : can_move(this, 1, SIGN(dx)) ? 1 : -1,
-		dx ? SIGN(dx) : can_move(this, SIGN(dy), 1) ? 1 : -1
-	);
+	if (dy == 0)
+		monster_move(this, 1, SIGN(dx)) || monster_move(this, -1, SIGN(dx));
+	else if (dx == 0)
+		monster_move(this, SIGN(dy), 1) || monster_move(this, SIGN(dy), 1);
+	else
+		monster_move(this, SIGN(dy), SIGN(dx)) ||
+		monster_move(this, SIGN(dy) * -SIGN(dx), 1) ||
+		monster_move(this, SIGN(dy) * SIGN(dx), -1);
 }
 
 static void moore_seek(Entity *this) {
-	(void) this;
-	// TODO
+	if (monster_move(this, SIGN(dy), SIGN(dx)))
+		return;
+	if (dx < 0)
+		monster_move(this, 0, -1) || monster_move(this, SIGN(dy), 0);
+	else
+		monster_move(this, SIGN(dy), 0) || monster_move(this, 0, 1);
 }
 
 static void bat(Entity *this) {
