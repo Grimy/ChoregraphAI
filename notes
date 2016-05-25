@@ -6,12 +6,13 @@ TO CODE:
 * Consider distinguishing Tile vs Entity
 
 TO TEST:
-* Blademasters: is it a knockback or a move away?
-* Spiders: is it basic_seek inside walls? is it diagonal_seek outside?
-* Bomb priority
 * Basic seek edge cases
-* Dig catacomb with Pick-axe + shovel
+* LOS
 
+Bomb priority:
+147
+258
+369
 
 Harpies:
 1. move to a square with line of sight

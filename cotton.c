@@ -42,8 +42,13 @@ typedef enum __attribute__((__packed__)) {
 
 	PLAYER,
 	TRAP,
-	OOZE,
 	FLOOR,
+	WATER,
+	TAR,
+	FIRE,
+	ICE,
+	OOZE,
+	STAIRS,
 	WALL,
 } Class;
 
@@ -134,8 +139,8 @@ static int monster_move(Entity *e, int8_t y, int8_t x) {
 }
 
 static void knockback(Entity *e) {
-	e->delay = 1;
 	monster_move(e, SIGN(e->y - player->y), SIGN(e->x - player->x));
+	e->delay = 1;
 }
 
 static void player_attack(Entity *e) {

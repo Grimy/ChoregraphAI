@@ -8,11 +8,28 @@ static int xml_attr(xmlTextReaderPtr xml, char* attr) {
 }
 
 static Entity xml_tile(uint8_t type) {
-	if (type >= 100)
-		return (Entity) {.class = WALL, .hp = 1};
-	else if (type == 17)
-		return (Entity) {.class = OOZE};
-	return (Entity) {.class = FLOOR};
+	switch (type) {
+		case 0:   return (Entity) {.class = FLOOR};
+		case 3:   return (Entity) {.class = FLOOR};
+		case 4:   return (Entity) {.class = WATER};
+		case 8:   return (Entity) {.class = TAR};
+		case 9:   return (Entity) {.class = STAIRS};
+		case 10:  return (Entity) {.class = FIRE};
+		case 11:  return (Entity) {.class = ICE};
+		case 17:  return (Entity) {.class = OOZE};
+		case 100: return (Entity) {.class = WALL, .hp = 1};
+		case 101: return (Entity) {.class = WALL, .hp = 1};
+		case 102: return (Entity) {.class = WALL, .hp = 5};
+		case 103: return (Entity) {.class = WALL, .hp = 0};
+		case 104: return (Entity) {.class = WALL, .hp = 4};
+		case 105: return (Entity) {.class = WALL, .hp = 4};
+		case 107: return (Entity) {.class = WALL, .hp = 2};
+		case 108: return (Entity) {.class = WALL, .hp = 3};
+		case 109: return (Entity) {.class = WALL, .hp = 5};
+		case 110: return (Entity) {.class = WALL, .hp = 4};
+		case 111: return (Entity) {.class = WALL, .hp = 0}; // TODO: metal doors
+		default: printf("Unknown tile type: %d\n", type); exit(1);
+	}
 }
 
 static void xml_process_node(xmlTextReaderPtr xml) {
