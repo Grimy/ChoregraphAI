@@ -7,6 +7,7 @@
 #define SIGN(x) (((x) > 0) - ((x) < 0))
 #define ABS(x)  ((x) < 0 ? -(x) : (x))
 
+#define IS_MONSTER(e) ((e) && (e)->class < PLAYER)
 #define CLASS(e) (class_infos[(e)->class])
 #define SPAWN_Y 9
 #define SPAWN_X 24
@@ -108,7 +109,7 @@ static void ent_move(Entity *e, int8_t y, int8_t x) {
 
 static int can_move(Entity *e, int dy, int dx) {
 	Entity dest = board[e->y + dy][e->x + dx];
-	return dest.class != WALL && (dest.next == NULL || dest.next == player);
+	return dest.class != WALL && !IS_MONSTER(dest.next);
 }
 
 static void monster_attack(Entity *attacker) {
@@ -165,10 +166,10 @@ static void player_dig(Entity *wall) {
 
 static void player_move(int8_t y, int8_t x) {
 	Entity *dest = &board[player->y + y][player->x + x];
-	if (dest->next)
-		player_attack(dest->next);
-	else if (dest->class == WALL)
+	if (dest->class == WALL)
 		player_dig(dest);
+	else if (IS_MONSTER(dest->next))
+		player_attack(dest->next);
 	else
 		ent_move(player, player->y + y, player->x + x);
 }

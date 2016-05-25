@@ -67,11 +67,19 @@ static void parry(Entity *this) {
 	}
 }
 
+static void spike_trap(Entity *this) {
+	Entity *target = board[this->y][this->x].next;
+	if (target == this)
+		return;
+	target->hp = 0;
+	ent_rm(target);
+}
+
 static void nop() {}
 
 static Class class_infos[256] = {
 	[PLAYER]      = { 1, 0, '@',  99999999, NULL },
-	[TRAP]        = { 0, 0, '^',         1, nop },
+	[TRAP]        = { 1, 0, '^',         1, spike_trap },
 	[SKELETON]    = { 1, 1, 'Z',  10101202, basic_seek },
 	[BLUE_BAT]    = { 1, 1, 'B',  10101202, bat },
 	[SPIDER]      = { 1, 1, 's',  10401202, basic_seek },
