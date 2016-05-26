@@ -12,15 +12,18 @@ static void basic_seek(Entity *this) {
 		this->y == player->prev_y ? 0 :
 		this->x == player->prev_x ? 1 :
 
-		// #4: if prevpos aligns with the player’s curpos or prevpos,
-		// move into the direction of the alignment (modulo a bug)
-		this->prev_y == player->y && dx < 0 ? 0 :
-		this->prev_x == player->x ? 1 :
+		// #4: if prevpos aligns with the player, switch axes
 		this->prev_y == player->y ? 0 :
-		this->prev_y == player->prev_y ? dx > 0 && player->x > SPAWN_X :
-		this->prev_x == player->prev_x ? 1 :
+		this->prev_x == player->x ? 1 :
 
-		// #5: keep moving along the same axis
+		// #5: don’t switch axes for a single tile
+		ABS(dy) == 1 || ABS(dx) == 1 ? this->vertical :
+
+		// #6: if prevpos aligns with the player’s prevpos, do something weird
+		this->prev_y == player->prev_y ? dx > 0 && player->x > SPAWN_X :
+		this->prev_x == player->prev_x ? dx > 0 && player->x > SPAWN_X :
+
+		// #7: keep moving along the same axis
 		this->vertical;
 
 	monster_move(this, this->vertical ? SIGN(dy) : 0, this->vertical ? 0 : SIGN(dx));

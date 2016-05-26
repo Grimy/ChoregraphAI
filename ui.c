@@ -1,8 +1,8 @@
 #define IS_WALL(y, x) (board[y][x].class == WALL && board[y][x].hp < 5)
 
 static void display_wall(int y, int x) {
-	if (board[y][x].hp >= 5) {
-		putchar(' ');
+	if (board[y][x].hp == 0) {
+		putchar('+');
 		return;
 	}
 	int glyph = IS_WALL(y - 1, x) << 3 |
@@ -18,10 +18,12 @@ static void display_tile(int y, int x) {
 		printf("[42m");
 	if (e.next)
 		putchar(CLASS(e.next).glyph);
-	else if (e.class == WALL)
-		display_wall(y, x);
+	else if (e.class == WALL && e.hp == 5)
+		putchar(' ');
 	else if (!can_see(y, x))
 		putchar(' ');
+	else if (e.class == WALL)
+		display_wall(y, x);
 	else
 		putchar('.');
 	if (e.class == OOZE)

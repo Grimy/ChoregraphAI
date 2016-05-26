@@ -4,14 +4,17 @@ TO CODE:
 * Monster digging
 * Consider distinguishing Tile vs Entity
 
-TO TEST:
-* Basic seek edge cases
-* LOS
-
 Bomb priority:
 147
 258
 369
+
+Harpy priority:
+...k.
+.!igd
+.heb.
+jfa..
+.c..@
 
 Harpies:
 1. move to a square with line of sight

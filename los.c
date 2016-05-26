@@ -5,7 +5,7 @@ static int los(double y, double x) {
 	double dx = player->x - x;
 	int cy = (int) (y + .5);
 	int cx = (int) (x + .5);
-	if (dx * (cx - x) > 0 &&
+	if ((player->x > x || x > cx) &&
 		dy * (cy - y) > 0 &&
 		BLOCKS_LOS(cy, cx))
 		return 0;

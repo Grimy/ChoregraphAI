@@ -10,6 +10,7 @@ static int xml_attr(xmlTextReaderPtr xml, char* attr) {
 static Entity xml_tile(uint8_t type) {
 	switch (type) {
 		case 0:   return (Entity) {.class = FLOOR};
+		case 2:   return (Entity) {.class = FLOOR};
 		case 3:   return (Entity) {.class = FLOOR};
 		case 4:   return (Entity) {.class = WATER};
 		case 8:   return (Entity) {.class = TAR};
