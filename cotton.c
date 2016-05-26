@@ -70,8 +70,9 @@ typedef struct entity {
 typedef struct {
 	int8_t max_hp;
 	uint8_t beat_delay;
-	int16_t glyph;
+	unsigned: 16;
 	uint32_t priority;
+	char *glyph;
 	void (*act) (struct entity*);
 } ClassInfos;
 

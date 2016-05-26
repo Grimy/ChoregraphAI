@@ -1,3 +1,11 @@
+#define BLACK  "\033[30;1m"
+#define RED    "\033[31m"
+#define GREEN  "\033[32m"
+#define YELLOW "\033[33m"
+#define ORANGE "\033[33;1m"
+#define BLUE   "\033[34m"
+#define PURPLE "\033[35m"
+
 #define IS_WALL(y, x) (board[y][x].class == WALL && board[y][x].hp < 5)
 
 static void display_wall(int y, int x) {
@@ -5,6 +13,8 @@ static void display_wall(int y, int x) {
 		putchar('+');
 		return;
 	}
+	if (board[y][x].hp == 3)
+		printf(BLACK);
 	int glyph = IS_WALL(y - 1, x) << 3 |
 		IS_WALL(y + 1, x) << 2 |
 		IS_WALL(y, x - 1) << 1 |
@@ -15,9 +25,9 @@ static void display_wall(int y, int x) {
 static void display_tile(int y, int x) {
 	Entity e = board[y][x];
 	if (e.class == OOZE)
-		printf("[42m");
+		printf("\033[42m");
 	if (e.next)
-		putchar(CLASS(e.next).glyph);
+		printf("%s", CLASS(e.next).glyph);
 	else if (e.class == WALL && e.hp == 5)
 		putchar(' ');
 	else if (!can_see(y, x))
@@ -26,8 +36,7 @@ static void display_tile(int y, int x) {
 		display_wall(y, x);
 	else
 		putchar('.');
-	if (e.class == OOZE)
-		printf("[m");
+	printf("\033[m");
 }
 
 static void display_board(void) {
