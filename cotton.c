@@ -3,15 +3,16 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define LENGTH(array) ((int) (sizeof(array) / sizeof(*(array))))
+#define LENGTH(array) ((long) (sizeof(array) / sizeof(*(array))))
 #define SIGN(x) (((x) > 0) - ((x) < 0))
 #define ABS(x)  ((x) < 0 ? -(x) : (x))
 
-#define IS_MONSTER(e) ((e) && (e)->class < PLAYER)
-#define CLASS(e) (class_infos[(e)->class])
+#define IS_MONSTER(m) ((m) && (m)->class != PLAYER)
+#define CLASS(m) (class_infos[(m)->class])
 #define SPAWN_Y 9
 #define SPAWN_X 24
-#define player entities
+
+typedef unsigned long bool;
 
 typedef enum __attribute__((__packed__)) {
 	SKELETON = 3,
@@ -41,7 +42,10 @@ typedef enum __attribute__((__packed__)) {
 	MOMMY = 155,
 
 	PLAYER,
-	TRAP,
+} MonsterClass;
+
+typedef enum __attribute__((__packed__)) {
+	WALL,
 	FLOOR,
 	WATER,
 	TAR,
@@ -49,12 +53,14 @@ typedef enum __attribute__((__packed__)) {
 	ICE,
 	OOZE,
 	STAIRS,
-	WALL,
-} Class;
+} TileClass;
 
-typedef struct entity {
-	struct entity *next;
-	Class class;
+typedef enum __attribute__((__packed__)) {
+	TRAP,
+} TrapClass;
+
+typedef struct {
+	MonsterClass class;
 	int8_t x;
 	int8_t y;
 	int8_t prev_x;
@@ -65,7 +71,23 @@ typedef struct entity {
 	unsigned vertical: 1;
 	unsigned state: 2;
 	unsigned: 8;
-} Entity;
+} Monster;
+
+typedef struct {
+	TileClass class;
+	int8_t hp;
+	int8_t torch;
+	int8_t zone;
+	int8_t revealed;
+	unsigned: 24;
+	Monster *next;
+} Tile;
+
+typedef struct {
+	TrapClass class;
+	int8_t x;
+	int8_t y;
+} Trap;
 
 typedef struct {
 	int8_t max_hp;
@@ -73,110 +95,88 @@ typedef struct {
 	unsigned: 16;
 	uint32_t priority;
 	char *glyph;
-	void (*act) (struct entity*);
+	void (*act) (Monster*, long, long);
 } ClassInfos;
 
 static ClassInfos class_infos[256];
 
 __extension__
-static Entity board[32][32] = {[0 ... 31] = {[0 ... 31] = {.class = WALL, .hp = 5}}};
-static Entity entities[256];
+static Tile board[32][32] = {[0 ... 31] = {[0 ... 31] = {.class = WALL, .hp = 5}}};
+static Monster player = {.class = PLAYER, .hp = 1, .y = SPAWN_Y, .x = SPAWN_X};
+static Monster monsters[256];
+static Trap traps[256];
 
-static int dy, dx;
-
-// Creates a new entity and adds it to the list
-static void spawn(uint8_t class, int8_t y, int8_t x) {
-	static int entity_count = 0;
-	Entity e = {.class = class, .y = y, .x = x, .hp = class_infos[class].max_hp};
-	entities[entity_count++] = e;
+static void ent_move(Monster *m, int8_t y, int8_t x) {
+	board[m->y][m->x].next = NULL;
+	m->prev_y = m->y;
+	m->prev_x = m->x;
+	m->y = y;
+	m->x = x;
+	board[m->y][m->x].next = m;
 }
 
-// Remove an entity from the board
-static void ent_rm(Entity *e) {
-	Entity *prev;
-	for (prev = &board[e->y][e->x]; prev->next != e; prev = prev->next);
-	prev->next = e->next;
-}
-
-// Add an entity to the board
-static void ent_add(Entity *e) {
-	e->next = board[e->y][e->x].next;
-	board[e->y][e->x].next = e;
-}
-
-static void ent_move(Entity *e, int8_t y, int8_t x) {
-	ent_rm(e);
-	e->prev_y = e->y;
-	e->prev_x = e->x;
-	e->y = y;
-	e->x = x;
-	ent_add(e);
-}
-
-static int can_move(Entity *e, int dy, int dx) {
-	Entity dest = board[e->y + dy][e->x + dx];
+static bool can_move(Monster *m, long dy, long dx) {
+	Tile dest = board[m->y + dy][m->x + dx];
 	return dest.class != WALL && !IS_MONSTER(dest.next);
 }
 
-static void monster_attack(Entity *attacker) {
+static void monster_attack(Monster *attacker) {
 	if (attacker->class == CONF_MONKEY || attacker->class == PIXIE) {
 		attacker->hp = 0;
-		ent_rm(attacker);
+		board[attacker->y][attacker->x].next = NULL;
 	} else {
-		player->hp = 0;
+		player.hp = 0;
 	}
 }
 
-static int monster_move(Entity *e, int8_t y, int8_t x) {
-	if (!(can_move(e, y, x)))
+static bool monster_move(Monster *m, int8_t y, int8_t x) {
+	if (!(can_move(m, y, x)))
 		return 0;
-	e->delay = CLASS(e).beat_delay;
-	Entity dest = board[e->y + y][e->x + x];
-	if (dest.next == player)
-		monster_attack(e);
+	m->delay = CLASS(m).beat_delay;
+	Tile dest = board[m->y + y][m->x + x];
+	if (dest.next == &player)
+		monster_attack(m);
 	else
-		ent_move(e, e->y + y, e->x + x);
+		ent_move(m, m->y + y, m->x + x);
 	return 1;
 }
 
-static void knockback(Entity *e) {
-	monster_move(e, SIGN(e->y - player->y), SIGN(e->x - player->x));
-	e->delay = 1;
+static void knockback(Monster *m) {
+	monster_move(m, SIGN(m->y - player.y), SIGN(m->x - player.x));
+	m->delay = 1;
 }
 
-static void player_attack(Entity *e) {
-	if (board[player->y][player->x].class == OOZE)
+static void player_attack(Monster *m) {
+	if (board[player.y][player.x].class == OOZE)
 		return;
-	if (e->class == OOZE_GOLEM)
-		board[player->y][player->x].class = OOZE;
-	if ((e->class == BLADENOVICE || e->class == BLADEMASTER) && e->state < 2) {
-		knockback(e);
-		e->state = 1;
+	if (m->class == OOZE_GOLEM)
+		board[player.y][player.x].class = OOZE;
+	if ((m->class == BLADENOVICE || m->class == BLADEMASTER) && m->state < 2) {
+		knockback(m);
+		m->state = 1;
 		return;
 	}
-	e->hp -= 1;
-	if (e->hp <= 0) {
-		ent_rm(e);
-		if (e->class == WARLOCK_1 || e->class == WARLOCK_2)
-			ent_move(player, e->y, e->x);
-	} else if (CLASS(e).beat_delay == 0) {
-		knockback(e);
+	m->hp -= 1;
+	if (m->hp <= 0) {
+		board[m->y][m->x].next = NULL;
+		if (m->class == WARLOCK_1 || m->class == WARLOCK_2)
+			ent_move(&player, m->y, m->x);
+	} else if (CLASS(m).beat_delay == 0) {
+		knockback(m);
 	}
 }
 
-static void zone4_dig(Entity *e) {
-	if (e->hp == 1 || e->hp == 2)
-		e->class = FLOOR;
+static void zone4_dig(Tile *tile) {
+	if (tile->hp == 1 || tile->hp == 2)
+		tile->class = FLOOR;
 }
 
-static void player_dig(Entity *wall) {
-	if (wall->class != WALL)
-		return;
-	int dig = board[player->y][player->x].class == OOZE ? 0 : 2;
+static void player_dig(Tile *wall) {
+	long dig = board[player.y][player.x].class == OOZE ? 0 : 2;
 	if (dig < wall->hp)
 		return;
 	wall->class = FLOOR;
-	if (wall->hp == 1 || wall->hp == 2) {
+	if (wall->zone == 4 && (wall->hp == 1 || wall->hp == 2)) {
 		zone4_dig(wall - 1);
 		zone4_dig(wall + 1);
 		zone4_dig(wall - LENGTH(*board));
@@ -185,13 +185,15 @@ static void player_dig(Entity *wall) {
 }
 
 static void player_move(int8_t y, int8_t x) {
-	Entity *dest = &board[player->y + y][player->x + x];
+	Tile *dest = &board[player.y + y][player.x + x];
+	player.prev_y = player.y;
+	player.prev_x = player.x;
 	if (dest->class == WALL)
 		player_dig(dest);
 	else if (IS_MONSTER(dest->next))
 		player_attack(dest->next);
 	else
-		ent_move(player, player->y + y, player->x + x);
+		ent_move(&player, player.y + y, player.x + x);
 }
 
 #include "los.c"
@@ -199,29 +201,39 @@ static void player_move(int8_t y, int8_t x) {
 #include "monsters.c"
 #include "xml.c"
 
-static void monster_turn(Entity *e) {
-	dy = player->y - e->y;
-	dx = player->x - e->x;
-	e->aggro = e->aggro || can_see(e->y, e->x);
-	if (!e->aggro && dy * dy + dx * dx > 9)
+static void trap_turn(Trap *this) {
+	Monster *target = board[this->y][this->x].next;
+	if (target == NULL)
 		return;
-	if (e->delay) {
-		e->delay--;
+	target->hp = 0;
+	board[target->y][target->x].next = NULL;
+}
+
+static void monster_turn(Monster *m) {
+	long dy = player.y - m->y;
+	long dx = player.x - m->x;
+	m->aggro = m->aggro || can_see(m->y, m->x);
+	if (!m->aggro && dy * dy + dx * dx > 9)
+		return;
+	if (m->delay) {
+		m->delay--;
 		return;
 	}
-	CLASS(e).act(e);
+	CLASS(m).act(m, dy, dx);
 }
 
 static void do_beat(void) {
 	player_turn();
-	for (Entity *e = entities + 1; CLASS(e).priority; ++e)
-		if (e->hp > 0)
-			monster_turn(e);
+	for (Monster *m = monsters; m->y; ++m)
+		if (m->hp > 0)
+			monster_turn(m);
+	for (Trap *t = traps; t->y; ++t)
+		trap_turn(t);
 }
 
 static int compare_priorities(const void *a, const void *b) {
-	uint32_t pa = CLASS((const Entity*) a).priority;
-	uint32_t pb = CLASS((const Entity*) b).priority;
+	uint32_t pa = CLASS((const Monster*) a).priority;
+	uint32_t pb = CLASS((const Monster*) b).priority;
 	return (pb > pa) - (pb < pa);
 }
 
@@ -229,10 +241,12 @@ int main(int argc, char **argv) {
 	if (argc != 2)
 		exit(argc);
 	xml_parse(argv[1]);
-	qsort(entities, LENGTH(entities), sizeof(*entities), compare_priorities);
-	for (Entity *e = entities; CLASS(e).priority; ++e)
-		ent_add(e);
+	qsort(monsters, LENGTH(monsters), sizeof(*monsters), compare_priorities);
+	for (Monster *m = monsters; CLASS(m).priority; ++m) {
+		m->hp = CLASS(m).max_hp;
+		board[m->y][m->x].next = m;
+	}
 	system("stty -echo -icanon eol \1");
-	while (player->hp)
+	while (player.hp)
 		do_beat();
 }

@@ -1,4 +1,4 @@
-static void basic_seek(Entity *this) {
+static void basic_seek(Monster *this, long dy, long dx) {
 	this->vertical =
 		// #1: move towards the player
 		dy == 0 ? 0 :
@@ -9,19 +9,19 @@ static void basic_seek(Entity *this) {
 		!can_move(this, 0, SIGN(dx)) ? 1 :
 	
 		// #3: move towards the player’s previous position
-		this->y == player->prev_y ? 0 :
-		this->x == player->prev_x ? 1 :
+		this->y == player.prev_y ? 0 :
+		this->x == player.prev_x ? 1 :
 
 		// #4: if prevpos aligns with the player, switch axes
-		this->prev_y == player->y ? 0 :
-		this->prev_x == player->x ? 1 :
+		this->prev_y == player.y ? 0 :
+		this->prev_x == player.x ? 1 :
 
 		// #5: don’t switch axes for a single tile
 		ABS(dy) == 1 || ABS(dx) == 1 ? this->vertical :
 
 		// #6: if prevpos aligns with the player’s prevpos, do something weird
-		this->prev_y == player->prev_y ? dx > 0 && player->x > SPAWN_X :
-		this->prev_x == player->prev_x ? dx > 0 && player->x > SPAWN_X :
+		this->prev_y == player.prev_y ? dx > 0 && player.x > SPAWN_X :
+		this->prev_x == player.prev_x ? dx > 0 && player.x > SPAWN_X :
 
 		// #7: keep moving along the same axis
 		this->vertical;
@@ -29,18 +29,18 @@ static void basic_seek(Entity *this) {
 	monster_move(this, this->vertical ? SIGN(dy) : 0, this->vertical ? 0 : SIGN(dx));
 }
 
-static void diagonal_seek(Entity *this) {
+static void diagonal_seek(Monster *this, long dy, long dx) {
 	if (dy == 0)
 		monster_move(this, 1, SIGN(dx)) || monster_move(this, -1, SIGN(dx));
 	else if (dx == 0)
-		monster_move(this, SIGN(dy), 1) || monster_move(this, SIGN(dy), 1);
+		monster_move(this, SIGN(dy), 1) || monster_move(this, SIGN(dy), -1);
 	else
 		monster_move(this, SIGN(dy), SIGN(dx)) ||
 		monster_move(this, SIGN(dy) * -SIGN(dx), 1) ||
 		monster_move(this, SIGN(dy) * SIGN(dx), -1);
 }
 
-static void moore_seek(Entity *this) {
+static void moore_seek(Monster *this, long dy, long dx) {
 	if (monster_move(this, SIGN(dy), SIGN(dx)))
 		return;
 	if (dx < 0)
@@ -49,28 +49,30 @@ static void moore_seek(Entity *this) {
 		monster_move(this, SIGN(dy), 0) || monster_move(this, 0, 1);
 }
 
-static void bat(Entity *this) {
+static void bat(Monster *this, long dy, long dx) {
+	(void) dy;
+	(void) dx;
 	static const int8_t bat_y[4] = {0, 0,  1, -1};
 	static const int8_t bat_x[4] = {1, -1, 0, 0};
-	int rng = rand();
-	for (int i = 0; i < 4; ++i)
+	long rng = rand();
+	for (long i = 0; i < 4; ++i)
 		if (monster_move(this, bat_y[(rng + i) & 3], bat_x[(rng + i) & 3]))
 			return;
 }
 
-static void black_bat(Entity *this) {
+static void black_bat(Monster *this, long dy, long dx) {
 	if (ABS(dy) + ABS(dx) == 1)
 		monster_move(this, (int8_t) dy, (int8_t) dx);
 	else
-		bat(this);
+		bat(this, dy, dx);
 }
 
-static void parry(Entity *this) {
+static void parry(Monster *this, long dy, long dx) {
 	if (this->state == 0) {
-		basic_seek(this);
+		basic_seek(this, dy, dx);
 	} else if (this->state == 1) {
-		int8_t y = SIGN(player->prev_y - this->y);
-		int8_t x = SIGN(player->prev_x - this->x);
+		int8_t y = SIGN(player.prev_y - this->y);
+		int8_t x = SIGN(player.prev_x - this->x);
 		if (monster_move(this, y, x))
 			monster_move(this, y, x);
 		this->state = 2;
@@ -78,14 +80,6 @@ static void parry(Entity *this) {
 	} else if (this->state == 2) {
 		this->state = 0;
 	}
-}
-
-static void spike_trap(Entity *this) {
-	Entity *target = board[this->y][this->x].next;
-	if (target == this)
-		return;
-	target->hp = 0;
-	ent_rm(target);
 }
 
 static void nop() {}
@@ -128,6 +122,5 @@ static ClassInfos class_infos[256] = {
 	[BLUE_DRAGON] = { 6, 1, 99999997, BLUE "D",   basic_seek },
 	[MOMMY]       = { 6, 3, 30405215, BLACK "@",  basic_seek },
 
-	[PLAYER]      = { 1, 0,      ~0u, "@",        NULL },
-	[TRAP]        = { 1, 0,        1, "^",        spike_trap },
+	[PLAYER]      = { 0, 0,      ~0u, "@",        NULL },
 };

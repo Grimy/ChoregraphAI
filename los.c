@@ -1,15 +1,15 @@
 #define BLOCKS_LOS(y, x) (board[y][x].class == WALL)
 
 static int los(double y, double x) {
-	double dy = player->y - y;
-	double dx = player->x - x;
+	double dy = player.y - y;
+	double dx = player.x - x;
 	int cy = (int) (y + .5);
 	int cx = (int) (x + .5);
-	if ((player->x > x || x > cx) &&
+	if ((player.x > x || x > cx) &&
 		dy * (cy - y) > 0 &&
 		BLOCKS_LOS(cy, cx))
 		return 0;
-	while (cy != player->y || cx != player->x) {
+	while (cy != player.y || cx != player.x) {
 		double err_y = ABS((cx - x) * dy - (cy + SIGN(dy) - y) * dx);
 		double err_x = ABS((cx + SIGN(dx) - x) * dy - (cy - y) * dx);
 		int old_cx = cx;
@@ -22,7 +22,9 @@ static int los(double y, double x) {
 	return 1;
 }
 
-static int can_see(int y, int x) {
+static int can_see(long y, long x) {
+	if (y < player.y - 5 || y > player.y + 5 || x < player.x - 10 || x > player.x + 9)
+		return 0;
 	return los(y - .55, x - .55)
 		|| los(y - .55, x + .55)
 		|| los(y + .55, x - .55)
