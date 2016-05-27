@@ -15,9 +15,39 @@
 typedef unsigned long bool;
 
 typedef enum __attribute__((__packed__)) {
-	SKELETON = 3,
-	BLUE_BAT = 6,
-	MONKEY = 9,
+	GREEN_SLIME, BLUE_SLIME, YOLO_SLIME,
+	SKELETON_1, SKELETON_2, SKELETON_3,
+	BLUE_BAT, RED_BAT, GREEN_BAT,
+	MONKEY_1, MONKEY_2,
+	GHOST,
+	ZOMBIE,
+	WRAITH,
+	MIMIC_1, MIMIC_2, MIMIC_3,
+
+	SKELETANK_1 = 100, SKELETANK_2, SKELETANK_3,
+	WINDMAGE_1, WINDMAGE_2, WINDMAGE_3,
+	MUSHROOM_1, MUSHROOM_2,
+	GOLEM_1, GOLEM_2,
+	ARMADILLO_1, ARMADILLO_2,
+	CLONE,
+	TARMONSTER,
+	MOLE,
+	WIGHT,
+	WALL_MIMIC,
+	LIGHTSHROOM, BOMBSHROOM,
+
+	FIRE_SLIME, ICE_SLIME,
+	RIDER_1, RIDER_2, RIDER_3,
+	EFREET, DJINN,
+	ASSASSIN_1, ASSASSIN_2,
+	FIRE_BEETLE, ICE_BEETLE,
+	HELLHOUND,
+	SHOVE_1,
+	YETI,
+	GHAST,
+	FIRE_MIMIC, ICE_MIMIC,
+	FIRE_POT, ICE_POT,
+	SHOVE_2,
 
 	BOMBER = 44,
 	DIGGER,
@@ -38,8 +68,13 @@ typedef enum __attribute__((__packed__)) {
 	GARGOYLE_1, GARGOYLE_2, GARGOYLE_3, GARGOYLE_4, GARGOYLE_5, GARGOYLE_6,
 
 	SHOPKEEPER = 88,
-	BLUE_DRAGON = 148,
-	MOMMY = 155,
+
+	DIREBAT_1 = 144, DIREBAT_2,
+	DRAGON, RED_DRAGON, BLUE_DRAGON,
+	BANSHEE_1, BANSHEE_2,
+	MINOTAUR_1, MINOTAUR_2,
+	NIGHTMARE_1, NIGHTMARE_2,
+	MOMMY, OGRE,
 
 	PLAYER,
 } MonsterClass;
@@ -56,7 +91,15 @@ typedef enum __attribute__((__packed__)) {
 } TileClass;
 
 typedef enum __attribute__((__packed__)) {
-	TRAP,
+	BOUNCE = 1,
+	SPIKE,
+	TRAPDOOR,
+	CONFUSE,
+	TELEPORT,
+	TEMPO_DOWN,
+	TEMPO_UP,
+	BOMB = 9,
+	FIREPIG,
 } TrapClass;
 
 typedef struct {
@@ -105,6 +148,7 @@ static Tile board[32][32] = {[0 ... 31] = {[0 ... 31] = {.class = WALL, .hp = 5}
 static Monster player = {.class = PLAYER, .hp = 1, .y = SPAWN_Y, .x = SPAWN_X};
 static Monster monsters[256];
 static Trap traps[256];
+static uint64_t monster_count = 0;
 
 static void ent_move(Monster *m, int8_t y, int8_t x) {
 	board[m->y][m->x].next = NULL;
@@ -241,8 +285,8 @@ int main(int argc, char **argv) {
 	if (argc != 2)
 		exit(argc);
 	xml_parse(argv[1]);
-	qsort(monsters, LENGTH(monsters), sizeof(*monsters), compare_priorities);
-	for (Monster *m = monsters; CLASS(m).priority; ++m) {
+	qsort(monsters, monster_count, sizeof(*monsters), compare_priorities);
+	for (Monster *m = monsters; m->x; ++m) {
 		m->hp = CLASS(m).max_hp;
 		board[m->y][m->x].next = m;
 	}

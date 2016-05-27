@@ -24,8 +24,7 @@ static void xml_tile(uint8_t type, Tile *tile) {
 }
 
 static void xml_process_node(xmlTextReaderPtr xml) {
-	static long trap_count = 0;
-	static long monster_count = 0;
+	static uint64_t trap_count = 0;
 	const char *name = (const char*) xmlTextReaderConstName(xml);
 
 	uint8_t type = (uint8_t) xml_attr("type");

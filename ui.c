@@ -1,10 +1,13 @@
+#define BLACK  "\033[30m"
 #define RED    "\033[31m"
 #define YELLOW "\033[33m"
 #define BLUE   "\033[34m"
-#define PURPLE "\033[35m"
-#define BLACK  "\033[90m"
+#define PINK   "\033[35m"
+#define GRAY   "\033[90m"
+#define ORANGE "\033[91m"
 #define GREEN  "\033[92m"
-#define ORANGE "\033[93m"
+#define CYAN   "\033[94m"
+#define PURPLE "\033[95m"
 
 #define IS_WALL(y, x) (board[y][x].class == WALL && board[y][x].hp < 5)
 
