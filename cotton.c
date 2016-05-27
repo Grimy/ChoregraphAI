@@ -266,6 +266,15 @@ static void monster_turn(Monster *m) {
 	CLASS(m).act(m, dy, dx);
 }
 
+static void player_turn() {
+	Tile *fire_tile = NULL;
+	if (board[player.y][player.x].class == FIRE)
+		fire_tile = &board[player.y][player.x];
+	display_prompt();
+	if (&board[player.y][player.x] == fire_tile)
+		player.hp = 0;
+}
+
 static void do_beat(void) {
 	player_turn();
 	for (Monster *m = monsters; m->y; ++m)

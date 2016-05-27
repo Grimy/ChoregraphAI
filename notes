@@ -21,6 +21,11 @@ Harpies:
 3. avoid moving in a straight line
 4. ← > ↑ > ↓ > →
 
+metal doors try to close themselves before and after each player turn, except
+on the first two turns they are open. This explains both the weird priority
+thing and the fact that metal doors never close on the turn after opening, even
+if there’s nothing in the way.
+
 ↓↓....←←
 ↓↓....←←
 ........

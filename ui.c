@@ -26,10 +26,12 @@ static void display_wall(long y, long x) {
 	printf("%3.3s", &"╳───│┌┐┬│└┘┴│├┤┼"[3*glyph]);
 }
 
+static int floor_colors[] = {0, 0, 4, 0, 1, 4, 2, 3};
+
 static void display_tile(long y, long x) {
 	Tile e = board[y][x];
-	if (e.class == OOZE)
-		printf("\033[42m");
+	if (e.class > FLOOR)
+		printf("\033[4%dm", floor_colors[e.class]);
 	if (e.next)
 		printf("%s", CLASS(e.next).glyph);
 	else if (e.class == WALL && e.hp == 5)
@@ -54,7 +56,7 @@ static void display_board(void) {
 		printf("\033[%d;%dH^", t->y + 1, t->x + 1);
 }
 
-static void player_turn() {
+static void display_prompt() {
 	// static long turn = 0;
 	// if (++turn >= 1000000)
 		// exit(0);
