@@ -11,6 +11,14 @@
 
 #define IS_WALL(y, x) (board[y][x].class == WALL && board[y][x].hp < 5)
 
+static int floor_colors[] = {0, 0, 4, 0, 1, 4, 2, 3};
+static char* trap_glyphs = "■???◭◭◆▫⇐⇒◭●●";
+static char bounce_glyphs[][9] = {
+	"↖↑↗",
+	"←▫→",
+	"↙↓↘",
+};
+
 static void display_wall(long y, long x) {
 	if (board[y][x].hp == 0) {
 		putchar('+');
@@ -25,8 +33,6 @@ static void display_wall(long y, long x) {
 		IS_WALL(y, x + 1);
 	printf("%3.3s", &"╳───│┌┐┬│└┘┴│├┤┼"[3*glyph]);
 }
-
-static int floor_colors[] = {0, 0, 4, 0, 1, 4, 2, 3};
 
 static void display_tile(long y, long x) {
 	Tile e = board[y][x];
@@ -52,8 +58,14 @@ static void display_board(void) {
 			display_tile(y, x);
 		putchar('\n');
 	}
-	for (Trap *t = traps; t->y; ++t)
-		printf("\033[%d;%dH^", t->y + 1, t->x + 1);
+	for (Trap *t = traps; t->y; ++t) {
+		if (board[t->y][t->x].next)
+			continue;
+		char *glyph = t->class == BOUNCE ? bounce_glyphs[t->dy+1] + 3*(t->dx+1)
+		                                 : trap_glyphs + 3 * t->class;
+		printf("\033[%d;%dH%3.3s", t->y + 1, t->x + 1, glyph);
+	}
+	printf("\033[H");
 }
 
 static void display_prompt() {

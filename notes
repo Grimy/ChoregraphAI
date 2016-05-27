@@ -26,6 +26,13 @@ on the first two turns they are open. This explains both the weird priority
 thing and the fact that metal doors never close on the turn after opening, even
 if there’s nothing in the way.
 
+There is a fourth damage type besides regular, piercing, phasing. I call it
+“bomb-like”. Bomb-like damage always hurts blademasters, but doesn’t hurt other
+armored enemies (beetles). Bomb-like damage never triggers warlock teleports.
+The following sources deal bomb-like damage: bombs (duh), Boots of Lunging,
+spike traps and all fireballs (traps, spells, scrolls and Red Dragons; didn’t
+test it with DM)
+
 ↓↓....←←
 ↓↓....←←
 ........

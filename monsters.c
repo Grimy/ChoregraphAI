@@ -21,7 +21,7 @@ static void basic_seek(Monster *this, long dy, long dx) {
 
 		// #6: if prevpos aligns with the player’s prevpos, do something weird
 		this->prev_y == player.prev_y ? dx > 0 && player.x > SPAWN_X :
-		this->prev_x == player.prev_x ? dx > 0 && player.x > SPAWN_X :
+		this->prev_x == player.prev_x ? ABS(dy) != 2 :
 
 		// #7: keep moving along the same axis
 		this->vertical;

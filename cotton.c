@@ -10,9 +10,9 @@
 #define IS_MONSTER(m) ((m) && (m)->class != PLAYER)
 #define CLASS(m) (class_infos[(m)->class])
 #define SPAWN_Y 9
-#define SPAWN_X 24
+#define SPAWN_X 19
 
-typedef unsigned long bool;
+typedef enum {false, true} bool;
 
 typedef enum __attribute__((__packed__)) {
 	GREEN_SLIME, BLUE_SLIME, YOLO_SLIME,
@@ -91,14 +91,15 @@ typedef enum __attribute__((__packed__)) {
 } TileClass;
 
 typedef enum __attribute__((__packed__)) {
-	BOUNCE = 1,
+	OMNIBOUNCE,
+	BOUNCE,
 	SPIKE,
 	TRAPDOOR,
 	CONFUSE,
 	TELEPORT,
 	TEMPO_DOWN,
 	TEMPO_UP,
-	BOMB = 9,
+	BOMBTRAP = 9,
 	FIREPIG,
 } TrapClass;
 
@@ -128,6 +129,8 @@ typedef struct {
 
 typedef struct {
 	TrapClass class;
+	int8_t dx;
+	int8_t dy;
 	int8_t x;
 	int8_t y;
 } Trap;
@@ -175,14 +178,24 @@ static void monster_attack(Monster *attacker) {
 
 static bool monster_move(Monster *m, int8_t y, int8_t x) {
 	if (!(can_move(m, y, x)))
-		return 0;
+		return false;
 	m->delay = CLASS(m).beat_delay;
 	Tile dest = board[m->y + y][m->x + x];
 	if (dest.next == &player)
 		monster_attack(m);
 	else
 		ent_move(m, m->y + y, m->x + x);
-	return 1;
+	return true;
+}
+
+static void trap_move(Monster *m, int8_t y, int8_t x) {
+	if (!(can_move(m, y, x)))
+		return;
+	Tile dest = board[m->y + y][m->x + x];
+	if (dest.next == &player)
+		monster_attack(m);
+	else
+		ent_move(m, m->y + y, m->x + x);
 }
 
 static void knockback(Monster *m) {
@@ -190,24 +203,28 @@ static void knockback(Monster *m) {
 	m->delay = 1;
 }
 
+static void damage(Monster *m, long dmg, bool bomblike) {
+	if (!bomblike && (m->class == BLADENOVICE || m->class == BLADEMASTER) && m->state < 2) {
+		knockback(m);
+		m->state = 1;
+		return;
+	}
+	m->hp -= dmg;
+	if (m->hp > 0)
+		return;
+	board[m->y][m->x].next = NULL;
+	if (!bomblike && (m->class == WARLOCK_1 || m->class == WARLOCK_2))
+		ent_move(&player, m->y, m->x);
+}
+
 static void player_attack(Monster *m) {
 	if (board[player.y][player.x].class == OOZE)
 		return;
 	if (m->class == OOZE_GOLEM)
 		board[player.y][player.x].class = OOZE;
-	if ((m->class == BLADENOVICE || m->class == BLADEMASTER) && m->state < 2) {
+	damage(m, 1, false);
+	if (m->hp > 0 && CLASS(m).beat_delay == 0)
 		knockback(m);
-		m->state = 1;
-		return;
-	}
-	m->hp -= 1;
-	if (m->hp <= 0) {
-		board[m->y][m->x].next = NULL;
-		if (m->class == WARLOCK_1 || m->class == WARLOCK_2)
-			ent_move(&player, m->y, m->x);
-	} else if (CLASS(m).beat_delay == 0) {
-		knockback(m);
-	}
 }
 
 static void zone4_dig(Tile *tile) {
@@ -249,8 +266,18 @@ static void trap_turn(Trap *this) {
 	Monster *target = board[this->y][this->x].next;
 	if (target == NULL)
 		return;
-	target->hp = 0;
-	board[target->y][target->x].next = NULL;
+	switch (this->class) {
+		case OMNIBOUNCE: break;
+		case BOUNCE: trap_move(target, this->dy, this->dx); break;
+		case SPIKE: damage(target, 4, true); break;
+		case TRAPDOOR: damage(target, 4, true); break;
+		case CONFUSE: break;
+		case TELEPORT: break;
+		case TEMPO_DOWN: break;
+		case TEMPO_UP: break;
+		case BOMBTRAP: break;
+		case FIREPIG: break;
+	}
 }
 
 static void monster_turn(Monster *m) {
@@ -295,10 +322,8 @@ int main(int argc, char **argv) {
 		exit(argc);
 	xml_parse(argv[1]);
 	qsort(monsters, monster_count, sizeof(*monsters), compare_priorities);
-	for (Monster *m = monsters; m->x; ++m) {
-		m->hp = CLASS(m).max_hp;
+	for (Monster *m = monsters; m->x; ++m)
 		board[m->y][m->x].next = m;
-	}
 	system("stty -echo -icanon eol \1");
 	while (player.hp)
 		do_beat();
