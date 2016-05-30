@@ -164,6 +164,8 @@ static void ent_move(Monster *m, int8_t y, int8_t x) {
 
 static bool can_move(Monster *m, long dy, long dx) {
 	Tile dest = board[m->y + dy][m->x + dx];
+	if (m->class == SPIDER && board[m->y][m->x].class == WALL)
+		return dest.class == WALL && !dest.torch;
 	return dest.class != WALL && !IS_MONSTER(dest.next);
 }
 

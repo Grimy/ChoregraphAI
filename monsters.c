@@ -82,6 +82,15 @@ static void parry(Monster *this, long dy, long dx) {
 	}
 }
 
+static void spider(Monster *this, long dy, long dx) {
+	if (board[this->y][this->x].class == WALL) {
+		basic_seek(this, dy, dx);
+	} else {
+		diagonal_seek(this, dy, dx);
+		this->delay = 0;
+	}
+}
+
 static void todo() {}
 static void nop() {}
 
@@ -160,7 +169,7 @@ static ClassInfos class_infos[256] = {
 	[SARCO_1]     = { 1, 9, 10101805, "|",        todo },
 	[SARCO_2]     = { 2, 9, 10102910, YELLOW "|", todo },
 	[SARCO_3]     = { 3, 9, 10103915, BLACK "|",  todo },
-	[SPIDER]      = { 1, 1, 10401202, YELLOW "s", basic_seek },
+	[SPIDER]      = { 1, 1, 10401202, YELLOW "s", spider },
 	[WARLOCK_1]   = { 1, 1, 10401202, "w",        basic_seek },
 	[WARLOCK_2]   = { 2, 1, 10401302, YELLOW "w", basic_seek },
 	[MUMMY]       = { 1, 1, 30201103, "M",        moore_seek },
