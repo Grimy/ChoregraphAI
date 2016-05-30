@@ -1,3 +1,5 @@
+// cotton.c - typedefs, game logic, entry point… should be split further
+
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,10 +12,12 @@
 #define IS_MONSTER(m) ((m) && (m)->class != PLAYER)
 #define CLASS(m) (class_infos[(m)->class])
 #define SPAWN_Y 9
-#define SPAWN_X 19
+#define SPAWN_X 24
 
 typedef enum {false, true} bool;
 
+// Human-friendly names for monster classes.
+// Numerical values were arbitrarily picked to make parsing dungeon XML easier.
 typedef enum __attribute__((__packed__)) {
 	GREEN_SLIME, BLUE_SLIME, YOLO_SLIME,
 	SKELETON_1, SKELETON_2, SKELETON_3,
@@ -79,17 +83,21 @@ typedef enum __attribute__((__packed__)) {
 	PLAYER,
 } MonsterClass;
 
+// Human-readable names for tile types.
+// Note that WALL can be any wall type, including level edges and doors.
 typedef enum __attribute__((__packed__)) {
-	WALL,
-	FLOOR,
-	WATER,
-	TAR,
-	FIRE,
-	ICE,
-	OOZE,
-	STAIRS,
+	WALL = 0,
+	FLOOR = 1,
+	WATER = 2,
+	TAR = 8,
+	STAIRS = 9,
+	FIRE = 10,
+	ICE = 11,
+	OOZE = 17,
 } TileClass;
 
+// Human-readable names for traps.
+// BOUNCE includes all eight directional bounce traps, but not omni-bounce nor random-bounce.
 typedef enum __attribute__((__packed__)) {
 	OMNIBOUNCE,
 	BOUNCE,
@@ -103,6 +111,7 @@ typedef enum __attribute__((__packed__)) {
 	FIREPIG,
 } TrapClass;
 
+// A “Monster” is either an enemy or the player.
 typedef struct {
 	MonsterClass class;
 	int8_t x;

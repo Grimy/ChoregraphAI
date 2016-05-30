@@ -3,11 +3,6 @@ TO CODE:
 * Bombs
 * Monster digging
 
-Bomb priority:
-147
-258
-369
-
 Harpy priority:
 ...k.
 .!igd
@@ -18,7 +13,7 @@ jfa..
 Harpies:
 1. move to a square with line of sight
 2. move as close as possible to the player (L1 distance)
-3. avoid moving in a straight line
+3. move as close as possible to the player (L2 distance)
 4. ← > ↑ > ↓ > →
 
 metal doors try to close themselves before and after each player turn, except

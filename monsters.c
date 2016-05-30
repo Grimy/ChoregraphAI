@@ -1,6 +1,18 @@
+// monsters.c - defines all monsters in the game and their AIs
+
+// Many things in the game follow the so-called “bomb order”:
+// 147
+// 258
+// 369
+// Most monster AIs use this as a tiebreaker: when several destination tiles fit
+// all criteria equally well, monsters pick the one that comes first in bomb-order.
+
+// Move cardinally toward the player.
+// Try to keep moving along the same axis, unless the monster’s current or
+// previous position is aligned with the player’s current or previous position.
 static void basic_seek(Monster *this, long dy, long dx) {
 	this->vertical =
-		// #1: move towards the player
+		// #1: move toward the player
 		dy == 0 ? 0 :
 		dx == 0 ? 1 :
 
@@ -8,7 +20,7 @@ static void basic_seek(Monster *this, long dy, long dx) {
 		!can_move(this, SIGN(dy), 0) ? 0 :
 		!can_move(this, 0, SIGN(dx)) ? 1 :
 	
-		// #3: move towards the player’s previous position
+		// #3: move toward the player’s previous position
 		this->y == player.prev_y ? 0 :
 		this->x == player.prev_x ? 1 :
 
@@ -29,6 +41,7 @@ static void basic_seek(Monster *this, long dy, long dx) {
 	monster_move(this, this->vertical ? SIGN(dy) : 0, this->vertical ? 0 : SIGN(dx));
 }
 
+// Move diagonally toward the player. The tiebreaker is *reverse* bomb-order.
 static void diagonal_seek(Monster *this, long dy, long dx) {
 	if (dy == 0)
 		monster_move(this, 1, SIGN(dx)) || monster_move(this, -1, SIGN(dx));
@@ -40,6 +53,7 @@ static void diagonal_seek(Monster *this, long dy, long dx) {
 		monster_move(this, SIGN(dy) * SIGN(dx), -1);
 }
 
+// Move toward the player either cardinally or diagonally.
 static void moore_seek(Monster *this, long dy, long dx) {
 	if (monster_move(this, SIGN(dy), SIGN(dx)))
 		return;
@@ -49,6 +63,7 @@ static void moore_seek(Monster *this, long dy, long dx) {
 		monster_move(this, SIGN(dy), 0) || monster_move(this, 0, 1);
 }
 
+// Move randomly.
 static void bat(Monster *this, long dy, long dx) {
 	(void) dy;
 	(void) dx;
@@ -60,6 +75,7 @@ static void bat(Monster *this, long dy, long dx) {
 			return;
 }
 
+// Attack the player if possible, otherwise move randomly.
 static void black_bat(Monster *this, long dy, long dx) {
 	if (ABS(dy) + ABS(dx) == 1)
 		monster_move(this, (int8_t) dy, (int8_t) dx);
@@ -67,6 +83,8 @@ static void black_bat(Monster *this, long dy, long dx) {
 		bat(this, dy, dx);
 }
 
+// basic_seek variant used by blademasters.
+// After parrying a melee hit, lunge two tiles in the direction the hit came from.
 static void parry(Monster *this, long dy, long dx) {
 	if (this->state == 0) {
 		basic_seek(this, dy, dx);
@@ -82,6 +100,7 @@ static void parry(Monster *this, long dy, long dx) {
 	}
 }
 
+// Move cardinally while inside walls, diagonally otherwise.
 static void spider(Monster *this, long dy, long dx) {
 	if (board[this->y][this->x].class == WALL) {
 		basic_seek(this, dy, dx);
@@ -95,6 +114,7 @@ static void todo() {}
 static void nop() {}
 
 static ClassInfos class_infos[256] = {
+	// Name         hp delay priority   glyph     AI
 	[GREEN_SLIME] = { 1, 9, 19901101, GREEN "P",  nop },
 	[BLUE_SLIME]  = { 2, 1, 10202202, BLUE "P",   todo },
 	[YOLO_SLIME]  = { 1, 0, 10101102, YELLOW "P", todo },
@@ -138,12 +158,12 @@ static ClassInfos class_infos[256] = {
 	[EFREET]      = { 2, 2, 20302302, RED "E",    basic_seek },
 	[DJINN]       = { 2, 2, 20302302, CYAN "E",   basic_seek },
 	[ASSASSIN_1]  = { 1, 0, 10401103, PURPLE "G", todo },
-	[ASSASSIN_2]  = { 2, 0, 10602105, GRAY "G",   todo },
+	[ASSASSIN_2]  = { 2, 0, 10602105, BLACK "G",  todo },
 	[FIRE_BEETLE] = { 3, 1, 10303202, RED "a",    basic_seek },
 	[ICE_BEETLE]  = { 3, 1, 10303202, CYAN "a",   basic_seek },
 	[HELLHOUND]   = { 1, 1, 10301202, RED "d",    moore_seek },
 	[SHOVE_1]     = { 2, 0, 10002102, PURPLE "~", basic_seek },
-	[SHOVE_2]     = { 3, 0, 10003102, GRAY "~",   basic_seek },
+	[SHOVE_2]     = { 3, 0, 10003102, BLACK "~",  basic_seek },
 	[YETI]        = { 1, 3, 20301403, CYAN "Y",   basic_seek },
 	[GHAST]       = { 1, 0, 10201102, PURPLE "W", basic_seek },
 	[FIRE_MIMIC]  = { 1, 0, 10201102, RED "m",    todo },
@@ -182,14 +202,14 @@ static ClassInfos class_infos[256] = {
 
 	[SHOPKEEPER]  = { 9, 9, 99999997, "@",        nop },
 	[DIREBAT_1]   = { 2, 1, 30302210, YELLOW "B", bat },
-	[DIREBAT_2]   = { 3, 1, 30403215, GRAY "B",   bat },
+	[DIREBAT_2]   = { 3, 1, 30403215, "B",        bat },
 	[DRAGON]      = { 4, 1, 30404210, GREEN "D",  basic_seek },
 	[RED_DRAGON]  = { 6, 1, 99999999, RED "D",    basic_seek },
 	[BLUE_DRAGON] = { 6, 1, 99999997, BLUE "D",   basic_seek },
 	[BANSHEE_1]   = { 3, 0, 30403110, BLUE "8",   basic_seek },
 	[BANSHEE_2]   = { 4, 0, 30604115, GREEN "8",  basic_seek },
 	[MINOTAUR_1]  = { 3, 0, 30403110, "H",        todo },
-	[MINOTAUR_2]  = { 5, 0, 30505115, GRAY "H",   todo },
+	[MINOTAUR_2]  = { 5, 0, 30505115, BLACK "H",  todo },
 	[NIGHTMARE_1] = { 3, 1, 30403210, BLACK "u",  basic_seek },
 	[NIGHTMARE_2] = { 5, 1, 30505215, RED "u",    basic_seek },
 	[MOMMY]       = { 6, 3, 30405215, BLACK "@",  basic_seek },

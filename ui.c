@@ -1,24 +1,24 @@
-#define BLACK  "\033[30m"
+// ui.c - manages terminal input/output
+// We assume an ansi-compatible UTF-8 terminal.
+
+// ANSI codes to enable color output in the terminal
 #define RED    "\033[31m"
 #define YELLOW "\033[33m"
 #define BLUE   "\033[34m"
 #define PINK   "\033[35m"
-#define GRAY   "\033[90m"
+#define BLACK  "\033[90m"
 #define ORANGE "\033[91m"
 #define GREEN  "\033[92m"
 #define CYAN   "\033[94m"
 #define PURPLE "\033[95m"
 
+// For display purposes, doors count as walls, but level edges don’t
 #define IS_WALL(y, x) (board[y][x].class == WALL && board[y][x].hp < 5)
 
-static int floor_colors[] = {0, 0, 4, 0, 1, 4, 2, 3};
-static char* trap_glyphs = "■???◭◭◆▫⇐⇒◭●●";
-static char bounce_glyphs[][9] = {
-	"↖↑↗",
-	"←▫→",
-	"↙↓↘",
-};
+static const int floor_colors[] = {[WATER] = 4, [TAR] = 7, [FIRE] = 1, [ICE] = 4, [OOZE] = 2};
 
+// Picks an appropriate box-drawing glyph for a wall by looking at adjacent tiles.
+// For example, when tiles to the bottom and right are walls too, we use '┌'.
 static void display_wall(long y, long x) {
 	if (board[y][x].hp == 0) {
 		putchar('+');
@@ -34,6 +34,7 @@ static void display_wall(long y, long x) {
 	printf("%3.3s", &"╳───│┌┐┬│└┘┴│├┤┼"[3*glyph]);
 }
 
+// Pretty-prints the tile at the given coordinates.
 static void display_tile(long y, long x) {
 	Tile e = board[y][x];
 	if (e.class > FLOOR)
@@ -51,6 +52,7 @@ static void display_tile(long y, long x) {
 	printf("\033[m");
 }
 
+// Clears and redraws the entire board.
 static void display_board(void) {
 	printf("\033[H\033[2J");
 	for (long y = 0; y < LENGTH(board); ++y) {
@@ -61,13 +63,14 @@ static void display_board(void) {
 	for (Trap *t = traps; t->y; ++t) {
 		if (board[t->y][t->x].next)
 			continue;
-		char *glyph = t->class == BOUNCE ? bounce_glyphs[t->dy+1] + 3*(t->dx+1)
-		                                 : trap_glyphs + 3 * t->class;
+		int glyph_index = t->class == BOUNCE ? 15 + 3 * t->dy + t->dx : t->class;
+		char *glyph = &"■▫◭◭◆▫⇐⇒◭●●↖↑↗←▫→↙↓↘"[3 * glyph_index];
 		printf("\033[%d;%dH%3.3s", t->y + 1, t->x + 1, glyph);
 	}
 	printf("\033[H");
 }
 
+// Updates the interface, then prompts the user for a command.
 static void display_prompt() {
 	// static long turn = 0;
 	// if (++turn >= 1000000)
