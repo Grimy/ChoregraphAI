@@ -23,7 +23,7 @@ static void player_turn() {
 		player.hp = 0;
 }
 
-static void monster_turn(Monster *m) {
+static void enemy_turn(Monster *m) {
 	long dy = player.y - m->y;
 	long dx = player.x - m->x;
 	m->aggro = m->aggro || can_see(m->y, m->x);
@@ -37,7 +37,7 @@ static void monster_turn(Monster *m) {
 }
 
 static void trap_turn(Trap *this) {
-	Monster *target = board[this->y][this->x].next;
+	Monster *target = board[this->y][this->x].monster;
 	if (target == NULL)
 		return;
 	switch (this->class) {
@@ -61,7 +61,7 @@ static void do_beat(void) {
 	player_turn();
 	for (Monster *m = monsters; m->y; ++m)
 		if (m->hp > 0)
-			monster_turn(m);
+			enemy_turn(m);
 	for (Trap *t = traps; t->y; ++t)
 		trap_turn(t);
 }
@@ -73,7 +73,7 @@ int main(int argc, char **argv) {
 	xml_parse(argv[1]);
 	qsort(monsters, monster_count, sizeof(*monsters), compare_priorities);
 	for (Monster *m = monsters; m->x; ++m)
-		board[m->y][m->x].next = m;
+		board[m->y][m->x].monster = m;
 	system("stty -echo -icanon eol \1");
 	while (player.hp)
 		do_beat();

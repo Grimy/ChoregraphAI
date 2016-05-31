@@ -38,29 +38,29 @@ static void basic_seek(Monster *this, long dy, long dx) {
 		// #7: keep moving along the same axis
 		this->vertical;
 
-	monster_move(this, this->vertical ? SIGN(dy) : 0, this->vertical ? 0 : SIGN(dx));
+	enemy_move(this, this->vertical ? SIGN(dy) : 0, this->vertical ? 0 : SIGN(dx));
 }
 
 // Move diagonally toward the player. The tiebreaker is *reverse* bomb-order.
 static void diagonal_seek(Monster *this, long dy, long dx) {
 	if (dy == 0)
-		monster_move(this, 1, SIGN(dx)) || monster_move(this, -1, SIGN(dx));
+		enemy_move(this, 1, SIGN(dx)) || enemy_move(this, -1, SIGN(dx));
 	else if (dx == 0)
-		monster_move(this, SIGN(dy), 1) || monster_move(this, SIGN(dy), -1);
+		enemy_move(this, SIGN(dy), 1) || enemy_move(this, SIGN(dy), -1);
 	else
-		monster_move(this, SIGN(dy), SIGN(dx)) ||
-		monster_move(this, SIGN(dy) * -SIGN(dx), 1) ||
-		monster_move(this, SIGN(dy) * SIGN(dx), -1);
+		enemy_move(this, SIGN(dy), SIGN(dx)) ||
+		enemy_move(this, SIGN(dy) * -SIGN(dx), 1) ||
+		enemy_move(this, SIGN(dy) * SIGN(dx), -1);
 }
 
 // Move toward the player either cardinally or diagonally.
 static void moore_seek(Monster *this, long dy, long dx) {
-	if (monster_move(this, SIGN(dy), SIGN(dx)))
+	if (enemy_move(this, SIGN(dy), SIGN(dx)))
 		return;
 	if (dx < 0)
-		monster_move(this, 0, -1) || monster_move(this, SIGN(dy), 0);
+		enemy_move(this, 0, -1) || enemy_move(this, SIGN(dy), 0);
 	else
-		monster_move(this, SIGN(dy), 0) || monster_move(this, 0, 1);
+		enemy_move(this, SIGN(dy), 0) || enemy_move(this, 0, 1);
 }
 
 // Move randomly.
@@ -71,14 +71,14 @@ static void bat(Monster *this, long dy, long dx) {
 	static const int8_t bat_x[4] = {1, -1, 0, 0};
 	long rng = rand();
 	for (long i = 0; i < 4; ++i)
-		if (monster_move(this, bat_y[(rng + i) & 3], bat_x[(rng + i) & 3]))
+		if (enemy_move(this, bat_y[(rng + i) & 3], bat_x[(rng + i) & 3]))
 			return;
 }
 
 // Attack the player if possible, otherwise move randomly.
 static void black_bat(Monster *this, long dy, long dx) {
 	if (ABS(dy) + ABS(dx) == 1)
-		monster_move(this, (int8_t) dy, (int8_t) dx);
+		enemy_move(this, (int8_t) dy, (int8_t) dx);
 	else
 		bat(this, dy, dx);
 }
@@ -91,8 +91,8 @@ static void parry(Monster *this, long dy, long dx) {
 	} else if (this->state == 1) {
 		int8_t y = SIGN(player.prev_y - this->y);
 		int8_t x = SIGN(player.prev_x - this->x);
-		if (monster_move(this, y, x))
-			monster_move(this, y, x);
+		if (enemy_move(this, y, x))
+			enemy_move(this, y, x);
 		this->state = 2;
 		this->delay = 0;
 	} else if (this->state == 2) {

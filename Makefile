@@ -14,4 +14,4 @@ rtl.expand: $(SOURCES)
 	rm main.s
 
 graph: rtl.expand
-	egypt --omit ent_add,ent_rm,ent_move,can_move $< | dot -Tpng | feh -FZ -
+	egypt --omit move,can_move $< | dot -Tpng | feh -FZ -

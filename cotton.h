@@ -121,7 +121,7 @@ typedef struct {
 	int8_t zone;
 	int8_t revealed;
 	unsigned: 24;
-	Monster *next;
+	Monster *monster;
 } Tile;
 
 typedef struct {

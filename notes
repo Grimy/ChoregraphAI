@@ -6,11 +6,6 @@ TO CODE:
 * Harpies
 * Bombs
 
-RENAME:
-* monster_attack → enemy_attack
-* monster_move → enemy_move
-* next → monster
-
 Harpy priority:
 ...k.
 .!igd

@@ -39,8 +39,8 @@ static void display_tile(long y, long x) {
 	Tile e = board[y][x];
 	if (e.class > FLOOR)
 		printf("\033[4%dm", floor_colors[e.class]);
-	if (e.next)
-		printf("%s", CLASS(e.next).glyph);
+	if (e.monster)
+		printf("%s", CLASS(e.monster).glyph);
 	else if (e.class == WALL && e.hp == 5)
 		putchar(' ');
 	else if (!can_see(y, x))
@@ -61,7 +61,7 @@ static void display_board(void) {
 		putchar('\n');
 	}
 	for (Trap *t = traps; t->y; ++t) {
-		if (board[t->y][t->x].next)
+		if (board[t->y][t->x].monster)
 			continue;
 		int glyph_index = t->class == BOUNCE ? 15 + 3 * t->dy + t->dx : t->class;
 		char *glyph = &"■▫◭◭◆▫⇐⇒◭●●↖↑↗←▫→↙↓↘"[3 * glyph_index];

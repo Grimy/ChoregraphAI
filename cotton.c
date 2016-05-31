@@ -8,15 +8,15 @@
 #define IS_OPAQUE(y, x) (board[y][x].class == WALL)
 #define CLASS(m) (class_infos[(m)->class])
 
-// Moves a monster from one tile to another.
-// This also updates the monster’s current and previous positions.
-static void ent_move(Monster *m, int8_t y, int8_t x) {
-	board[m->y][m->x].next = NULL;
+// Moves the given monster to a specific position.
+// Keeps track of the monster’s previous position.
+static void move(Monster *m, int8_t y, int8_t x) {
+	board[m->y][m->x].monster = NULL;
 	m->prev_y = m->y;
 	m->prev_x = m->x;
 	m->y = y;
 	m->x = x;
-	board[m->y][m->x].next = m;
+	board[m->y][m->x].monster = m;
 }
 
 // Tests whether the given monster can move in the given direction.
@@ -24,15 +24,15 @@ static void ent_move(Monster *m, int8_t y, int8_t x) {
 // change before adding phasing enemies.
 static bool can_move(Monster *m, long dy, long dx) {
 	Tile dest = board[m->y + dy][m->x + dx];
-	if (IS_ENEMY(dest.next) || dest.torch)
+	if (IS_ENEMY(dest.monster) || dest.torch)
 		return false;
 	return (board[m->y][m->x].class == WALL) == (dest.class == WALL);
 }
 
-static void monster_attack(Monster *attacker) {
+static void enemy_attack(Monster *attacker) {
 	if (attacker->class == CONF_MONKEY || attacker->class == PIXIE) {
 		attacker->hp = 0;
-		board[attacker->y][attacker->x].next = NULL;
+		board[attacker->y][attacker->x].monster = NULL;
 	} else {
 		player.hp = 0;
 	}
@@ -41,27 +41,27 @@ static void monster_attack(Monster *attacker) {
 // Performs a movement action on behalf of an enemy.
 // This includes attacking the player if they block the movement.
 // TODO: implement enemy digging
-static bool monster_move(Monster *m, int8_t dy, int8_t dx) {
+static bool enemy_move(Monster *m, int8_t dy, int8_t dx) {
 	if (!(can_move(m, dy, dx)))
 		return false;
 	m->delay = CLASS(m).beat_delay;
 	Tile dest = board[m->y + dy][m->x + dx];
-	if (dest.next == &player)
-		monster_attack(m);
+	if (dest.monster == &player)
+		enemy_attack(m);
 	else
-		ent_move(m, m->y + dy, m->x + dx);
+		move(m, m->y + dy, m->x + dx);
 	return true;
 }
 
 // Moves something by force, as caused by bounce traps, wind mages and knockback.
-// Unlike monster_move, this ignores confusion, doesn’t change the beat delay,
+// Unlike enemy_move, this ignores confusion, doesn’t change the beat delay,
 // and doesn’t cause digging.
 static void forced_move(Monster *m, int8_t dy, int8_t dx) {
 	Tile dest = board[m->y + dy][m->x + dx];
-	if (dest.next == &player)
-		monster_attack(m);
+	if (dest.monster == &player)
+		enemy_attack(m);
 	else if (dest.class != WALL)
-		ent_move(m, m->y + dy, m->x + dx);
+		move(m, m->y + dy, m->x + dx);
 }
 
 // Checks whether the straight line from the player to the given coordinates
@@ -127,9 +127,9 @@ static void damage(Monster *m, long dmg, bool bomblike) {
 	m->hp -= dmg;
 	if (m->hp > 0)
 		return;
-	board[m->y][m->x].next = NULL;
+	board[m->y][m->x].monster = NULL;
 	if (!bomblike && (m->class == WARLOCK_1 || m->class == WARLOCK_2))
-		ent_move(&player, m->y, m->x);
+		move(&player, m->y, m->x);
 }
 
 static void player_attack(Monster *m) {
@@ -166,8 +166,8 @@ static void player_move(int8_t y, int8_t x) {
 	player.prev_x = player.x;
 	if (dest->class == WALL)
 		player_dig(dest);
-	else if (IS_ENEMY(dest->next))
-		player_attack(dest->next);
+	else if (IS_ENEMY(dest->monster))
+		player_attack(dest->monster);
 	else
-		ent_move(&player, player.y + y, player.x + x);
+		move(&player, player.y + y, player.x + x);
 }

@@ -25,9 +25,9 @@ static void xml_process_node(xmlTextReaderPtr xml) {
 
 	if (!strcmp(name, "trap"))
 		traps[trap_count++] = (Trap) {
+			.class = subtype == 8 ? 0 : type,
 			.y = y,
 			.x = x,
-			.class = subtype == 8 ? 0 : type,
 			.dy = (int8_t[]) {0, 0, 1, -1, 1, 1, -1, -1} [subtype & 7],
 			.dx = (int8_t[]) {1, -1, 0, 0, 1, -1, 1, -1} [subtype & 7],
 		};
@@ -61,5 +61,5 @@ static void xml_parse(char *file) {
 	if (xmlTextReaderRead(xml) < 0)
 		exit(1);
 	xmlFreeTextReader(xml);
-	board[SPAWN_Y][SPAWN_X].next = &player;
+	board[SPAWN_Y][SPAWN_X].monster = &player;
 }
