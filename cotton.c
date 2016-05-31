@@ -1,167 +1,15 @@
-// cotton.c - typedefs, game logic, entry point… should be split further
-
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+// cotton.c - core game logic
 
 #define LENGTH(array) ((long) (sizeof(array) / sizeof(*(array))))
 #define SIGN(x) (((x) > 0) - ((x) < 0))
 #define ABS(x)  ((x) < 0 ? -(x) : (x))
 
-#define IS_MONSTER(m) ((m) && (m)->class != PLAYER)
+#define IS_ENEMY(m) ((m) && (m) != &player)
+#define IS_OPAQUE(y, x) (board[y][x].class == WALL)
 #define CLASS(m) (class_infos[(m)->class])
-#define SPAWN_Y 9
-#define SPAWN_X 24
 
-typedef enum {false, true} bool;
-
-// Human-friendly names for monster classes.
-// Numerical values were arbitrarily picked to make parsing dungeon XML easier.
-typedef enum __attribute__((__packed__)) {
-	GREEN_SLIME, BLUE_SLIME, YOLO_SLIME,
-	SKELETON_1, SKELETON_2, SKELETON_3,
-	BLUE_BAT, RED_BAT, GREEN_BAT,
-	MONKEY_1, MONKEY_2,
-	GHOST,
-	ZOMBIE,
-	WRAITH,
-	MIMIC_1, MIMIC_2, MIMIC_3,
-
-	SKELETANK_1 = 100, SKELETANK_2, SKELETANK_3,
-	WINDMAGE_1, WINDMAGE_2, WINDMAGE_3,
-	MUSHROOM_1, MUSHROOM_2,
-	GOLEM_1, GOLEM_2,
-	ARMADILLO_1, ARMADILLO_2,
-	CLONE,
-	TARMONSTER,
-	MOLE,
-	WIGHT,
-	WALL_MIMIC,
-	LIGHTSHROOM, BOMBSHROOM,
-
-	FIRE_SLIME, ICE_SLIME,
-	RIDER_1, RIDER_2, RIDER_3,
-	EFREET, DJINN,
-	ASSASSIN_1, ASSASSIN_2,
-	FIRE_BEETLE, ICE_BEETLE,
-	HELLHOUND,
-	SHOVE_1,
-	YETI,
-	GHAST,
-	FIRE_MIMIC, ICE_MIMIC,
-	FIRE_POT, ICE_POT,
-	SHOVE_2,
-
-	BOMBER = 44,
-	DIGGER,
-	BLACK_BAT,
-	ARMADILDO,
-	BLADENOVICE, BLADEMASTER,
-	GHOUL,
-	OOZE_GOLEM,
-	HARPY,
-	LICH_1, LICH_2, LICH_3,
-	CONF_MONKEY,
-	TELE_MONKEY,
-	PIXIE,
-	SARCO_1, SARCO_2, SARCO_3,
-	SPIDER,
-	WARLOCK_1, WARLOCK_2,
-	MUMMY,
-	GARGOYLE_1, GARGOYLE_2, GARGOYLE_3, GARGOYLE_4, GARGOYLE_5, GARGOYLE_6,
-
-	SHOPKEEPER = 88,
-
-	DIREBAT_1 = 144, DIREBAT_2,
-	DRAGON, RED_DRAGON, BLUE_DRAGON,
-	BANSHEE_1, BANSHEE_2,
-	MINOTAUR_1, MINOTAUR_2,
-	NIGHTMARE_1, NIGHTMARE_2,
-	MOMMY, OGRE,
-
-	PLAYER,
-} MonsterClass;
-
-// Human-readable names for tile types.
-// Note that WALL can be any wall type, including level edges and doors.
-typedef enum __attribute__((__packed__)) {
-	WALL = 0,
-	FLOOR = 1,
-	WATER = 2,
-	TAR = 8,
-	STAIRS = 9,
-	FIRE = 10,
-	ICE = 11,
-	OOZE = 17,
-} TileClass;
-
-// Human-readable names for traps.
-// BOUNCE includes all eight directional bounce traps, but not omni-bounce nor random-bounce.
-typedef enum __attribute__((__packed__)) {
-	OMNIBOUNCE,
-	BOUNCE,
-	SPIKE,
-	TRAPDOOR,
-	CONFUSE,
-	TELEPORT,
-	TEMPO_DOWN,
-	TEMPO_UP,
-	BOMBTRAP = 9,
-	FIREPIG,
-} TrapClass;
-
-// A “Monster” is either an enemy or the player.
-typedef struct {
-	MonsterClass class;
-	int8_t x;
-	int8_t y;
-	int8_t prev_x;
-	int8_t prev_y;
-	int8_t hp;
-	unsigned delay: 4;
-	unsigned aggro: 1;
-	unsigned vertical: 1;
-	unsigned state: 2;
-	unsigned: 8;
-} Monster;
-
-typedef struct {
-	TileClass class;
-	int8_t hp;
-	int8_t torch;
-	int8_t zone;
-	int8_t revealed;
-	unsigned: 24;
-	Monster *next;
-} Tile;
-
-typedef struct {
-	TrapClass class;
-	int8_t dx;
-	int8_t dy;
-	int8_t x;
-	int8_t y;
-} Trap;
-
-typedef struct {
-	int8_t max_hp;
-	uint8_t beat_delay;
-	unsigned: 16;
-	uint32_t priority;
-	char *glyph;
-	void (*act) (Monster*, long, long);
-} ClassInfos;
-
-static ClassInfos class_infos[256];
-
-__extension__
-static Tile board[32][32] = {[0 ... 31] = {[0 ... 31] = {.class = WALL, .hp = 5}}};
-static Monster player = {.class = PLAYER, .hp = 1, .y = SPAWN_Y, .x = SPAWN_X};
-static Monster monsters[256];
-static Trap traps[256];
-static uint64_t monster_count = 0;
-
+// Moves a monster from one tile to another.
+// This also updates the monster’s current and previous positions.
 static void ent_move(Monster *m, int8_t y, int8_t x) {
 	board[m->y][m->x].next = NULL;
 	m->prev_y = m->y;
@@ -171,11 +19,14 @@ static void ent_move(Monster *m, int8_t y, int8_t x) {
 	board[m->y][m->x].next = m;
 }
 
+// Tests whether the given monster can move in the given direction.
+// The code assumes that only spiders can be inside walls. This will need to
+// change before adding phasing enemies.
 static bool can_move(Monster *m, long dy, long dx) {
 	Tile dest = board[m->y + dy][m->x + dx];
-	if (m->class == SPIDER && board[m->y][m->x].class == WALL)
-		return dest.class == WALL && !dest.torch;
-	return dest.class != WALL && !IS_MONSTER(dest.next);
+	if (IS_ENEMY(dest.next) || dest.torch)
+		return false;
+	return (board[m->y][m->x].class == WALL) == (dest.class == WALL);
 }
 
 static void monster_attack(Monster *attacker) {
@@ -187,33 +38,86 @@ static void monster_attack(Monster *attacker) {
 	}
 }
 
-static bool monster_move(Monster *m, int8_t y, int8_t x) {
-	if (!(can_move(m, y, x)))
+// Performs a movement action on behalf of an enemy.
+// This includes attacking the player if they block the movement.
+// TODO: implement enemy digging
+static bool monster_move(Monster *m, int8_t dy, int8_t dx) {
+	if (!(can_move(m, dy, dx)))
 		return false;
 	m->delay = CLASS(m).beat_delay;
-	Tile dest = board[m->y + y][m->x + x];
+	Tile dest = board[m->y + dy][m->x + dx];
 	if (dest.next == &player)
 		monster_attack(m);
 	else
-		ent_move(m, m->y + y, m->x + x);
+		ent_move(m, m->y + dy, m->x + dx);
 	return true;
 }
 
-static void trap_move(Monster *m, int8_t y, int8_t x) {
-	if (!(can_move(m, y, x)))
-		return;
-	Tile dest = board[m->y + y][m->x + x];
+// Moves something by force, as caused by bounce traps, wind mages and knockback.
+// Unlike monster_move, this ignores confusion, doesn’t change the beat delay,
+// and doesn’t cause digging.
+static void forced_move(Monster *m, int8_t dy, int8_t dx) {
+	Tile dest = board[m->y + dy][m->x + dx];
 	if (dest.next == &player)
 		monster_attack(m);
-	else
-		ent_move(m, m->y + y, m->x + x);
+	else if (dest.class != WALL)
+		ent_move(m, m->y + dy, m->x + dx);
 }
 
+// Checks whether the straight line from the player to the given coordinates
+// is free from obstacles.
+// This uses fractional coordinates: the center of tile (y, x) is at (y + 0.5, x + 0.5).
+static bool los(double y, double x) {
+	double dy = player.y - y;
+	double dx = player.x - x;
+	int cy = (int) (y + .5);
+	int cx = (int) (x + .5);
+	if ((player.x > x || x > cx) &&
+		dy * (cy - y) > 0 &&
+		IS_OPAQUE(cy, cx))
+		return false;
+	while (cy != player.y || cx != player.x) {
+		double err_y = ABS((cx - x) * dy - (cy + SIGN(dy) - y) * dx);
+		double err_x = ABS((cx + SIGN(dx) - x) * dy - (cy - y) * dx);
+		int old_cx = cx;
+		if (err_x < err_y + .001 && IS_OPAQUE(cy, cx += SIGN(dx)))
+			return false;
+		if (err_y < err_x + .001)
+			if (IS_OPAQUE(cy += SIGN(dy), cx) || IS_OPAQUE(cy, old_cx))
+				return false;
+	}
+	return true;
+}
+
+// Tests whether the player can see the tile at the given coordinates.
+// This is true if there’s an unblocked line from the center of the player’s
+// tile to any corner or the center of the destination tile.
+static bool can_see(long y, long x) {
+	if (y < player.y - 5 || y > player.y + 5 || x < player.x - 10 || x > player.x + 9)
+		return false;
+	return los(y - .55, x - .55)
+		|| los(y - .55, x + .55)
+		|| los(y + .55, x - .55)
+		|| los(y + .55, x + .55)
+		|| los(y, x);
+}
+
+// Compares the priorities of two monsters.
+// Meant to be used as a callback for qsort.
+static int compare_priorities(const void *a, const void *b) {
+	uint32_t pa = CLASS((const Monster*) a).priority;
+	uint32_t pb = CLASS((const Monster*) b).priority;
+	return (pb > pa) - (pb < pa);
+}
+
+// Knocks an enemy away from the player.
+// TODO: set the knockback direction correctly for diagonal attacks.
 static void knockback(Monster *m) {
-	monster_move(m, SIGN(m->y - player.y), SIGN(m->x - player.x));
+	forced_move(m, SIGN(m->y - player.y), SIGN(m->x - player.x));
 	m->delay = 1;
 }
 
+// Deals damage to the given monster.
 static void damage(Monster *m, long dmg, bool bomblike) {
 	if (!bomblike && (m->class == BLADENOVICE || m->class == BLADEMASTER) && m->state < 2) {
 		knockback(m);
@@ -262,80 +166,8 @@ static void player_move(int8_t y, int8_t x) {
 	player.prev_x = player.x;
 	if (dest->class == WALL)
 		player_dig(dest);
-	else if (IS_MONSTER(dest->next))
+	else if (IS_ENEMY(dest->next))
 		player_attack(dest->next);
 	else
 		ent_move(&player, player.y + y, player.x + x);
-}
-
-#include "los.c"
-#include "ui.c"
-#include "monsters.c"
-#include "xml.c"
-
-static void trap_turn(Trap *this) {
-	Monster *target = board[this->y][this->x].next;
-	if (target == NULL)
-		return;
-	switch (this->class) {
-		case OMNIBOUNCE: break;
-		case BOUNCE: trap_move(target, this->dy, this->dx); break;
-		case SPIKE: damage(target, 4, true); break;
-		case TRAPDOOR: damage(target, 4, true); break;
-		case CONFUSE: break;
-		case TELEPORT: break;
-		case TEMPO_DOWN: break;
-		case TEMPO_UP: break;
-		case BOMBTRAP: break;
-		case FIREPIG: break;
-	}
-}
-
-static void monster_turn(Monster *m) {
-	long dy = player.y - m->y;
-	long dx = player.x - m->x;
-	m->aggro = m->aggro || can_see(m->y, m->x);
-	if (!m->aggro && dy * dy + dx * dx > 9)
-		return;
-	if (m->delay) {
-		m->delay--;
-		return;
-	}
-	CLASS(m).act(m, dy, dx);
-}
-
-static void player_turn() {
-	Tile *fire_tile = NULL;
-	if (board[player.y][player.x].class == FIRE)
-		fire_tile = &board[player.y][player.x];
-	display_prompt();
-	if (&board[player.y][player.x] == fire_tile)
-		player.hp = 0;
-}
-
-static void do_beat(void) {
-	player_turn();
-	for (Monster *m = monsters; m->y; ++m)
-		if (m->hp > 0)
-			monster_turn(m);
-	for (Trap *t = traps; t->y; ++t)
-		trap_turn(t);
-}
-
-static int compare_priorities(const void *a, const void *b) {
-	uint32_t pa = CLASS((const Monster*) a).priority;
-	uint32_t pb = CLASS((const Monster*) b).priority;
-	return (pb > pa) - (pb < pa);
-}
-
-int main(int argc, char **argv) {
-	if (argc != 2)
-		exit(argc);
-	xml_parse(argv[1]);
-	qsort(monsters, monster_count, sizeof(*monsters), compare_priorities);
-	for (Monster *m = monsters; m->x; ++m)
-		board[m->y][m->x].next = m;
-	system("stty -echo -icanon eol \1");
-	while (player.hp)
-		do_beat();
 }

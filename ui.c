@@ -1,5 +1,5 @@
 // ui.c - manages terminal input/output
-// We assume an ansi-compatible UTF-8 terminal.
+// All output code assumes an ANSI-compatible UTF-8 terminal.
 
 // ANSI codes to enable color output in the terminal
 #define RED    "\033[31m"
@@ -18,7 +18,7 @@
 static const int floor_colors[] = {[WATER] = 4, [TAR] = 7, [FIRE] = 1, [ICE] = 4, [OOZE] = 2};
 
 // Picks an appropriate box-drawing glyph for a wall by looking at adjacent tiles.
-// For example, when tiles to the bottom and right are walls too, we use '┌'.
+// For example, when tiles to the bottom and right are walls too, use '┌'.
 static void display_wall(long y, long x) {
 	if (board[y][x].hp == 0) {
 		putchar('+');

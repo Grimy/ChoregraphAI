@@ -1,7 +1,15 @@
+TO TEST:
+* Z4 digging with different shovel strengths
+* Trap-to-trap priority
+
 TO CODE:
 * Harpies
 * Bombs
-* Monster digging
+
+RENAME:
+* monster_attack → enemy_attack
+* monster_move → enemy_move
+* next → monster
 
 Harpy priority:
 ...k.
