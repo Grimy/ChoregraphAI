@@ -64,9 +64,7 @@ static void moore_seek(Monster *this, long dy, long dx) {
 }
 
 // Move randomly.
-static void bat(Monster *this, long dy, long dx) {
-	(void) dy;
-	(void) dx;
+static void bat(Monster *this, __attribute__((unused)) long dy, __attribute__((unused)) long dx) {
 	static const int8_t bat_y[4] = {0, 0,  1, -1};
 	static const int8_t bat_x[4] = {1, -1, 0, 0};
 	long rng = rand();
@@ -134,15 +132,33 @@ static void mushroom(Monster *this, long dy, long dx) {
 	this->delay = CLASS(this).beat_delay;
 }
 
+static void blue_slime(Monster *this, __attribute__((unused)) long dy, __attribute__((unused)) long dx) {
+	this->state ^= enemy_move(this, this->state ? -1 : 1, 0);
+}
+
+static void yellow_slime(Monster *this, __attribute__((unused)) long dy, __attribute__((unused)) long dx) {
+	static const int8_t move_y[] = {0, 1, 0, -1};
+	static const int8_t move_x[] = {1, 0, -1, 0};
+	this->state += enemy_move(this, move_y[this->state], move_x[this->state]);
+}
+
+static void diagonal_slime(Monster *this, __attribute__((unused)) long dy, __attribute__((unused)) long dx) {
+	static const int8_t move_y[] = {1, 1, -1, -1};
+	static const int8_t move_x[] = {1, -1, -1, 1};
+	bool ok = can_move(this, move_y[this->state], move_x[this->state]);
+	enemy_move(this, move_y[this->state], move_x[this->state]);
+	this->state += ok;
+}
+
 static void todo() {}
 static void mimic() {/*TODO*/}
 static void nop() {}
 
 static const ClassInfos class_infos[256] = {
 	// [Name] = { max_hp, beat_delay, radius, flying, dig, priority, glyph, act }
-	[GREEN_SLIME] = { 1, 9,   9, false, 0, 19901101, GREEN "P",  nop },
-	[BLUE_SLIME]  = { 2, 1,   9, false, 0, 10202202, BLUE "P",   todo },
-	[YOLO_SLIME]  = { 1, 0,   9, false, 0, 10101102, YELLOW "P", todo },
+	[GREEN_SLIME] = { 1, 9, 225, false, 0, 19901101, GREEN "P",  nop },
+	[BLUE_SLIME]  = { 2, 1, 225, false, 0, 10202202, BLUE "P",   blue_slime },
+	[YOLO_SLIME]  = { 1, 0, 225, false, 0, 10101102, YELLOW "P", yellow_slime },
 	[SKELETON_1]  = { 1, 1,   9, false, 0, 10101202, "Z",        basic_seek },
 	[SKELETON_2]  = { 2, 1,   9, false, 0, 10302203, YELLOW "Z", basic_seek },
 	[SKELETON_3]  = { 3, 1,   9, false, 0, 10403204, BLACK "Z",  basic_seek },
@@ -163,7 +179,6 @@ static const ClassInfos class_infos[256] = {
 	[WINDMAGE_3]  = { 3, 1,   9, false, 0, 10503206, BLACK "@",  windmage },
 	[MUSHROOM_1]  = { 1, 3,   9, false, 0, 10201402, BLUE "%",   mushroom },
 	[MUSHROOM_2]  = { 3, 2,   9, false, 0, 10403303, PURPLE "%", mushroom },
-	[TEST]        = { 3, 2,   9, false, 0, 10403303, PURPLE "%", mushroom },
 	[GOLEM_1]     = { 5, 3,  49,  true, 2, 20405404, "'",        basic_seek },
 	[GOLEM_2]     = { 7, 3,  49,  true, 2, 20607407, BLACK "'",  basic_seek },
 	[ARMADILLO_1] = { 1, 0,   9, false, 2, 10201102, "q",        todo },
@@ -176,8 +191,9 @@ static const ClassInfos class_infos[256] = {
 	[LIGHTSHROOM] = { 1, 9,   9, false, 0,        0, "%",        nop },
 	[BOMBSHROOM]  = { 1, 9,   9, false, 0,      ~1u, "%",        todo },
 
-	[FIRE_SLIME]  = { 1, 0,   9, false, 2, 10301101, RED "P",    todo },
-	[ICE_SLIME]   = { 1, 0,   9, false, 2, 10301101, CYAN "P",   todo },
+	[FIRE_SLIME]  = { 1, 0, 225, false, 2, 10301101, RED "P",    diagonal_slime },
+	[ICE_SLIME]   = { 1, 0, 225, false, 2, 10301101, CYAN "P",   diagonal_slime },
+	[TEST]        = { 1, 0, 225, false, 2, 10301101, CYAN "P",   diagonal_slime },
 	[RIDER_1]     = { 1, 0,   9,  true, 0, 10201102, "&",        basic_seek },
 	[RIDER_2]     = { 2, 0,   9,  true, 0, 10402104, YELLOW "&", basic_seek },
 	[RIDER_3]     = { 3, 0,   9,  true, 0, 10603106, BLACK "&",  basic_seek },
