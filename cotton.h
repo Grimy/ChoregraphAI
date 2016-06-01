@@ -111,7 +111,8 @@ typedef struct {
 	bool aggro: 1;
 	bool vertical: 1;
 	unsigned state: 2;
-	unsigned: 8;
+	unsigned confused: 4;
+	unsigned: 4;
 } Monster;
 
 typedef struct {

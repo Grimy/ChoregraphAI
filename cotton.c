@@ -168,8 +168,10 @@ static void player_dig(Tile *wall) {
 		dig(wall);
 }
 
-static void player_move(int8_t y, int8_t x) {
-	Tile *dest = &board[player.y + y][player.x + x];
+static void player_move(int8_t dy, int8_t dx) {
+	if (player.confused)
+		dy = -dy, dx = -dx;
+	Tile *dest = &board[player.y + dy][player.x + dx];
 	player.prev_y = player.y;
 	player.prev_x = player.x;
 	if (dest->class == WALL)
@@ -177,5 +179,5 @@ static void player_move(int8_t y, int8_t x) {
 	else if (IS_ENEMY(dest->monster))
 		player_attack(dest->monster);
 	else
-		move(&player, player.y + y, player.x + x);
+		move(&player, player.y + dy, player.x + dx);
 }

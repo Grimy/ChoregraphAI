@@ -19,6 +19,8 @@ static void player_turn() {
 	if (board[player.y][player.x].class == FIRE)
 		fire_tile = &board[player.y][player.x];
 	display_prompt();
+	if (player.confused)
+		player.confused--;
 	if (&board[player.y][player.x] == fire_tile)
 		player.hp = 0;
 }
@@ -47,7 +49,7 @@ static void trap_turn(Trap *this) {
 		case BOUNCE: forced_move(target, this->dy, this->dx); break;
 		case SPIKE: damage(target, 4, true); break;
 		case TRAPDOOR: damage(target, 4, true); break;
-		case CONFUSE: break;
+		case CONFUSE: target->confused = 9; break;
 		case TELEPORT: break;
 		case TEMPO_DOWN: break;
 		case TEMPO_UP: break;

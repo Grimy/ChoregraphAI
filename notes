@@ -4,6 +4,8 @@ TO TEST:
 * Activated-unaggroed goblin diggers
 * Aggroed-unactivated enemy delay
 * Is trampling bomb-like?
+* Delay before player re-confusion?
+* Enemies digging while confused
 
 TO CODE:
 * Harpies

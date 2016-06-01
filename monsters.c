@@ -110,6 +110,15 @@ static void spider(Monster *this, long dy, long dx) {
 	}
 }
 
+static void lich(Monster *this, long dy, long dx) {
+	if (dy * dy + dx * dx == 4 && !player.confused) {
+		player.confused = 4;
+		this->delay = 1;
+	} else {
+		basic_seek(this, dy, dx);
+	}
+}
+
 static void todo() {}
 static void nop() {}
 
@@ -180,9 +189,9 @@ static ClassInfos class_infos[256] = {
 	[GHOUL]       = { 1, 0,   9,  true, 0, 10301102, "W",        moore_seek },
 	[OOZE_GOLEM]  = { 5, 3,  49,  true, 2, 20510407, GREEN "'",  basic_seek },
 	[HARPY]       = { 1, 1,   9,  true, 0, 10301203, GREEN "h",  basic_seek },
-	[LICH_1]      = { 1, 1,   9, false, 0, 10404202, "L",        basic_seek },
-	[LICH_2]      = { 2, 1,   9, false, 0, 10404302, PURPLE "L", basic_seek },
-	[LICH_3]      = { 3, 1,   9, false, 0, 10404402, BLACK "L",  basic_seek },
+	[LICH_1]      = { 1, 1,   9, false, 0, 10404202, "L",        lich },
+	[LICH_2]      = { 2, 1,   9, false, 0, 10404302, PURPLE "L", lich },
+	[LICH_3]      = { 3, 1,   9, false, 0, 10404402, BLACK "L",  lich },
 	[CONF_MONKEY] = { 1, 0,   9, false, 0, 10004103, GREEN "Y",  basic_seek },
 	[TELE_MONKEY] = { 2, 0,   9, false, 0, 10002103, PINK "Y",   basic_seek },
 	[PIXIE]       = { 1, 0,   9,  true, 0, 10401102, "n",        basic_seek },
