@@ -135,7 +135,9 @@ typedef struct {
 typedef struct {
 	int8_t max_hp;
 	uint8_t beat_delay;
-	unsigned: 16;
+	uint8_t radius;
+	bool flying: 1;
+	unsigned: 7;
 	uint32_t priority;
 	char *glyph;
 	void (*act) (Monster*, long, long);

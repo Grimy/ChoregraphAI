@@ -27,7 +27,7 @@ static void enemy_turn(Monster *m) {
 	long dy = player.y - m->y;
 	long dx = player.x - m->x;
 	m->aggro = m->aggro || can_see(m->y, m->x);
-	if (!m->aggro && dy * dy + dx * dx > 9)
+	if (!m->aggro && dy * dy + dx * dx > CLASS(m).radius)
 		return;
 	if (m->delay) {
 		m->delay--;
@@ -38,7 +38,7 @@ static void enemy_turn(Monster *m) {
 
 static void trap_turn(Trap *this) {
 	Monster *target = board[this->y][this->x].monster;
-	if (target == NULL)
+	if (target == NULL || CLASS(target).flying)
 		return;
 	switch (this->class) {
 		case OMNIBOUNCE: break;
