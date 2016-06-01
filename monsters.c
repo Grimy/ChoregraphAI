@@ -111,7 +111,7 @@ static void spider(Monster *this, long dy, long dx) {
 }
 
 static void lich(Monster *this, long dy, long dx) {
-	if (dy * dy + dx * dx == 4 && !player.confused) {
+	if (dy*dy + dx*dx == 4 && !player.confused) {
 		player.confused = 4;
 		this->delay = 1;
 	} else {
@@ -119,7 +119,17 @@ static void lich(Monster *this, long dy, long dx) {
 	}
 }
 
+static void windmage(Monster *this, long dy, long dx) {
+	if (dy*dy + dx*dx == 4 && can_move(this, SIGN(dy), SIGN(dx))) {
+		forced_move(&player, -SIGN(dy), -SIGN(dx));
+		this->delay = 1;
+	} else {
+		basic_seek(this, dy, dx);
+	}
+}
+
 static void todo() {}
+static void mimic() {/*TODO*/}
 static void nop() {}
 
 static ClassInfos class_infos[256] = {
@@ -142,9 +152,9 @@ static ClassInfos class_infos[256] = {
 	[SKELETANK_1] = { 1, 1,   9, false, 0, 10101202, "Z",        basic_seek },
 	[SKELETANK_2] = { 2, 1,   9, false, 0, 10302204, YELLOW "Z", basic_seek },
 	[SKELETANK_3] = { 3, 1,   9, false, 0, 10503206, BLACK "Z",  basic_seek },
-	[WINDMAGE_1]  = { 1, 1,   9, false, 0, 10201202, BLUE "@",   todo },
-	[WINDMAGE_2]  = { 2, 1,   9, false, 0, 10402204, YELLOW "@", todo },
-	[WINDMAGE_3]  = { 3, 1,   9, false, 0, 10503206, BLACK "@",  todo },
+	[WINDMAGE_1]  = { 1, 1,   9, false, 0, 10201202, BLUE "@",   windmage },
+	[WINDMAGE_2]  = { 2, 1,   9, false, 0, 10402204, YELLOW "@", windmage },
+	[WINDMAGE_3]  = { 3, 1,   9, false, 0, 10503206, BLACK "@",  windmage },
 	[MUSHROOM_1]  = { 1, 3,   9, false, 0, 10201402, BLUE "%",   todo },
 	[MUSHROOM_2]  = { 3, 2,   9, false, 0, 10403303, PURPLE "%", todo },
 	[GOLEM_1]     = { 5, 3,  49,  true, 2, 20405404, "'",        basic_seek },
@@ -152,10 +162,10 @@ static ClassInfos class_infos[256] = {
 	[ARMADILLO_1] = { 1, 0,   9, false, 2, 10201102, "q",        todo },
 	[ARMADILLO_2] = { 2, 0,   9, false, 2, 10302105, YELLOW "q", todo },
 	[CLONE]       = { 1, 0,   9, false, 0, 10301102, "@",        todo },
-	[TARMONSTER]  = { 1, 0,   9, false, 0, 10304103, "t",        todo },
+	[TARMONSTER]  = { 1, 0,   9, false, 0, 10304103, "t",        mimic },
 	[MOLE]        = { 1, 0,   9,  true, 0,  1020113, "r",        todo },
-	[WIGHT]       = { 1, 0,   9,  true, 0, 10201103, GREEN "W",  todo },
-	[WALL_MIMIC]  = { 1, 0,   9, false, 0, 10201103, GREEN "m",  todo },
+	[WIGHT]       = { 1, 0,   9,  true, 0, 10201103, GREEN "W",  basic_seek },
+	[WALL_MIMIC]  = { 1, 0,   9, false, 0, 10201103, GREEN "m",  mimic },
 	[LIGHTSHROOM] = { 1, 9,   9, false, 0,        0, "%",        nop },
 	[BOMBSHROOM]  = { 1, 9,   9, false, 0,      ~1u, "%",        todo },
 
@@ -175,8 +185,8 @@ static ClassInfos class_infos[256] = {
 	[SHOVE_2]     = { 3, 0,   9, false, 0, 10003102, BLACK "~",  basic_seek },
 	[YETI]        = { 1, 3,   9,  true, 2, 20301403, CYAN "Y",   basic_seek },
 	[GHAST]       = { 1, 0,   9,  true, 0, 10201102, PURPLE "W", basic_seek },
-	[FIRE_MIMIC]  = { 1, 0,   9, false, 0, 10201102, RED "m",    todo },
-	[ICE_MIMIC]   = { 1, 0,   9, false, 0, 10201102, CYAN "m",   todo },
+	[FIRE_MIMIC]  = { 1, 0,   9, false, 0, 10201102, RED "m",    mimic },
+	[ICE_MIMIC]   = { 1, 0,   9, false, 0, 10201102, CYAN "m",   mimic },
 	[FIRE_POT]    = { 1, 9,   9, false, 0,        0, RED "(",    nop },
 	[ICE_POT]     = { 1, 0,   9, false, 0,        0, CYAN "(",   nop },
 

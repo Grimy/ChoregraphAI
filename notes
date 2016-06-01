@@ -6,10 +6,14 @@ TO TEST:
 * Is trampling bomb-like?
 * Delay before player re-confusion?
 * Enemies digging while confused
+* Confused barrels?
+* Do moles/crates/SK ghosts/… prevents windmages from casting?
+* Where is a lich/windmage’s prevpos after casting?
 
 TO CODE:
 * Harpies
 * Bombs
+* Consider renaming most AI functions
 
 REPORT:
 * Different aggression mechanics in the level editor
