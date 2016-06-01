@@ -91,8 +91,8 @@ static void parry(Monster *this, long dy, long dx) {
 	} else if (this->state == 1) {
 		int8_t y = SIGN(player.prev_y - this->y);
 		int8_t x = SIGN(player.prev_x - this->x);
-		if (enemy_move(this, y, x))
-			enemy_move(this, y, x);
+		enemy_move(this, y, x);
+		enemy_move(this, y, x);
 		this->state = 2;
 		this->delay = 0;
 	} else if (this->state == 2) {
@@ -128,11 +128,17 @@ static void windmage(Monster *this, long dy, long dx) {
 	}
 }
 
+static void mushroom(Monster *this, long dy, long dx) {
+	if (dy*dy + dx*dx < 4)
+		enemy_attack(this);
+	this->delay = CLASS(this).beat_delay;
+}
+
 static void todo() {}
 static void mimic() {/*TODO*/}
 static void nop() {}
 
-static ClassInfos class_infos[256] = {
+static const ClassInfos class_infos[256] = {
 	// [Name] = { max_hp, beat_delay, radius, flying, dig, priority, glyph, act }
 	[GREEN_SLIME] = { 1, 9,   9, false, 0, 19901101, GREEN "P",  nop },
 	[BLUE_SLIME]  = { 2, 1,   9, false, 0, 10202202, BLUE "P",   todo },
@@ -155,8 +161,9 @@ static ClassInfos class_infos[256] = {
 	[WINDMAGE_1]  = { 1, 1,   9, false, 0, 10201202, BLUE "@",   windmage },
 	[WINDMAGE_2]  = { 2, 1,   9, false, 0, 10402204, YELLOW "@", windmage },
 	[WINDMAGE_3]  = { 3, 1,   9, false, 0, 10503206, BLACK "@",  windmage },
-	[MUSHROOM_1]  = { 1, 3,   9, false, 0, 10201402, BLUE "%",   todo },
-	[MUSHROOM_2]  = { 3, 2,   9, false, 0, 10403303, PURPLE "%", todo },
+	[MUSHROOM_1]  = { 1, 3,   9, false, 0, 10201402, BLUE "%",   mushroom },
+	[MUSHROOM_2]  = { 3, 2,   9, false, 0, 10403303, PURPLE "%", mushroom },
+	[TEST]        = { 3, 2,   9, false, 0, 10403303, PURPLE "%", mushroom },
 	[GOLEM_1]     = { 5, 3,  49,  true, 2, 20405404, "'",        basic_seek },
 	[GOLEM_2]     = { 7, 3,  49,  true, 2, 20607407, BLACK "'",  basic_seek },
 	[ARMADILLO_1] = { 1, 0,   9, false, 2, 10201102, "q",        todo },

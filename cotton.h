@@ -68,6 +68,7 @@ typedef enum __attribute__((__packed__)) {
 	MOMMY, OGRE,
 
 	PLAYER,
+	TEST = 255,
 } MonsterClass;
 
 // Human-readable names for tile types.
@@ -144,7 +145,7 @@ typedef struct {
 	void (*act) (Monster*, long, long);
 } ClassInfos;
 
-static ClassInfos class_infos[256];
+static const ClassInfos class_infos[256];
 
 __extension__
 static Tile board[32][32] = {[0 ... 31] = {[0 ... 31] = {.class = WALL, .hp = 5}}};
