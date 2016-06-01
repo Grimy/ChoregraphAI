@@ -1,10 +1,16 @@
 TO TEST:
 * Z4 digging with different shovel strengths
 * Trap-to-trap priority
+* Activated-unaggroed goblin diggers
+* Aggroed-unactivated enemy delay
+* Is trampling bomb-like?
 
 TO CODE:
 * Harpies
 * Bombs
+
+REPORT:
+* Different aggression mechanics in the level editor
 
 Harpy priority:
 ...k.

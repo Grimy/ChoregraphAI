@@ -29,6 +29,21 @@ static bool can_move(Monster *m, long dy, long dx) {
 	return (board[m->y][m->x].class == WALL) == (dest.class == WALL);
 }
 
+static void zone4_dig(Tile *tile) {
+	if (tile->hp == 1 || tile->hp == 2)
+		tile->class = FLOOR;
+}
+
+static void dig(Tile *wall) {
+	wall->class = FLOOR;
+	if (wall->zone == 4 && (wall->hp == 1 || wall->hp == 2)) {
+		zone4_dig(wall - 1);
+		zone4_dig(wall + 1);
+		zone4_dig(wall - LENGTH(*board));
+		zone4_dig(wall + LENGTH(*board));
+	}
+}
+
 static void enemy_attack(Monster *attacker) {
 	if (attacker->class == CONF_MONKEY || attacker->class == PIXIE) {
 		attacker->hp = 0;
@@ -40,17 +55,22 @@ static void enemy_attack(Monster *attacker) {
 
 // Performs a movement action on behalf of an enemy.
 // This includes attacking the player if they block the movement.
-// TODO: implement enemy digging
 static bool enemy_move(Monster *m, int8_t dy, int8_t dx) {
-	if (!(can_move(m, dy, dx)))
-		return false;
-	m->delay = CLASS(m).beat_delay;
-	Tile dest = board[m->y + dy][m->x + dx];
-	if (dest.monster == &player)
+	Tile *dest = &board[m->y + dy][m->x + dx];
+	bool success = true;
+	if (dest->monster == &player)
 		enemy_attack(m);
-	else
+	else if (dest->monster)
+		success = false;
+	else if (dest->class != WALL)
 		move(m, m->y + dy, m->x + dx);
-	return true;
+	else if (dest->hp <= CLASS(m).dig)
+		dig(dest);
+	else
+		success = false;
+	if (success)
+		m->delay = CLASS(m).beat_delay;
+	return success;
 }
 
 // Moves something by force, as caused by bounce traps, wind mages and knockback.
@@ -142,22 +162,10 @@ static void player_attack(Monster *m) {
 		knockback(m);
 }
 
-static void zone4_dig(Tile *tile) {
-	if (tile->hp == 1 || tile->hp == 2)
-		tile->class = FLOOR;
-}
-
 static void player_dig(Tile *wall) {
-	long dig = board[player.y][player.x].class == OOZE ? 0 : 2;
-	if (dig < wall->hp)
-		return;
-	wall->class = FLOOR;
-	if (wall->zone == 4 && (wall->hp == 1 || wall->hp == 2)) {
-		zone4_dig(wall - 1);
-		zone4_dig(wall + 1);
-		zone4_dig(wall - LENGTH(*board));
-		zone4_dig(wall + LENGTH(*board));
-	}
+	long digging_power = board[player.y][player.x].class == OOZE ? 0 : 2;
+	if (digging_power >= wall->hp)
+		dig(wall);
 }
 
 static void player_move(int8_t y, int8_t x) {

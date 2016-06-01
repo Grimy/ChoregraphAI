@@ -137,7 +137,7 @@ typedef struct {
 	uint8_t beat_delay;
 	uint8_t radius;
 	bool flying: 1;
-	unsigned: 7;
+	unsigned dig: 7;
 	uint32_t priority;
 	char *glyph;
 	void (*act) (Monster*, long, long);

@@ -26,9 +26,11 @@ static void player_turn() {
 static void enemy_turn(Monster *m) {
 	long dy = player.y - m->y;
 	long dx = player.x - m->x;
-	m->aggro = m->aggro || can_see(m->y, m->x);
-	if (!m->aggro && dy * dy + dx * dx > CLASS(m).radius)
-		return;
+	if (!m->aggro) {
+		m->aggro = can_see(m->y, m->x);
+		if (dy * dy + dx * dx > CLASS(m).radius)
+			return;
+	}
 	if (m->delay) {
 		m->delay--;
 		return;
