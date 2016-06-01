@@ -77,10 +77,10 @@ static bool enemy_move(Monster *m, int8_t dy, int8_t dx) {
 // Unlike enemy_move, this ignores confusion, doesn’t change the beat delay,
 // and doesn’t cause digging.
 static void forced_move(Monster *m, int8_t dy, int8_t dx) {
-	Tile dest = board[m->y + dy][m->x + dx];
-	if (dest.monster == &player)
+	Tile *dest = &board[m->y + dy][m->x + dx];
+	if (dest->monster == &player)
 		enemy_attack(m);
-	else if (dest.class != WALL)
+	else if (!dest->monster && dest->class != WALL)
 		move(m, m->y + dy, m->x + dx);
 }
 
