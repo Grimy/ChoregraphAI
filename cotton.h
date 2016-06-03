@@ -3,6 +3,9 @@
 // Boolean type.
 typedef enum {false, true} bool;
 
+// A pair of cartesian coordinates.
+typedef int8_t Coords __attribute__((ext_vector_type(2)));
+
 // Human-friendly names for monster classes.
 // Numerical values were arbitrarily picked to make parsing dungeon XML easier.
 typedef enum __attribute__((__packed__)) {
@@ -104,11 +107,9 @@ typedef enum __attribute__((__packed__)) {
 // Honestly, “Entity” is way too generic, and “Character” sounds too much like “char*”.
 typedef struct {
 	MonsterClass class;
-	int8_t x;
-	int8_t y;
-	int8_t prev_x;
-	int8_t prev_y;
 	int8_t hp;
+	Coords pos;
+	Coords prev_pos;
 	unsigned delay: 4;
 	bool aggro: 1;
 	bool vertical: 1;
@@ -128,11 +129,10 @@ typedef struct {
 } Tile;
 
 typedef struct {
+	Coords pos;
+	Coords dir;
 	TrapClass class;
-	int8_t dx;
-	int8_t dy;
-	int8_t x;
-	int8_t y;
+	unsigned: 24;
 } Trap;
 
 typedef struct {
@@ -143,14 +143,14 @@ typedef struct {
 	unsigned dig: 7;
 	uint32_t priority;
 	char *glyph;
-	void (*act) (Monster*, long, long);
+	void (*act) (Monster*, Coords);
 } ClassInfos;
 
 static const ClassInfos class_infos[256];
 
 __extension__
 static Tile board[32][32] = {[0 ... 31] = {[0 ... 31] = {.class = WALL, .hp = 5}}};
-static Monster player = {.class = PLAYER, .hp = 1, .y = SPAWN_Y, .x = SPAWN_X};
+static Monster player = {.class = PLAYER, .hp = 1, .pos = {SPAWN_X, SPAWN_Y}};
 static Monster monsters[256];
 static Trap traps[256];
 static uint64_t monster_count = 0;

@@ -2,34 +2,34 @@
 
 #define LENGTH(array) ((long) (sizeof(array) / sizeof(*(array))))
 #define SIGN(x) (((x) > 0) - ((x) < 0))
+#define DIRECTION(pos) ((Coords) {SIGN((pos).x), SIGN((pos).y)})
 #define ABS(x) ((x) < 0 ? -(x) : (x))
 
-#define L1(y, x) (ABS(y) + ABS(x))
-#define L2(y, x) ((y) * (y) + (x) * (x))
+#define L1(pos) (ABS((pos).x) + ABS((pos).y))
+#define L2(pos) ((pos).x * (pos).x + (pos).y * (pos).y)
 
+#define TILE(pos) (board[(pos).y][(pos).x])
 #define IS_ENEMY(m) ((m) && (m) != &player)
-#define IS_OPAQUE(y, x) (board[y][x].class == WALL)
+#define IS_OPAQUE(pos) (TILE(pos).class == WALL)
 #define CLASS(m) (class_infos[(m)->class])
 
 // Moves the given monster to a specific position.
 // Keeps track of the monster’s previous position.
-static void move(Monster *m, int8_t y, int8_t x) {
-	board[m->y][m->x].monster = NULL;
-	m->prev_y = m->y;
-	m->prev_x = m->x;
-	m->y = y;
-	m->x = x;
-	board[m->y][m->x].monster = m;
+static void move(Monster *m, Coords dest) {
+	TILE(m->pos).monster = NULL;
+	m->prev_pos = m->pos;
+	m->pos = dest;
+	TILE(m->pos).monster = m;
 }
 
 // Tests whether the given monster can move in the given direction.
 // The code assumes that only spiders can be inside walls. This will need to
 // change before adding phasing enemies.
-static bool can_move(Monster *m, long dy, long dx) {
-	Tile dest = board[m->y + dy][m->x + dx];
+static bool can_move(Monster *m, Coords offset) {
+	Tile dest = TILE(m->pos + offset);
 	if (dest.monster)
 		return dest.monster == &player;
-	if (board[m->y][m->x].class == WALL)
+	if (TILE(m->pos).class == WALL)
 		return dest.class == WALL && !dest.torch;
 	return dest.class != WALL;
 }
@@ -56,11 +56,11 @@ static bool dig(Tile *wall, int digging_power, bool z4) {
 static void enemy_attack(Monster *attacker) {
 	if (attacker->class == CONF_MONKEY) {
 		attacker->hp = 0;
-		board[attacker->y][attacker->x].monster = NULL;
+		TILE(attacker->pos).monster = NULL;
 		player.confused = 4;
 	} else if (attacker->class == PIXIE) {
 		attacker->hp = 0;
-		board[attacker->y][attacker->x].monster = NULL;
+		TILE(attacker->pos).monster = NULL;
 	} else {
 		player.hp = 0;
 	}
@@ -68,13 +68,13 @@ static void enemy_attack(Monster *attacker) {
 
 // Performs a movement action on behalf of an enemy.
 // This includes attacking the player if they block the movement.
-static bool enemy_move(Monster *m, int8_t dy, int8_t dx) {
-	Tile *dest = &board[m->y + dy][m->x + dx];
+static bool enemy_move(Monster *m, Coords offset) {
+	Tile *dest = &TILE(m->pos + offset);
 	bool success = true;
 	if (dest->monster == &player)
 		enemy_attack(m);
-	else if ((success = can_move(m, dy, dx)))
-		move(m, m->y + dy, m->x + dx);
+	else if ((success = can_move(m, offset)))
+		move(m, m->pos + offset);
 	else if (dest->class == WALL)
 		success = dig(dest, CLASS(m).dig, false);
 	if (success)
@@ -85,35 +85,39 @@ static bool enemy_move(Monster *m, int8_t dy, int8_t dx) {
 // Moves something by force, as caused by bounce traps, wind mages and knockback.
 // Unlike enemy_move, this ignores confusion, doesn’t change the beat delay,
 // and doesn’t cause digging.
-static void forced_move(Monster *m, int8_t dy, int8_t dx) {
-	Tile *dest = &board[m->y + dy][m->x + dx];
+static void forced_move(Monster *m, Coords offset) {
+	Tile *dest = &TILE(m->pos + offset);
 	if (dest->monster == &player)
 		enemy_attack(m);
 	else if (!dest->monster && dest->class != WALL)
-		move(m, m->y + dy, m->x + dx);
+		move(m, m->pos + offset);
 }
 
 // Checks whether the straight line from the player to the given coordinates
 // is free from obstacles.
 // This uses fractional coordinates: the center of tile (y, x) is at (y + 0.5, x + 0.5).
-static bool los(double y, double x) {
-	double dy = player.y - y;
-	double dx = player.x - x;
-	int cy = (int) (y + .5);
-	int cx = (int) (x + .5);
-	if ((player.x > x || x > cx) &&
-		dy * (cy - y) > 0 &&
-		IS_OPAQUE(cy, cx))
+static bool los(double x, double y) {
+	double dx = player.pos.x - x;
+	double dy = player.pos.y - y;
+	Coords c = {(int8_t) (x + .5), (int8_t) (y + .5)};
+	if ((player.pos.x > x || x > c.x) &&
+		dy * (c.y - y) > 0 &&
+		IS_OPAQUE(c))
 		return false;
-	while (cy != player.y || cx != player.x) {
-		double err_y = ABS((cx - x) * dy - (cy + SIGN(dy) - y) * dx);
-		double err_x = ABS((cx + SIGN(dx) - x) * dy - (cy - y) * dx);
-		int old_cx = cx;
-		if (err_x < err_y + .001 && IS_OPAQUE(cy, cx += SIGN(dx)))
-			return false;
-		if (err_y < err_x + .001)
-			if (IS_OPAQUE(cy += SIGN(dy), cx) || IS_OPAQUE(cy, old_cx))
+	while (c.x != player.pos.x || c.y != player.pos.y) {
+		double err_x = ABS((c.x + SIGN(dx) - x) * dy - (c.y - y) * dx);
+		double err_y = ABS((c.x - x) * dy - (c.y + SIGN(dy) - y) * dx);
+		int8_t old_cx = c.x;
+		if (err_x < err_y + .001) {
+			c.x += SIGN(dx);
+			if (IS_OPAQUE(c))
 				return false;
+		}
+		if (err_y < err_x + .001) {
+			c.y += SIGN(dy);
+			if (IS_OPAQUE(c) || IS_OPAQUE(((Coords) {old_cx, c.y})))
+				return false;
+		}
 	}
 	return true;
 }
@@ -121,14 +125,15 @@ static bool los(double y, double x) {
 // Tests whether the player can see the tile at the given coordinates.
 // This is true if there’s an unblocked line from the center of the player’s
 // tile to any corner or the center of the destination tile.
-static bool can_see(long y, long x) {
-	if (y < player.y - 5 || y > player.y + 5 || x < player.x - 10 || x > player.x + 9)
+static bool can_see(long x, long y) {
+	Coords pos = player.pos;
+	if (x < pos.x - 10 || x > pos.x + 9 || y < pos.y - 5 || y > pos.y + 5)
 		return false;
-	return los(y - .55, x - .55)
-		|| los(y - .55, x + .55)
-		|| los(y + .55, x - .55)
-		|| los(y + .55, x + .55)
-		|| los(y, x);
+	return los(x - .55, y - .55)
+		|| los(x + .55, y - .55)
+		|| los(x - .55, y + .55)
+		|| los(x + .55, y + .55)
+		|| los(x, y);
 }
 
 // Compares the priorities of two monsters.
@@ -142,13 +147,13 @@ static int compare_priorities(const void *a, const void *b) {
 // Knocks an enemy away from the player.
 // TODO: set the knockback direction correctly for diagonal attacks.
 static void knockback(Monster *m) {
-	forced_move(m, SIGN(m->y - player.y), SIGN(m->x - player.x));
+	forced_move(m, (Coords) {SIGN(m->pos.x - player.pos.x), SIGN(m->pos.y - player.pos.y)});
 	m->delay = 1;
 }
 
 // Deals damage to the given monster.
 static void damage(Monster *m, long dmg, bool bomblike) {
-	Tile *tile = &board[m->y][m->x];
+	Tile *tile = &TILE(m->pos);
 	if (!bomblike && (m->class == BLADENOVICE || m->class == BLADEMASTER) && m->state < 2) {
 		knockback(m);
 		m->state = 1;
@@ -159,7 +164,7 @@ static void damage(Monster *m, long dmg, bool bomblike) {
 		return;
 	tile->monster = NULL;
 	if (!bomblike && (m->class == WARLOCK_1 || m->class == WARLOCK_2))
-		move(&player, m->y, m->x);
+		move(&player, m->pos);
 	else if (m->class == ICE_SLIME || m->class == YETI)
 		tile->class = tile->class == FIRE ? WATER : ICE;
 	else if (m->class == FIRE_SLIME || m->class == HELLHOUND)
@@ -167,25 +172,24 @@ static void damage(Monster *m, long dmg, bool bomblike) {
 }
 
 static void player_attack(Monster *m) {
-	if (board[player.y][player.x].class == OOZE)
+	if (TILE(player.pos).class == OOZE)
 		return;
 	if (m->class == OOZE_GOLEM)
-		board[player.y][player.x].class = OOZE;
+		TILE(player.pos).class = OOZE;
 	damage(m, 1, false);
 	if (m->hp > 0 && CLASS(m).beat_delay == 0)
 		knockback(m);
 }
 
-static void player_move(int8_t dy, int8_t dx) {
+static void player_move(Coords offset) {
 	if (player.confused)
-		dy = -dy, dx = -dx;
-	Tile *dest = &board[player.y + dy][player.x + dx];
-	player.prev_y = player.y;
-	player.prev_x = player.x;
+		offset = -offset;
+	Tile *dest = &TILE(player.pos + offset);
+	player.prev_pos = player.pos;
 	if (dest->class == WALL)
-		dig(dest, board[player.y][player.x].class == OOZE ? 0 : 2, false);
+		dig(dest, TILE(player.pos).class == OOZE ? 0 : 2, false);
 	else if (IS_ENEMY(dest->monster))
 		player_attack(dest->monster);
 	else
-		move(&player, player.y + dy, player.x + dx);
+		move(&player, player.pos + offset);
 }

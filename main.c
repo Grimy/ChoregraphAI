@@ -16,37 +16,36 @@
 
 static void player_turn() {
 	Tile *fire_tile = NULL;
-	if (board[player.y][player.x].class == FIRE)
-		fire_tile = &board[player.y][player.x];
+	if (TILE(player.pos).class == FIRE)
+		fire_tile = &TILE(player.pos);
 	display_prompt();
 	if (player.confused)
 		player.confused--;
-	if (&board[player.y][player.x] == fire_tile)
+	if (&TILE(player.pos) == fire_tile)
 		player.hp = 0;
 }
 
 static void enemy_turn(Monster *m) {
-	long dy = player.y - m->y;
-	long dx = player.x - m->x;
+	Coords d = player.pos - m->pos;
 	if (!m->aggro) {
-		m->aggro = can_see(m->y, m->x);
-		if (L2(dy, dx) > CLASS(m).radius)
+		m->aggro = can_see(m->pos.x, m->pos.y);
+		if (L2(d) > CLASS(m).radius)
 			return;
 	}
 	if (m->delay) {
 		m->delay--;
 		return;
 	}
-	CLASS(m).act(m, dy, dx);
+	CLASS(m).act(m, d);
 }
 
 static void trap_turn(Trap *this) {
-	Monster *target = board[this->y][this->x].monster;
+	Monster *target = TILE(this->pos).monster;
 	if (target == NULL || CLASS(target).flying)
 		return;
 	switch (this->class) {
 		case OMNIBOUNCE: break;
-		case BOUNCE: forced_move(target, this->dy, this->dx); break;
+		case BOUNCE: forced_move(target, this->dir); break;
 		case SPIKE: damage(target, 4, true); break;
 		case TRAPDOOR: damage(target, 4, true); break;
 		case CONFUSE: target->confused = 9; break;
@@ -63,10 +62,10 @@ static void trap_turn(Trap *this) {
 // Enemies act in decreasing priority order. Traps have an arbitrary order.
 static void do_beat(void) {
 	player_turn();
-	for (Monster *m = monsters; m->y; ++m)
+	for (Monster *m = monsters; m->pos.x; ++m)
 		if (m->hp > 0)
 			enemy_turn(m);
-	for (Trap *t = traps; t->y; ++t)
+	for (Trap *t = traps; t->pos.x; ++t)
 		trap_turn(t);
 }
 
@@ -76,8 +75,8 @@ int main(int argc, char **argv) {
 		exit(argc);
 	xml_parse(argv[1]);
 	qsort(monsters, monster_count, sizeof(*monsters), compare_priorities);
-	for (Monster *m = monsters; m->x; ++m)
-		board[m->y][m->x].monster = m;
+	for (Monster *m = monsters; m->pos.x; ++m)
+		TILE(m->pos).monster = m;
 	system("stty -echo -icanon eol \1");
 	while (player.hp)
 		do_beat();

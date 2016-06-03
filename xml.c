@@ -20,20 +20,20 @@ static void xml_process_node(xmlTextReaderPtr xml) {
 	const char *name = (const char*) xmlTextReaderConstName(xml);
 	uint8_t type = (uint8_t) xml_attr(xml, "type");
 	int subtype = xml_attr(xml, "subtype");
-	int8_t y = (int8_t) xml_attr(xml, "y") + SPAWN_Y;
-	int8_t x = (int8_t) xml_attr(xml, "x") + SPAWN_X;
+	Coords pos = {(int8_t) xml_attr(xml, "x") + SPAWN_X, (int8_t) xml_attr(xml, "y") + SPAWN_Y};
+	static const Coords trap_dirs[] = {
+		{1, 0}, {-1, 0}, {0, -1}, {0, 1}, {1, 1}, {-1, 1}, {1, -1}, {-1, -1}
+	};
 
 	if (!strcmp(name, "trap"))
 		traps[trap_count++] = (Trap) {
 			.class = subtype == 8 ? 0 : type,
-			.y = y,
-			.x = x,
-			.dy = (int8_t[]) {0, 0, 1, -1, 1, 1, -1, -1} [subtype & 7],
-			.dx = (int8_t[]) {1, -1, 0, 0, 1, -1, 1, -1} [subtype & 7],
+			.pos = pos,
+			.dir = trap_dirs[subtype & 7],
 		};
 
 	else if (!strcmp(name, "tile"))
-		board[y][x] = (Tile) {
+		TILE(pos) = (Tile) {
 			.class = type >= 100 ? WALL : type < 3 ? FLOOR : type,
 			.hp = (int8_t[]) {[100] = 1, 1, 5, 0, 4, 4, -1, 2, 3, 5, 4, 0} [type],
 			.torch = (int8_t) xml_attr(xml, "torch"),
@@ -43,8 +43,7 @@ static void xml_process_node(xmlTextReaderPtr xml) {
 	else if (!strcmp(name, "enemy"))
 		monsters[monster_count++] = (Monster) {
 			.class = type,
-			.y = y,
-			.x = x,
+			.pos = pos,
 		    .hp = class_infos[type].max_hp,
 		};
 }
