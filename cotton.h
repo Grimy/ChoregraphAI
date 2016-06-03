@@ -57,6 +57,7 @@ typedef enum __attribute__((__packed__)) {
 	WARLOCK_1, WARLOCK_2,
 	MUMMY,
 	GARGOYLE_1, GARGOYLE_2, GARGOYLE_3, GARGOYLE_4, GARGOYLE_5, GARGOYLE_6,
+	FREE_SPIDER,
 
 	SHOPKEEPER = 88,
 

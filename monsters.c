@@ -75,7 +75,7 @@ static void bat(Monster *this, __attribute__((unused)) long dy, __attribute__((u
 
 // Attack the player if possible, otherwise move randomly.
 static void black_bat(Monster *this, long dy, long dx) {
-	if (ABS(dy) + ABS(dx) == 1)
+	if (L1(dy, dx) == 1)
 		enemy_move(this, (int8_t) dy, (int8_t) dx);
 	else
 		bat(this, dy, dx);
@@ -98,18 +98,8 @@ static void parry(Monster *this, long dy, long dx) {
 	}
 }
 
-// Move cardinally while inside walls, diagonally otherwise.
-static void spider(Monster *this, long dy, long dx) {
-	if (board[this->y][this->x].class == WALL) {
-		basic_seek(this, dy, dx);
-	} else {
-		diagonal_seek(this, dy, dx);
-		this->delay = 0;
-	}
-}
-
 static void lich(Monster *this, long dy, long dx) {
-	if (dy*dy + dx*dx == 4 && !player.confused) {
+	if (L2(dy, dx) == 4 && !player.confused) {
 		player.confused = 4;
 		this->delay = 1;
 	} else {
@@ -118,7 +108,7 @@ static void lich(Monster *this, long dy, long dx) {
 }
 
 static void windmage(Monster *this, long dy, long dx) {
-	if (dy*dy + dx*dx == 4 && can_move(this, SIGN(dy), SIGN(dx))) {
+	if (L2(dy, dx) == 4 && can_move(this, SIGN(dy), SIGN(dx))) {
 		forced_move(&player, -SIGN(dy), -SIGN(dx));
 		this->delay = 1;
 	} else {
@@ -127,9 +117,44 @@ static void windmage(Monster *this, long dy, long dx) {
 }
 
 static void mushroom(Monster *this, long dy, long dx) {
-	if (dy*dy + dx*dx < 4)
+	if (L2(dy, dx) < 4)
 		enemy_attack(this);
 	this->delay = CLASS(this).beat_delay;
+}
+
+typedef struct { int8_t y; int8_t x; } Distance;
+
+static const Distance harpy_moves[] = {
+	{0, -1}, {-1, 0}, {1, 0}, {0, 1},
+	{-1, -1}, {1, -1}, {-1, 1}, {1, 1},
+	{0, -2}, {-2, 0}, {2, 0}, {0, 2},
+	{-1, -2}, {1, -2}, {-2, -1}, {2, -1}, {-2, 1}, {2, 1}, {-1, 2}, {1, 2},
+	{0, -3}, {-3, 0}, {3, 0}, {0, 3},
+};
+
+static void harpy(Monster *this, long dy, long dx) {
+	if (L1(dy, dx) == 1) {
+		enemy_move(this, (int8_t) dy, (int8_t) dx);
+		return;
+	}
+	const Distance *best = &(Distance) {0, 0};
+	long min = L1(dy, dx);
+	for (const Distance *d = harpy_moves; d < harpy_moves + LENGTH(harpy_moves); ++d) {
+		if ((L2(d->y, d->x) == 9 || L2(d->y, d->x) == 4) && (
+				IS_OPAQUE(this->y +   SIGN(d->y), this->x +   SIGN(d->x)) ||
+				IS_OPAQUE(this->y + 2*SIGN(d->y), this->x + 2*SIGN(d->x))))
+			continue;
+		if (L2(d->y, d->x) == 5 &&
+				IS_OPAQUE(this->y + SIGN(d->y), this->x + SIGN(d->x)) &&
+				IS_OPAQUE(this->y + d->y / 2, this->x + d->x / 2))
+			continue;
+		long score = L1(dy - d->y, dx - d->x);
+		if (score && score < min && can_move(this, d->y, d->x)) {
+			min = score;
+			best = d;
+		}
+	}
+	enemy_move(this, best->y, best->x);
 }
 
 static void blue_slime(Monster *this, __attribute__((unused)) long dy, __attribute__((unused)) long dx) {
@@ -193,7 +218,6 @@ static const ClassInfos class_infos[256] = {
 
 	[FIRE_SLIME]  = { 1, 0, 225, false, 2, 10301101, RED "P",    diagonal_slime },
 	[ICE_SLIME]   = { 1, 0, 225, false, 2, 10301101, CYAN "P",   diagonal_slime },
-	[TEST]        = { 1, 0, 225, false, 2, 10301101, CYAN "P",   diagonal_slime },
 	[RIDER_1]     = { 1, 0,   9,  true, 0, 10201102, "&",        basic_seek },
 	[RIDER_2]     = { 2, 0,   9,  true, 0, 10402104, YELLOW "&", basic_seek },
 	[RIDER_3]     = { 3, 0,   9,  true, 0, 10603106, BLACK "&",  basic_seek },
@@ -221,7 +245,8 @@ static const ClassInfos class_infos[256] = {
 	[BLADEMASTER] = { 2, 1,   9, false, 0, 99999996, "b",        parry },
 	[GHOUL]       = { 1, 0,   9,  true, 0, 10301102, "W",        moore_seek },
 	[OOZE_GOLEM]  = { 5, 3,  49,  true, 2, 20510407, GREEN "'",  basic_seek },
-	[HARPY]       = { 1, 1,   9,  true, 0, 10301203, GREEN "h",  basic_seek },
+	[HARPY]       = { 1, 1,   9,  true, 0, 10301203, GREEN "h",  harpy },
+	[TEST]        = { 1, 1,   9,  true, 0, 10301203, GREEN "h",  harpy },
 	[LICH_1]      = { 1, 1,   9, false, 0, 10404202, "L",        lich },
 	[LICH_2]      = { 2, 1,   9, false, 0, 10404302, PURPLE "L", lich },
 	[LICH_3]      = { 3, 1,   9, false, 0, 10404402, BLACK "L",  lich },
@@ -231,7 +256,8 @@ static const ClassInfos class_infos[256] = {
 	[SARCO_1]     = { 1, 9,   9, false, 0, 10101805, "|",        todo },
 	[SARCO_2]     = { 2, 9,   9, false, 0, 10102910, YELLOW "|", todo },
 	[SARCO_3]     = { 3, 9,   9, false, 0, 10103915, BLACK "|",  todo },
-	[SPIDER]      = { 1, 1,   9, false, 0, 10401202, YELLOW "s", spider },
+	[SPIDER]      = { 1, 1,   9, false, 0, 10401202, YELLOW "s", basic_seek },
+	[FREE_SPIDER] = { 1, 0,   9, false, 0, 10401202, YELLOW "s", diagonal_seek },
 	[WARLOCK_1]   = { 1, 1,   9, false, 0, 10401202, "w",        basic_seek },
 	[WARLOCK_2]   = { 2, 1,   9, false, 0, 10401302, YELLOW "w", basic_seek },
 	[MUMMY]       = { 1, 1,   9, false, 0, 30201103, "M",        moore_seek },

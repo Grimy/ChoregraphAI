@@ -1,18 +1,10 @@
 TO TEST:
-* Z4 digging with different shovel strengths
 * Trap-to-trap priority
-* Activated-unaggroed goblin diggers
-* Aggroed-unactivated enemy delay
-* Is trampling bomb-like?
-* Delay before player re-confusion?
-* Enemies digging while confused
-* Confused barrels?
-* Do moles/crates/SK ghosts/… prevents windmages from casting?
-* Where is a lich/windmage’s prevpos after casting?
-* Enemy delay after digging
 
 TO CODE:
-* Harpies
+* Fix Z4 digging on base shovel
+* Fix player reconfused on same beat
+* Fix enemies digging while confused
 * Bombs
 * Consider renaming most AI functions
 
@@ -20,17 +12,19 @@ REPORT:
 * Different aggression mechanics in the level editor
 
 Harpy priority:
-...k.
-.!igd
-.heb.
-jfa..
-.c..@
+   N
+  IFJ
+ HDBDK
+MEA.CGO
+ IDBDL
+  JFK
+   N
 
 Harpies:
 1. move to a square with line of sight
 2. move as close as possible to the player (L1 distance)
-3. move as close as possible to the player (L2 distance)
-4. ← > ↑ > ↓ > →
+3. move as little as possible (L2 distance)
+4. bomb order
 
 metal doors try to close themselves before and after each player turn, except
 on the first two turns they are open. This explains both the weird priority

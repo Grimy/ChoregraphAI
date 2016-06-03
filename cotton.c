@@ -2,7 +2,10 @@
 
 #define LENGTH(array) ((long) (sizeof(array) / sizeof(*(array))))
 #define SIGN(x) (((x) > 0) - ((x) < 0))
-#define ABS(x)  ((x) < 0 ? -(x) : (x))
+#define ABS(x) ((x) < 0 ? -(x) : (x))
+
+#define L1(y, x) (ABS(y) + ABS(x))
+#define L2(y, x) ((y) * (y) + (x) * (x))
 
 #define IS_ENEMY(m) ((m) && (m) != &player)
 #define IS_OPAQUE(y, x) (board[y][x].class == WALL)
@@ -24,28 +27,38 @@ static void move(Monster *m, int8_t y, int8_t x) {
 // change before adding phasing enemies.
 static bool can_move(Monster *m, long dy, long dx) {
 	Tile dest = board[m->y + dy][m->x + dx];
-	if (IS_ENEMY(dest.monster) || dest.torch)
+	if (dest.monster)
+		return dest.monster == &player;
+	if (board[m->y][m->x].class == WALL)
+		return dest.class == WALL && !dest.torch;
+	return dest.class != WALL;
+}
+
+static bool dig(Tile *wall, int digging_power, bool z4) {
+	if (wall->hp > digging_power)
 		return false;
-	return (board[m->y][m->x].class == WALL) == (dest.class == WALL);
-}
-
-static void zone4_dig(Tile *tile) {
-	if (tile->hp == 1 || tile->hp == 2)
-		tile->class = FLOOR;
-}
-
-static void dig(Tile *wall) {
+	if (z4 && (wall->class != WALL || wall->hp == 0 || wall->hp > 2))
+		return false;
 	wall->class = FLOOR;
-	if (wall->zone == 4 && (wall->hp == 1 || wall->hp == 2)) {
-		zone4_dig(wall - 1);
-		zone4_dig(wall + 1);
-		zone4_dig(wall - LENGTH(*board));
-		zone4_dig(wall + LENGTH(*board));
+	if (wall->monster && wall->monster->class == SPIDER) {
+		wall->monster->class = FREE_SPIDER;
+		wall->monster->delay = 1;
 	}
+	if (!z4 && wall->zone == 4 && (wall->hp == 1 || wall->hp == 2)) {
+		dig(wall - 1, digging_power, true);
+		dig(wall + 1, digging_power, true);
+		dig(wall - LENGTH(*board), digging_power, true);
+		dig(wall + LENGTH(*board), digging_power, true);
+	}
+	return true;
 }
 
 static void enemy_attack(Monster *attacker) {
-	if (attacker->class == CONF_MONKEY || attacker->class == PIXIE) {
+	if (attacker->class == CONF_MONKEY) {
+		attacker->hp = 0;
+		board[attacker->y][attacker->x].monster = NULL;
+		player.confused = 4;
+	} else if (attacker->class == PIXIE) {
 		attacker->hp = 0;
 		board[attacker->y][attacker->x].monster = NULL;
 	} else {
@@ -60,14 +73,10 @@ static bool enemy_move(Monster *m, int8_t dy, int8_t dx) {
 	bool success = true;
 	if (dest->monster == &player)
 		enemy_attack(m);
-	else if (dest->monster)
-		success = false;
-	else if (dest->class != WALL)
+	else if ((success = can_move(m, dy, dx)))
 		move(m, m->y + dy, m->x + dx);
-	else if (dest->hp <= CLASS(m).dig)
-		dig(dest);
-	else
-		success = false;
+	else if (dest->class == WALL)
+		success = dig(dest, CLASS(m).dig, false);
 	if (success)
 		m->delay = CLASS(m).beat_delay;
 	return success;
@@ -139,6 +148,7 @@ static void knockback(Monster *m) {
 
 // Deals damage to the given monster.
 static void damage(Monster *m, long dmg, bool bomblike) {
+	Tile *tile = &board[m->y][m->x];
 	if (!bomblike && (m->class == BLADENOVICE || m->class == BLADEMASTER) && m->state < 2) {
 		knockback(m);
 		m->state = 1;
@@ -147,9 +157,13 @@ static void damage(Monster *m, long dmg, bool bomblike) {
 	m->hp -= dmg;
 	if (m->hp > 0)
 		return;
-	board[m->y][m->x].monster = NULL;
+	tile->monster = NULL;
 	if (!bomblike && (m->class == WARLOCK_1 || m->class == WARLOCK_2))
 		move(&player, m->y, m->x);
+	else if (m->class == ICE_SLIME || m->class == YETI)
+		tile->class = tile->class == FIRE ? WATER : ICE;
+	else if (m->class == FIRE_SLIME || m->class == HELLHOUND)
+		tile->class = tile->class == ICE ? WATER : tile->class == WATER ? FLOOR : FIRE;
 }
 
 static void player_attack(Monster *m) {
@@ -162,12 +176,6 @@ static void player_attack(Monster *m) {
 		knockback(m);
 }
 
-static void player_dig(Tile *wall) {
-	long digging_power = board[player.y][player.x].class == OOZE ? 0 : 2;
-	if (digging_power >= wall->hp)
-		dig(wall);
-}
-
 static void player_move(int8_t dy, int8_t dx) {
 	if (player.confused)
 		dy = -dy, dx = -dx;
@@ -175,7 +183,7 @@ static void player_move(int8_t dy, int8_t dx) {
 	player.prev_y = player.y;
 	player.prev_x = player.x;
 	if (dest->class == WALL)
-		player_dig(dest);
+		dig(dest, board[player.y][player.x].class == OOZE ? 0 : 2, false);
 	else if (IS_ENEMY(dest->monster))
 		player_attack(dest->monster);
 	else
