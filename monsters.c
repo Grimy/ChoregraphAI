@@ -146,8 +146,9 @@ static void harpy(Monster *this, Coords d) {
 				IS_OPAQUE(this->pos + 2*DIRECTION(move))))
 			continue;
 		if (L2(move) == 5 &&
-				IS_OPAQUE(this->pos + DIRECTION(move)) &&
-				IS_OPAQUE(this->pos + move / 2))
+				IS_OPAQUE(this->pos + move / 2) && (
+				IS_OPAQUE(this->pos + DIRECTION(move)) ||
+				IS_OPAQUE(this->pos + DIRECTION(move) - move / 2)))
 			continue;
 		long score = L1(d - move);
 		if (score && score < min && can_move(this, move)) {
