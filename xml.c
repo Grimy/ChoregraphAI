@@ -7,23 +7,23 @@
 
 // Returns the numeric value of a named attribute of the current node.
 // If the attribute is absent, it defaults to 0.
-static int xml_attr(xmlTextReaderPtr xml, char* attr) {
+static int8_t xml_attr(xmlTextReaderPtr xml, char* attr) {
 	char* value = (char*) xmlTextReaderGetAttribute(xml, (xmlChar*) (attr));
 	int result = value ? atoi(value) : 0;
 	free(value);
-	return result;
+	return (int8_t) result;
 }
 
 // Converts a single XML node into an appropriate object (Trap, Tile or Monster).
 static void xml_process_node(xmlTextReaderPtr xml) {
+	static const Coords trap_dirs[] = {
+		{1, 0}, {-1, 0}, {0, -1}, {0, 1}, {1, 1}, {-1, 1}, {1, -1}, {-1, -1}
+	};
 	static uint64_t trap_count = 0;
 	const char *name = (const char*) xmlTextReaderConstName(xml);
 	uint8_t type = (uint8_t) xml_attr(xml, "type");
 	int subtype = xml_attr(xml, "subtype");
-	Coords pos = {(int8_t) xml_attr(xml, "x") + SPAWN_X, (int8_t) xml_attr(xml, "y") + SPAWN_Y};
-	static const Coords trap_dirs[] = {
-		{1, 0}, {-1, 0}, {0, -1}, {0, 1}, {1, 1}, {-1, 1}, {1, -1}, {-1, -1}
-	};
+	Coords pos = (Coords) {xml_attr(xml, "x"), xml_attr(xml, "y")} + spawn;
 
 	if (!strcmp(name, "trap"))
 		traps[trap_count++] = (Trap) {
@@ -36,8 +36,8 @@ static void xml_process_node(xmlTextReaderPtr xml) {
 		TILE(pos) = (Tile) {
 			.class = type >= 100 ? WALL : type < 3 ? FLOOR : type,
 			.hp = (int8_t[]) {[100] = 1, 1, 5, 0, 4, 4, -1, 2, 3, 5, 4, 0} [type],
-			.torch = (int8_t) xml_attr(xml, "torch"),
-			.zone = (int8_t) xml_attr(xml, "zone"),
+			.torch = xml_attr(xml, "torch"),
+			.zone = xml_attr(xml, "zone"),
 		};
 
 	else if (!strcmp(name, "enemy"))
@@ -60,5 +60,5 @@ static void xml_parse(char *file) {
 	if (xmlTextReaderRead(xml) < 0)
 		exit(1);
 	xmlFreeTextReader(xml);
-	board[SPAWN_Y][SPAWN_X].monster = &player;
+	move(&player, spawn);
 }

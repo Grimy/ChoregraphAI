@@ -34,7 +34,7 @@ static void basic_seek(Monster *this, Coords d) {
 		ABS(d.y) == 1 || ABS(d.x) == 1 ? this->vertical :
 
 		// #6: if prevpos aligns with the player’s prevpos, do something weird
-		this->prev_pos.y == player.prev_pos.y ? d.x > 0 && player.pos.x > SPAWN_X :
+		this->prev_pos.y == player.prev_pos.y ? d.x > 0 && player.pos.x > spawn.x :
 		this->prev_pos.x == player.prev_pos.x ? ABS(d.y) != 2 :
 
 		// #7: keep moving along the same axis
@@ -46,13 +46,13 @@ static void basic_seek(Monster *this, Coords d) {
 // Move diagonally toward the player. The tiebreaker is *reverse* bomb-order.
 static void diagonal_seek(Monster *this, Coords d) {
 	if (d.y == 0)
-		MOVE(1, SIGN(d.x)) || MOVE(-1, SIGN(d.x));
+		MOVE(SIGN(d.x), 1) || MOVE(SIGN(d.x), -1);
 	else if (d.x == 0)
-		MOVE(SIGN(d.y), 1) || MOVE(SIGN(d.y), -1);
+		MOVE(1, SIGN(d.y)) || MOVE(-1, SIGN(d.y));
 	else
-		MOVE(SIGN(d.y), SIGN(d.x)) ||
-		MOVE(SIGN(d.y) * -SIGN(d.x), 1) ||
-		MOVE(SIGN(d.y) * SIGN(d.x), -1);
+		MOVE(SIGN(d.x), SIGN(d.y)) ||
+		MOVE(1,  SIGN(d.y) * -SIGN(d.x)) ||
+		MOVE(-1, SIGN(d.y) * SIGN(d.x));
 }
 
 // Move toward the player either cardinally or diagonally.

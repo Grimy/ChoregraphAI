@@ -150,7 +150,8 @@ static const ClassInfos class_infos[256];
 
 __extension__
 static Tile board[32][32] = {[0 ... 31] = {[0 ... 31] = {.class = WALL, .hp = 5}}};
-static Monster player = {.class = PLAYER, .hp = 1, .pos = {SPAWN_X, SPAWN_Y}};
+static const Coords spawn = {24, 9};
+static Monster player = {.class = PLAYER, .hp = 1};
 static Monster monsters[256];
 static Trap traps[256];
 static uint64_t monster_count = 0;

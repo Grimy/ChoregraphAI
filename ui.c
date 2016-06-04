@@ -13,40 +13,40 @@
 #define PURPLE "\033[95m"
 
 // For display purposes, doors count as walls, but level edges don’t
-#define IS_WALL(x, y) (board[y][x].class == WALL && board[y][x].hp < 5)
+#define IS_WALL(tile) ((tile)->class == WALL && (tile)->hp < 5)
 
 static const int floor_colors[] = {[WATER] = 4, [TAR] = 7, [FIRE] = 1, [ICE] = 4, [OOZE] = 2};
 
 // Picks an appropriate box-drawing glyph for a wall by looking at adjacent tiles.
 // For example, when tiles to the bottom and right are walls too, use '┌'.
-static void display_wall(long x, long y) {
-	if (board[y][x].hp == 0) {
+static void display_wall(Tile *wall) {
+	if (wall->hp == 0) {
 		putchar('+');
 		return;
 	}
-	if (board[y][x].hp == 3)
+	if (wall->hp == 3)
 		printf(BLACK);
 	long glyph =
-		IS_WALL(x, y - 1) << 3 |
-		IS_WALL(x, y + 1) << 2 |
-		IS_WALL(x - 1, y) << 1 |
-		IS_WALL(x + 1, y);
+		IS_WALL(wall - LENGTH(*board)) << 3 |
+		IS_WALL(wall + LENGTH(*board)) << 2 |
+		IS_WALL(wall - 1) << 1 |
+		IS_WALL(wall + 1);
 	printf("%3.3s", &"╳───│┌┐┬│└┘┴│├┤┼"[3*glyph]);
 }
 
 // Pretty-prints the tile at the given coordinates.
 static void display_tile(long x, long y) {
-	Tile e = board[y][x];
-	if (e.class > FLOOR)
-		printf("\033[4%dm", floor_colors[e.class]);
-	if (e.monster)
-		printf("%s", CLASS(e.monster).glyph);
-	else if (e.class == WALL && e.hp == 5)
+	Tile *tile = &board[y][x];
+	if (tile->class > FLOOR)
+		printf("\033[4%dm", floor_colors[tile->class]);
+	if (tile->monster)
+		printf("%s", CLASS(tile->monster).glyph);
+	else if (tile->class == WALL && tile->hp == 5)
 		putchar(' ');
 	else if (!can_see(x, y))
 		putchar(' ');
-	else if (e.class == WALL)
-		display_wall(x, y);
+	else if (tile->class == WALL)
+		display_wall(tile);
 	else
 		putchar('.');
 	printf("\033[m");

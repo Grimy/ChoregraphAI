@@ -1,8 +1,5 @@
 // main.c - initialization, main game loop
 
-#define SPAWN_Y 9
-#define SPAWN_X 24
-
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
