@@ -176,8 +176,32 @@ static void diagonal_slime(Monster *this, __attribute__((unused)) Coords d) {
 	this->state += ok;
 }
 
+static void bomb_tile(Tile *tile) {
+	if (tile->monster)
+		damage(tile->monster, 4, true);
+	if (tile->class == WALL || tile->class == WATER)
+		tile->class = FLOOR;
+	else if (tile->class == ICE)
+		tile->class = WATER;
+}
+
+static void bomb(Monster *this, __attribute__((unused)) Coords d) {
+	for (int x = this->pos.x - 1; x <= this->pos.x + 1; ++x)
+		for (int y = this->pos.y - 1; y <= this->pos.y + 1; ++y)
+			bomb_tile(&board[y][x]);
+	monster_remove(this);
+}
+
+static void mimic(Monster *this, Coords d) {
+	if (this->state) {
+		this->state = 2;
+		basic_seek(this, d);
+	} else if (L1(d) == 1) {
+		this->state = 1;
+	}
+}
+
 static void todo() {}
-static void mimic() {/*TODO*/}
 static void nop() {}
 
 static const ClassInfos class_infos[256] = {
@@ -214,6 +238,7 @@ static const ClassInfos class_infos[256] = {
 	[MOLE]        = { 1, 0,   9,  true, 0,  1020113, "r",        todo },
 	[WIGHT]       = { 1, 0,   9,  true, 0, 10201103, GREEN "W",  basic_seek },
 	[WALL_MIMIC]  = { 1, 0,   9, false, 0, 10201103, GREEN "m",  mimic },
+	[TEST]        = { 1, 0,   9, false, 0, 10201103, GREEN "m",  mimic },
 	[LIGHTSHROOM] = { 1, 9,   9, false, 0,        0, "%",        nop },
 	[BOMBSHROOM]  = { 1, 9,   9, false, 0,      ~1u, "%",        todo },
 
@@ -238,7 +263,7 @@ static const ClassInfos class_infos[256] = {
 	[FIRE_POT]    = { 1, 9,   9, false, 0,        0, RED "(",    nop },
 	[ICE_POT]     = { 1, 0,   9, false, 0,        0, CYAN "(",   nop },
 
-	[BOMBER]      = { 1, 1,   9, false, 0, 99999998, RED "G",    diagonal_seek },
+	[BOMBER]      = { 1, 1,   0, false, 0, 99999998, RED "G",    diagonal_seek },
 	[DIGGER]      = { 1, 1,   9, false, 2, 10101201, "G",        basic_seek },
 	[BLACK_BAT]   = { 1, 0,   9,  true, 0, 10401120, BLACK "B",  black_bat },
 	[ARMADILDO]   = { 3, 0,   9, false, 2, 10303104, ORANGE "q", todo },
@@ -246,8 +271,7 @@ static const ClassInfos class_infos[256] = {
 	[BLADEMASTER] = { 2, 1,   9, false, 0, 99999996, "b",        parry },
 	[GHOUL]       = { 1, 0,   9,  true, 0, 10301102, "W",        moore_seek },
 	[OOZE_GOLEM]  = { 5, 3,  49,  true, 2, 20510407, GREEN "'",  basic_seek },
-	[HARPY]       = { 1, 1,   9,  true, 0, 10301203, GREEN "h",  harpy },
-	[TEST]        = { 1, 1,   9,  true, 0, 10301203, GREEN "h",  harpy },
+	[HARPY]       = { 1, 1,   0,  true, 0, 10301203, GREEN "h",  harpy },
 	[LICH_1]      = { 1, 1,   9, false, 0, 10404202, "L",        lich },
 	[LICH_2]      = { 2, 1,   9, false, 0, 10404302, PURPLE "L", lich },
 	[LICH_3]      = { 3, 1,   9, false, 0, 10404402, BLACK "L",  lich },
@@ -284,5 +308,6 @@ static const ClassInfos class_infos[256] = {
 	[MOMMY]       = { 6, 3,  49,  true, 0, 30405215, BLACK "@",  basic_seek },
 	[OGRE]        = { 5, 3,  49,  true, 2, 30505115, GREEN "O",  basic_seek },
 
-	[PLAYER]      = { 0, 0,   9, false, 0,      ~0u, "@",        NULL },
+	[PLAYER]      = { 1, 0,   0, false, 0,      ~0u, "@",        NULL },
+	[BOMB]        = { 0, 0,   0, false, 0,      ~1u, "o",        bomb },
 };

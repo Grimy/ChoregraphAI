@@ -83,6 +83,7 @@ static void display_prompt() {
 		case 'f': player_move((Coords) { 0,  1}); break;
 		case 'i': player_move((Coords) { 1,  0}); break;
 		case 'j': player_move((Coords) { 0, -1}); break;
+		case '<': bomb_plant(player.pos); break;
 		case 't': player.hp = 0; break;
 		default: break;
 	}

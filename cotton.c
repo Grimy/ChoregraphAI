@@ -13,6 +13,8 @@
 #define IS_OPAQUE(pos) (TILE(pos).class == WALL)
 #define CLASS(m) (class_infos[(m)->class])
 
+static void damage(Monster *m, long dmg, bool bomblike);
+
 // Moves the given monster to a specific position.
 // Keeps track of the monster’s previous position.
 static void move(Monster *m, Coords dest) {
@@ -53,16 +55,24 @@ static bool dig(Tile *wall, int digging_power, bool z4) {
 	return true;
 }
 
+static void monster_remove(Monster *m) {
+	if (m == &player)
+		exit(0);
+	TILE(m->pos).monster = NULL;
+	Monster *prev = &player;
+	while (prev->next != m)
+		prev = prev->next;
+	prev->next = m->next;
+}
+
 static void enemy_attack(Monster *attacker) {
 	if (attacker->class == CONF_MONKEY) {
-		attacker->hp = 0;
-		TILE(attacker->pos).monster = NULL;
+		monster_remove(attacker);
 		player.confused = 4;
 	} else if (attacker->class == PIXIE) {
-		attacker->hp = 0;
-		TILE(attacker->pos).monster = NULL;
+		monster_remove(attacker);
 	} else {
-		player.hp = 0;
+		damage(&player, 1, false);
 	}
 }
 
@@ -151,18 +161,9 @@ static void knockback(Monster *m) {
 	m->delay = 1;
 }
 
-// Deals damage to the given monster.
-static void damage(Monster *m, long dmg, bool bomblike) {
+static void kill(Monster *m, bool bomblike) {
+	monster_remove(m);
 	Tile *tile = &TILE(m->pos);
-	if (!bomblike && (m->class == BLADENOVICE || m->class == BLADEMASTER) && m->state < 2) {
-		knockback(m);
-		m->state = 1;
-		return;
-	}
-	m->hp -= dmg;
-	if (m->hp > 0)
-		return;
-	tile->monster = NULL;
 	if (!bomblike && (m->class == WARLOCK_1 || m->class == WARLOCK_2))
 		move(&player, m->pos);
 	else if (m->class == ICE_SLIME || m->class == YETI)
@@ -171,14 +172,29 @@ static void damage(Monster *m, long dmg, bool bomblike) {
 		tile->class = tile->class == ICE ? WATER : tile->class == WATER ? FLOOR : FIRE;
 }
 
+// Deals damage to the given monster.
+static void damage(Monster *m, long dmg, bool bomblike) {
+	if (!bomblike && (m->class == BLADENOVICE || m->class == BLADEMASTER) && m->state < 2) {
+		knockback(m);
+		m->state = 1;
+		return;
+	}
+	if ((m->class == TARMONSTER || m->class == WALL_MIMIC ||
+			m->class == FIRE_MIMIC || m->class == ICE_MIMIC) && m->state < 2)
+		return;
+	m->hp -= dmg;
+	if (m->hp <= 0)
+		kill(m, bomblike);
+	else if (CLASS(m).beat_delay == 0)
+		knockback(m);
+}
+
 static void player_attack(Monster *m) {
 	if (TILE(player.pos).class == OOZE)
 		return;
 	if (m->class == OOZE_GOLEM)
 		TILE(player.pos).class = OOZE;
 	damage(m, 1, false);
-	if (m->hp > 0 && CLASS(m).beat_delay == 0)
-		knockback(m);
 }
 
 static void player_move(Coords offset) {
@@ -192,4 +208,10 @@ static void player_move(Coords offset) {
 		player_attack(dest->monster);
 	else
 		move(&player, player.pos + offset);
+}
+
+static void bomb_plant(Coords pos) {
+	Monster bomb = {.class = BOMB, .pos = pos, .next = player.next, .delay = 3};
+	player.next = &monsters[monster_count];
+	monsters[monster_count++] = bomb;
 }

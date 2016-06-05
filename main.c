@@ -59,9 +59,8 @@ static void trap_turn(Trap *this) {
 // Enemies act in decreasing priority order. Traps have an arbitrary order.
 static void do_beat(void) {
 	player_turn();
-	for (Monster *m = monsters; m->pos.x; ++m)
-		if (m->hp > 0)
-			enemy_turn(m);
+	for (Monster *m = player.next; m; m = m->next)
+		enemy_turn(m);
 	for (Trap *t = traps; t->pos.x; ++t)
 		trap_turn(t);
 }
@@ -72,8 +71,10 @@ int main(int argc, char **argv) {
 		exit(argc);
 	xml_parse(argv[1]);
 	qsort(monsters, monster_count, sizeof(*monsters), compare_priorities);
-	for (Monster *m = monsters; m->pos.x; ++m)
+	for (Monster *m = monsters; m->hp; ++m) {
 		TILE(m->pos).monster = m;
+		(m == monsters ? &player : m - 1)->next = m;
+	}
 	system("stty -echo -icanon eol \1");
 	while (player.hp)
 		do_beat();

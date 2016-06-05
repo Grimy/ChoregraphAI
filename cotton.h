@@ -72,6 +72,7 @@ typedef enum __attribute__((__packed__)) {
 	MOMMY, OGRE,
 
 	PLAYER,
+	BOMB,
 	TEST = 255,
 } MonsterClass;
 
@@ -105,7 +106,8 @@ typedef enum __attribute__((__packed__)) {
 
 // A “Monster” is either an enemy or the player. Yes, we are all monsters.
 // Honestly, “Entity” is way too generic, and “Character” sounds too much like “char*”.
-typedef struct {
+typedef struct monster {
+	struct monster *next;
 	MonsterClass class;
 	int8_t hp;
 	Coords pos;
