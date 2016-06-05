@@ -19,7 +19,7 @@ static void player_turn() {
 	if (player.confused)
 		player.confused--;
 	if (&TILE(player.pos) == fire_tile)
-		player.hp = 0;
+		damage(&player, 2, false);
 }
 
 static void enemy_turn(Monster *m) {
@@ -49,7 +49,7 @@ static void trap_turn(Trap *this) {
 		case TELEPORT: break;
 		case TEMPO_DOWN: break;
 		case TEMPO_UP: break;
-		case BOMBTRAP: break;
+		case BOMBTRAP: bomb_plant(this->pos, 2);
 		case FIREPIG: break;
 	}
 }

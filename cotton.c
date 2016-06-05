@@ -161,6 +161,12 @@ static void knockback(Monster *m) {
 	m->delay = 1;
 }
 
+static void bomb_plant(Coords pos, uint8_t delay) {
+	Monster bomb = {.class = BOMB, .pos = pos, .next = player.next, .aggro = true, .delay = delay};
+	player.next = &monsters[monster_count];
+	monsters[monster_count++] = bomb;
+}
+
 static void kill(Monster *m, bool bomblike) {
 	monster_remove(m);
 	Tile *tile = &TILE(m->pos);
@@ -170,6 +176,8 @@ static void kill(Monster *m, bool bomblike) {
 		tile->class = tile->class == FIRE ? WATER : ICE;
 	else if (m->class == FIRE_SLIME || m->class == HELLHOUND)
 		tile->class = tile->class == ICE ? WATER : tile->class == WATER ? FLOOR : FIRE;
+	else if (m->class == BOMBER)
+		bomb_plant(m->pos, 3);
 }
 
 // Deals damage to the given monster.
@@ -208,10 +216,4 @@ static void player_move(Coords offset) {
 		player_attack(dest->monster);
 	else
 		move(&player, player.pos + offset);
-}
-
-static void bomb_plant(Coords pos) {
-	Monster bomb = {.class = BOMB, .pos = pos, .next = player.next, .delay = 3};
-	player.next = &monsters[monster_count];
-	monsters[monster_count++] = bomb;
 }
