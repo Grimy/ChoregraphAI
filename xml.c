@@ -25,6 +25,8 @@ static void xml_process_node(xmlTextReaderPtr xml) {
 	int subtype = xml_attr(xml, "subtype");
 	Coords pos = (Coords) {xml_attr(xml, "x"), xml_attr(xml, "y")} + spawn;
 
+	type = type == 255 ? RIDER_3 : type;
+
 	if (!strcmp(name, "trap"))
 		traps[trap_count++] = (Trap) {
 			.class = subtype == 8 ? 0 : type,

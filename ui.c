@@ -35,15 +35,15 @@ static void display_wall(Tile *wall) {
 }
 
 // Pretty-prints the tile at the given coordinates.
-static void display_tile(long x, long y) {
-	Tile *tile = &board[y][x];
+static void display_tile(Coords pos) {
+	Tile *tile = &TILE(pos);
 	if (tile->class > FLOOR)
 		printf("\033[4%dm", floor_colors[tile->class]);
 	if (tile->monster)
 		printf("%s", CLASS(tile->monster).glyph);
 	else if (tile->class == WALL && tile->hp == 5)
 		putchar(' ');
-	else if (!can_see(x, y))
+	else if (!can_see(pos))
 		putchar(' ');
 	else if (tile->class == WALL)
 		display_wall(tile);
@@ -55,9 +55,9 @@ static void display_tile(long x, long y) {
 // Clears and redraws the entire board.
 static void display_board(void) {
 	printf("\033[H\033[2J");
-	for (long y = 0; y < LENGTH(board); ++y) {
-		for (long x = 0; x < LENGTH(*board); ++x)
-			display_tile(x, y);
+	for (int8_t y = 0; y < LENGTH(board); ++y) {
+		for (int8_t x = 0; x < LENGTH(*board); ++x)
+			display_tile((Coords) {x, y});
 		putchar('\n');
 	}
 	for (Trap *t = traps; t->pos.x; ++t) {

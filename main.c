@@ -25,7 +25,7 @@ static void player_turn() {
 static void enemy_turn(Monster *m) {
 	Coords d = player.pos - m->pos;
 	if (!m->aggro) {
-		m->aggro = can_see(m->pos.x, m->pos.y);
+		m->aggro = can_see(m->pos);
 		if (L2(d) > CLASS(m).radius)
 			return;
 	}
@@ -76,6 +76,6 @@ int main(int argc, char **argv) {
 		(m == monsters ? &player : m - 1)->next = m;
 	}
 	system("stty -echo -icanon eol \1");
-	while (player.hp)
+	while (true)
 		do_beat();
 }

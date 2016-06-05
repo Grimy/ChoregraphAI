@@ -135,15 +135,15 @@ static bool los(double x, double y) {
 // Tests whether the player can see the tile at the given coordinates.
 // This is true if there’s an unblocked line from the center of the player’s
 // tile to any corner or the center of the destination tile.
-static bool can_see(long x, long y) {
+static bool can_see(Coords dest) {
 	Coords pos = player.pos;
-	if (x < pos.x - 10 || x > pos.x + 9 || y < pos.y - 5 || y > pos.y + 5)
+	if (dest.x < pos.x - 10 || dest.x > pos.x + 9 || dest.y < pos.y - 5 || dest.y > pos.y + 5)
 		return false;
-	return los(x - .55, y - .55)
-		|| los(x + .55, y - .55)
-		|| los(x - .55, y + .55)
-		|| los(x + .55, y + .55)
-		|| los(x, y);
+	return los(dest.x - .55, dest.y - .55)
+		|| los(dest.x + .55, dest.y - .55)
+		|| los(dest.x - .55, dest.y + .55)
+		|| los(dest.x + .55, dest.y + .55)
+		|| los(dest.x, dest.y);
 }
 
 // Compares the priorities of two monsters.
@@ -190,10 +190,16 @@ static void damage(Monster *m, long dmg, bool bomblike) {
 	if ((m->class == TARMONSTER || m->class == WALL_MIMIC ||
 			m->class == FIRE_MIMIC || m->class == ICE_MIMIC) && m->state < 2)
 		return;
+	if (m->class >= RIDER_1 && m->class <= RIDER_3) {
+		knockback(m);
+		m->class += SKELETANK_1 - RIDER_1;
+		return;
+	}
 	m->hp -= dmg;
 	if (m->hp <= 0)
 		kill(m, bomblike);
-	else if (CLASS(m).beat_delay == 0)
+	else if (m->class == MONKEY_2 || m->class == TELE_MONKEY || m->class == ASSASSIN_2 ||
+			m->class == BANSHEE_1 || m->class == BANSHEE_2)
 		knockback(m);
 }
 

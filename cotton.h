@@ -30,7 +30,7 @@ typedef enum __attribute__((__packed__)) {
 	WALL_MIMIC,
 	LIGHTSHROOM, BOMBSHROOM,
 
-	FIRE_SLIME, ICE_SLIME,
+	FIRE_SLIME = 200, ICE_SLIME,
 	RIDER_1, RIDER_2, RIDER_3,
 	EFREET, DJINN,
 	ASSASSIN_1, ASSASSIN_2,
@@ -73,7 +73,6 @@ typedef enum __attribute__((__packed__)) {
 
 	PLAYER,
 	BOMB,
-	TEST = 255,
 } MonsterClass;
 
 // Human-readable names for tile types.

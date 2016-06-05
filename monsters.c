@@ -204,7 +204,28 @@ static void mimic(Monster *this, Coords d) {
 	}
 }
 
-// blue dragon: ABS(d.x) < 4 && ABS(d.y) < ABS(d.x)
+// static void blue_dragon(Monster *this, Coords d) {
+	// ABS(d.x) < 4 && ABS(d.y) < ABS(d.x)
+// }
+
+static void red_dragon(Monster *this, Coords d) {
+	if (this->state < 2) {
+		this->state ^= 1;
+		if (this->state)
+			basic_seek(this, d);
+		if (can_see(this->pos) && this->pos.y == player.pos.y)
+			this->state = 2;
+	} else if (this->state == 2) {
+		if (this->pos.y == player.pos.y)
+			damage(&player, 5, false);
+		this->delay = 1;
+		this->state = 3;
+	} else {
+		basic_seek(this, d);
+		this->state = 1;
+	}
+}
+
 static void todo() {}
 static void nop() {}
 
@@ -242,7 +263,6 @@ static const ClassInfos class_infos[256] = {
 	[MOLE]        = { 1, 0,   9,  true, 0,  1020113, "r",        todo },
 	[WIGHT]       = { 1, 0,   9,  true, 0, 10201103, GREEN "W",  basic_seek },
 	[WALL_MIMIC]  = { 1, 0,   9, false, 0, 10201103, GREEN "m",  mimic },
-	[TEST]        = { 1, 0,   9, false, 0, 10201103, GREEN "m",  mimic },
 	[LIGHTSHROOM] = { 1, 9,   9, false, 0,        0, "%",        nop },
 	[BOMBSHROOM]  = { 1, 9,   9, false, 0,      ~1u, "%",        todo },
 
@@ -276,7 +296,7 @@ static const ClassInfos class_infos[256] = {
 	[GHOUL]       = { 1, 0,   9,  true, 0, 10301102, "W",        moore_seek },
 	[OOZE_GOLEM]  = { 5, 3,  49,  true, 2, 20510407, GREEN "'",  basic_seek },
 	[HARPY]       = { 1, 1,   0,  true, 0, 10301203, GREEN "h",  harpy },
-	[LICH_1]      = { 1, 1,   9, false, 0, 10404202, "L",        lich },
+	[LICH_1]      = { 1, 1,   9, false, 0, 10404202, GREEN "L",  lich },
 	[LICH_2]      = { 2, 1,   9, false, 0, 10404302, PURPLE "L", lich },
 	[LICH_3]      = { 3, 1,   9, false, 0, 10404402, BLACK "L",  lich },
 	[CONF_MONKEY] = { 1, 0,   9, false, 0, 10004103, GREEN "Y",  basic_seek },
@@ -290,19 +310,19 @@ static const ClassInfos class_infos[256] = {
 	[WARLOCK_1]   = { 1, 1,   9, false, 0, 10401202, "w",        basic_seek },
 	[WARLOCK_2]   = { 2, 1,   9, false, 0, 10401302, YELLOW "w", basic_seek },
 	[MUMMY]       = { 1, 1,   9, false, 0, 30201103, "M",        moore_seek },
-	[GARGOYLE_1]  = { 1, 1,   9, false, 0, 10401102, "g",        todo },
-	[GARGOYLE_2]  = { 1, 1,   9, false, 0, 10401102, "g",        todo },
-	[GARGOYLE_3]  = { 1, 1,   9, false, 0, 10401102, "g",        todo },
-	[GARGOYLE_4]  = { 1, 1,   9, false, 0, 10401102, "g",        todo },
-	[GARGOYLE_5]  = { 1, 1,   9, false, 0, 10401102, "g",        todo },
-	[GARGOYLE_6]  = { 1, 1,   9, false, 0, 10401102, "g",        todo },
+	[GARGOYLE_1]  = { 1, 1,   9, false, 0, 10401102, "g",        todo /* wind */ },
+	[GARGOYLE_2]  = { 1, 1,   9, false, 0, 10401102, "g",        mimic },
+	[GARGOYLE_3]  = { 1, 1,   9, false, 0, 10401102, "g",        todo /* delayed explosion */},
+	[GARGOYLE_4]  = { 1, 1,   9, false, 0, 10401102, "g",        todo /* explode on hit*/},
+	[GARGOYLE_5]  = { 1, 1,   9, false, 0, 10401102, "g",        todo /* crate */},
+	[GARGOYLE_6]  = { 1, 1,   9, false, 0, 10401102, "g",        todo /* crate */},
 
 	[SHOPKEEPER]  = { 9, 9,   9, false, 0, 99999997, "@",        nop },
 	[DIREBAT_1]   = { 2, 1,   9,  true, 0, 30302210, YELLOW "B", bat },
 	[DIREBAT_2]   = { 3, 1,   9,  true, 0, 30403215, "B",        bat },
 	[DRAGON]      = { 4, 1,  49,  true, 4, 30404210, GREEN "D",  basic_seek },
-	[RED_DRAGON]  = { 6, 1, 225,  true, 4, 99999999, RED "D",    basic_seek },
-	[BLUE_DRAGON] = { 6, 1,   0,  true, 4, 99999997, BLUE "D",   basic_seek },
+	[RED_DRAGON]  = { 6, 0, 225,  true, 4, 99999999, RED "D",    red_dragon },
+	[BLUE_DRAGON] = { 6, 0,   0,  true, 4, 99999997, BLUE "D",   basic_seek },
 	[BANSHEE_1]   = { 3, 0,  49,  true, 0, 30403110, BLUE "8",   basic_seek },
 	[BANSHEE_2]   = { 4, 0,  49,  true, 0, 30604115, GREEN "8",  basic_seek },
 	[MINOTAUR_1]  = { 3, 0,  49,  true, 2, 30403110, "H",        todo },
