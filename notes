@@ -5,7 +5,6 @@ TO CODE:
 * Fix Z4 digging on base shovel
 * Fix player reconfused on same beat
 * Fix enemies digging while confused
-* Bombs
 * Consider renaming most AI functions
 
 REPORT:

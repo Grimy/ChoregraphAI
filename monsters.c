@@ -13,14 +13,17 @@
 // Try to keep moving along the same axis, unless the monster’s current or
 // previous position is aligned with the player’s current or previous position.
 static void basic_seek(Monster *this, Coords d) {
+	Coords vertical = {0, SIGN(d.y)};
+	Coords horizontal = {SIGN(d.x), 0};
+
 	this->vertical =
 		// #1: move toward the player
 		d.y == 0 ? 0 :
 		d.x == 0 ? 1 :
 
 		// #2: avoid obstacles
-		!can_move(this, (Coords) {0, SIGN(d.y)}) ? 0 :
-		!can_move(this, (Coords) {SIGN(d.x), 0}) ? 1 :
+		!can_move(this, vertical) ? !can_move(this, horizontal) && ABS(d.y) > ABS(d.x) :
+		!can_move(this, horizontal) ? 1 :
 	
 		// #3: move toward the player’s previous position
 		this->pos.y == player.prev_pos.y ? 0 :
@@ -40,7 +43,7 @@ static void basic_seek(Monster *this, Coords d) {
 		// #7: keep moving along the same axis
 		this->vertical;
 
-	enemy_move(this, this->vertical ? (Coords) {0, SIGN(d.y)} : (Coords) {SIGN(d.x), 0});
+	enemy_move(this, this->vertical ? vertical : horizontal);
 }
 
 // Move diagonally toward the player. The tiebreaker is *reverse* bomb-order.
@@ -201,6 +204,7 @@ static void mimic(Monster *this, Coords d) {
 	}
 }
 
+// blue dragon: ABS(d.x) < 4 && ABS(d.y) < ABS(d.x)
 static void todo() {}
 static void nop() {}
 
