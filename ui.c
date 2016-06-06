@@ -34,7 +34,7 @@ static void display_wall(Tile *wall) {
 	printf("%3.3s", &"╳───│┌┐┬│└┘┴│├┤┼"[3*glyph]);
 }
 
-// Pretty-prints the tile at the given coordinates.
+// Pretty-prints the tile at the given position.
 static void display_tile(Coords pos) {
 	Tile *tile = &TILE(pos);
 	if (tile->class > FLOOR)

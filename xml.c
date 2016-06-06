@@ -23,9 +23,10 @@ static void xml_process_node(xmlTextReaderPtr xml) {
 	const char *name = (const char*) xmlTextReaderConstName(xml);
 	uint8_t type = (uint8_t) xml_attr(xml, "type");
 	int subtype = xml_attr(xml, "subtype");
-	Coords pos = (Coords) {xml_attr(xml, "x"), xml_attr(xml, "y")} + spawn;
+	Coords pos = {xml_attr(xml, "x"), xml_attr(xml, "y")};
 
-	type = type == 255 ? BLUE_DRAGON : type;
+	pos += spawn;
+	type = type == 255 ? BLADEMASTER : type;
 
 	if (!strcmp(name, "trap"))
 		traps[trap_count++] = (Trap) {

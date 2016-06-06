@@ -21,26 +21,22 @@ static void basic_seek(Monster *this, Coords d) {
 		d.y == 0 ? 0 :
 		d.x == 0 ? 1 :
 
-		// #2: avoid obstacles
+		// #2: avoid obstacles (when both axes are blocked, tie-break by L2 distance)
 		!can_move(this, vertical) ? !can_move(this, horizontal) && ABS(d.y) > ABS(d.x) :
 		!can_move(this, horizontal) ? 1 :
-	
-		// #3: move toward the player’s previous position
-		this->pos.y == player.prev_pos.y ? 0 :
-		this->pos.x == player.prev_pos.x ? 1 :
 
-		// #4: if prevpos aligns with the player, switch axes
-		this->prev_pos.y == player.pos.y ? 0 :
-		this->prev_pos.x == player.pos.x ? 1 :
+		// #3: if pos aligns with the player’s prevpos or vice-versa, switch axes
+		this->pos.y == player.prev_pos.y || this->prev_pos.y == player.pos.y ? 0 :
+		this->pos.x == player.prev_pos.x || this->prev_pos.x == player.pos.x ? 1 :
 
-		// #5: don’t switch axes for a single tile
+		// #4: don’t switch axes for a single tile
 		ABS(d.y) == 1 || ABS(d.x) == 1 ? this->vertical :
 
-		// #6: if prevpos aligns with the player’s prevpos, do something weird
+		// #5: if prevpos aligns with the player’s prevpos, do something weird
 		this->prev_pos.y == player.prev_pos.y ? d.x > 0 && player.pos.x > spawn.x :
 		this->prev_pos.x == player.prev_pos.x ? ABS(d.y) != 2 :
 
-		// #7: keep moving along the same axis
+		// #6: keep moving along the same axis
 		this->vertical;
 
 	enemy_move(this, this->vertical ? vertical : horizontal);
@@ -113,14 +109,15 @@ static void lich(Monster *this, Coords d) {
 }
 
 static void windmage(Monster *this, Coords d) {
-	if (L2(d) == 4 && can_move(this, (Coords) {SIGN(d.y), SIGN(d.x)})) {
-		forced_move(&player, (Coords) {-SIGN(d.y), -SIGN(d.x)});
+	if (L2(d) == 4 && can_move(this, DIRECTION(d))) {
+		forced_move(&player, -DIRECTION(d));
 		this->delay = 1;
 	} else {
 		basic_seek(this, d);
 	}
 }
 
+// Attack in a 3x3 zone without moving.
 static void mushroom(Monster *this, Coords d) {
 	if (L2(d) < 4)
 		enemy_attack(this);
@@ -135,6 +132,9 @@ static const Coords harpy_moves[] = {
 	{0, -3}, {-3, 0}, {3, 0}, {0, 3},
 };
 
+// Move up to 3 tiles toward the player.
+// Only attacks if the player was already adjacent. The destination must be visible.
+// Try to move as little as possible in L2 distance.
 static void harpy(Monster *this, Coords d) {
 	if (L1(d) == 1) {
 		enemy_move(this, d);
@@ -145,13 +145,13 @@ static void harpy(Monster *this, Coords d) {
 	for (long i = 0; i < LENGTH(harpy_moves); ++i) {
 		Coords move = harpy_moves[i];
 		if ((L2(move) == 9 || L2(move) == 4) && (
-				IS_OPAQUE(this->pos + DIRECTION(move)) ||
-				IS_OPAQUE(this->pos + 2*DIRECTION(move))))
+				BLOCKS_MOVEMENT(this->pos + DIRECTION(move)) ||
+				BLOCKS_MOVEMENT(this->pos + 2*DIRECTION(move))))
 			continue;
 		if (L2(move) == 5 &&
-				IS_OPAQUE(this->pos + move / 2) && (
-				IS_OPAQUE(this->pos + DIRECTION(move)) ||
-				IS_OPAQUE(this->pos + DIRECTION(move) - move / 2)))
+				BLOCKS_MOVEMENT(this->pos + move / 2) && (
+				BLOCKS_MOVEMENT(this->pos + DIRECTION(move)) ||
+				BLOCKS_MOVEMENT(this->pos + DIRECTION(move) - move / 2)))
 			continue;
 		long score = L1(d - move);
 		if (score && score < min && can_move(this, move)) {
@@ -204,50 +204,28 @@ static void mimic(Monster *this, Coords d) {
 	}
 }
 
-static void fireball(Coords pos, int dir) {
-	for (Tile *tile = &TILE(pos) + dir; tile->class != WALL; tile += dir)
-		if (tile->monster)
-			damage(tile->monster, 5, false);
+static bool can_breath(Monster *this) {
+	Coords d = player.pos - this->pos;
+	return this->state < 2 &&
+		(this->class == RED_DRAGON ? !d.y : ABS(d.x) < 4 && ABS(d.y) < ABS(d.x));
 }
 
-static void freeze(Tile *tile) {
-	if (tile->class == WATER)
-		tile->class = ICE;
-	if (tile->monster)
-		tile->monster->freeze = 4;
+static void breath_attack(Monster *this) {
+	int8_t direction = SIGN(player.prev_pos.x - this->pos.x);
+	(this->class == RED_DRAGON ? fireball : cone_of_cold)(this->pos, direction);
+	this->delay = 1;
 }
 
-static void cone_of_cold(Coords pos, int8_t dir) {
-	for (int8_t x = 1; x <= 3; ++x)
-		for (int8_t y = 1 - x; y < x; ++y)
-			freeze(&TILE(pos + ((Coords) {x * dir, y})));
-}
-
-static void red_dragon(Monster *this, Coords d) {
-	if (this->state == 0 || this->state == 3) {
+// Dragons normally chase the player cardinally every two beats (see basic_seek).
+// However, as soon as the player is in breath range, they’ll charge a breath attack,
+// then fire it on the next beat.
+// They then resume chasing, but can’t charge another breath in the next two beats.
+static void dragon(Monster *this, Coords d) {
+	if (this->state == 0 || this->state == 2)
 		basic_seek(this, d);
-	} else if (this->state == 2) {
-		fireball(this->pos, SIGN(player.prev_pos.x - this->pos.x));
-		this->delay = 1;
-	}
-	if (this->state < 2 && this->pos.y == player.pos.y && can_see(this->pos))
-		this->state = 2;
-	else
-		this->state = (uint8_t[]) {1, 0, 3, 1} [this->state];
-}
-
-static void blue_dragon(Monster *this, Coords d) {
-	if (this->state == 0 || this->state == 3) {
-		basic_seek(this, d);
-	} else if (this->state == 2) {
-		cone_of_cold(this->pos, SIGN(player.prev_pos.x - this->pos.x));
-		this->delay = 1;
-	}
-	d = player.pos - this->pos;
-	if (this->state < 2 && ABS(d.x) < 4 && ABS(d.y) < ABS(d.x) && can_see(this->pos))
-		this->state = 2;
-	else
-		this->state = (uint8_t[]) {1, 0, 3, 1} [this->state];
+	else if (this->state == 3)
+		breath_attack(this);
+	this->state = can_breath(this) && can_see(this->pos) ? 3 : ABS(this->state - 1);
 }
 
 static void todo() {}
@@ -345,8 +323,8 @@ static const ClassInfos class_infos[256] = {
 	[DIREBAT_1]   = { 2, 1,   9,  true, 0, 30302210, YELLOW "B", bat },
 	[DIREBAT_2]   = { 3, 1,   9,  true, 0, 30403215, "B",        bat },
 	[DRAGON]      = { 4, 1,  49,  true, 4, 30404210, GREEN "D",  basic_seek },
-	[RED_DRAGON]  = { 6, 0, 225,  true, 4, 99999999, RED "D",    red_dragon },
-	[BLUE_DRAGON] = { 6, 0,   0,  true, 4, 99999997, BLUE "D",   blue_dragon },
+	[RED_DRAGON]  = { 6, 0, 225,  true, 4, 99999999, RED "D",    dragon },
+	[BLUE_DRAGON] = { 6, 0,   0,  true, 4, 99999997, BLUE "D",   dragon },
 	[BANSHEE_1]   = { 3, 0,  49,  true, 0, 30403110, BLUE "8",   basic_seek },
 	[BANSHEE_2]   = { 4, 0,  49,  true, 0, 30604115, GREEN "8",  basic_seek },
 	[MINOTAUR_1]  = { 3, 0,  49,  true, 2, 30403110, "H",        todo },

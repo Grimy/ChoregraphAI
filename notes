@@ -1,8 +1,15 @@
 TO TEST:
-* Trap-to-trap priority
+* Do elemental transform the floor before/after moving/digging/attacking/knockback?
+* Will dragons/nightmares trample monsters when they could avoid it?
+* Will golems bump into monsters when they could dig?
+* Hitting monkeys while on Ooze
+* `ABS(d.y) != 2` in basic_seek looks weird
 
 TO CODE:
-* Fix Z4 digging on base shovel
+* Ice
+* Assassins
+* Armored skeletons (attack direction!)
+* Refactor harpy AI
 * Fix player reconfused on same beat
 * Fix enemies digging while confused
 * Consider renaming most AI functions
@@ -18,12 +25,6 @@ MEA.CGO
  IDBDL
   JFK
    N
-
-Harpies:
-1. move to a square with line of sight
-2. move as close as possible to the player (L1 distance)
-3. move as little as possible (L2 distance)
-4. bomb order
 
 metal doors try to close themselves before and after each player turn, except
 on the first two turns they are open. This explains both the weird priority
