@@ -124,6 +124,13 @@ static void mushroom(Monster *this, Coords d) {
 	this->delay = CLASS(this).beat_delay;
 }
 
+// Chase the player, then attack in a 3x3 zone.
+static void yeti(Monster *this, Coords d) {
+	basic_seek(this, d);
+	if (L2(player.pos - this->pos) < 4)
+		enemy_attack(this);
+}
+
 static const Coords harpy_moves[] = {
 	{0, -1}, {-1, 0}, {1, 0}, {0, 1},
 	{-1, -1}, {1, -1}, {-1, 1}, {1, 1},
@@ -282,7 +289,7 @@ static const ClassInfos class_infos[256] = {
 	[HELLHOUND]   = { 1, 1,   9, false, 0, 10301202, RED "d",    moore_seek },
 	[SHOVE_1]     = { 2, 0,   9, false, 0, 10002102, PURPLE "~", basic_seek },
 	[SHOVE_2]     = { 3, 0,   9, false, 0, 10003102, BLACK "~",  basic_seek },
-	[YETI]        = { 1, 3,   9,  true, 2, 20301403, CYAN "Y",   basic_seek },
+	[YETI]        = { 1, 3,   9,  true, 2, 20301403, CYAN "Y",   yeti },
 	[GHAST]       = { 1, 0,   9,  true, 0, 10201102, PURPLE "W", basic_seek },
 	[FIRE_MIMIC]  = { 1, 0,   9, false, 0, 10201102, RED "m",    mimic },
 	[ICE_MIMIC]   = { 1, 0,   9, false, 0, 10201102, CYAN "m",   mimic },
