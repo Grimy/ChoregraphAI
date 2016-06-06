@@ -1,4 +1,6 @@
 TO TEST:
+* Different damage sources on proximity-mine and wind gargoyles
+* Are enemies pushed back by wind gargoyles?
 * Do elemental transform the floor before/after moving/digging/attacking/knockback?
 * Will dragons/nightmares trample monsters when they could avoid it?
 * Will golems bump into monsters when they could dig?
@@ -9,6 +11,7 @@ TO CODE:
 * Ice
 * Assassins
 * Armored skeletons (attack direction!)
+* Chest mimics
 * Refactor harpy AI
 * Fix player reconfused on same beat
 * Fix enemies digging while confused

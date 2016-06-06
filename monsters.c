@@ -186,22 +186,9 @@ static void diagonal_slime(Monster *this, __attribute__((unused)) Coords d) {
 	this->state += ok;
 }
 
-static void bomb_tile(Tile *tile) {
-	if (tile->monster)
-		damage(tile->monster, 4, true);
-	if (tile->class == WALL || tile->class == WATER)
-		tile->class = FLOOR;
-	else if (tile->class == ICE)
-		tile->class = WATER;
-}
-
-static void bomb(Monster *this, __attribute__((unused)) Coords d) {
-	for (int x = this->pos.x - 1; x <= this->pos.x + 1; ++x)
-		for (int y = this->pos.y - 1; y <= this->pos.y + 1; ++y)
-			bomb_tile(&board[y][x]);
-	monster_remove(this);
-}
-
+// State 0: camouflaged
+// State 1: invulnerable (right after waking up)
+// State 2: chasing the player
 static void mimic(Monster *this, Coords d) {
 	if (this->state) {
 		this->state = 2;
@@ -271,7 +258,7 @@ static const ClassInfos class_infos[256] = {
 	[TARMONSTER]  = { 1, 0,   9, false, 0, 10304103, "t",        mimic },
 	[MOLE]        = { 1, 0,   9,  true, 0,  1020113, "r",        todo },
 	[WIGHT]       = { 1, 0,   9,  true, 0, 10201103, GREEN "W",  basic_seek },
-	[WALL_MIMIC]  = { 1, 0,   9, false, 0, 10201103, GREEN "m",  mimic },
+	[WALL_MIMIC]  = { 1, 0,   0, false, 0, 10201103, GREEN "m",  mimic },
 	[LIGHTSHROOM] = { 1, 9,   9, false, 0,        0, "%",        nop },
 	[BOMBSHROOM]  = { 1, 9,   9, false, 0,      ~1u, "%",        todo },
 
@@ -291,8 +278,8 @@ static const ClassInfos class_infos[256] = {
 	[SHOVE_2]     = { 3, 0,   9, false, 0, 10003102, BLACK "~",  basic_seek },
 	[YETI]        = { 1, 3,   9,  true, 2, 20301403, CYAN "Y",   yeti },
 	[GHAST]       = { 1, 0,   9,  true, 0, 10201102, PURPLE "W", basic_seek },
-	[FIRE_MIMIC]  = { 1, 0,   9, false, 0, 10201102, RED "m",    mimic },
-	[ICE_MIMIC]   = { 1, 0,   9, false, 0, 10201102, CYAN "m",   mimic },
+	[FIRE_MIMIC]  = { 1, 0,   0, false, 0, 10201102, RED "m",    mimic },
+	[ICE_MIMIC]   = { 1, 0,   0, false, 0, 10201102, CYAN "m",   mimic },
 	[FIRE_POT]    = { 1, 9,   9, false, 0,        0, RED "(",    nop },
 	[ICE_POT]     = { 1, 0,   9, false, 0,        0, CYAN "(",   nop },
 
@@ -319,12 +306,12 @@ static const ClassInfos class_infos[256] = {
 	[WARLOCK_1]   = { 1, 1,   9, false, 0, 10401202, "w",        basic_seek },
 	[WARLOCK_2]   = { 2, 1,   9, false, 0, 10401302, YELLOW "w", basic_seek },
 	[MUMMY]       = { 1, 1,   9, false, 0, 30201103, "M",        moore_seek },
-	[GARGOYLE_1]  = { 1, 1,   9, false, 0, 10401102, "g",        todo /* wind */ },
-	[GARGOYLE_2]  = { 1, 1,   9, false, 0, 10401102, "g",        mimic },
-	[GARGOYLE_3]  = { 1, 1,   9, false, 0, 10401102, "g",        todo /* delayed explosion */},
-	[GARGOYLE_4]  = { 1, 1,   9, false, 0, 10401102, "g",        todo /* explode on hit*/},
-	[GARGOYLE_5]  = { 1, 1,   9, false, 0, 10401102, "g",        todo /* crate */},
-	[GARGOYLE_6]  = { 1, 1,   9, false, 0, 10401102, "g",        todo /* crate */},
+	[STATUE_WIND] = { 1, 0,   0, false, 0, 10401102, "g",        todo },
+	[STATUE_SEEK] = { 1, 0,   0, false, 0, 10401102, "g",        mimic },
+	[STATUE_BOMB] = { 1, 0,   0, false, 0, 10401102, "g",        todo },
+	[STATUE_MINE] = { 1, 0,   0, false, 0, 10401102, "g",        nop },
+	[CRATE_1]     = { 1, 1,   0, false, 0, 10401102, "g",        nop },
+	[CRATE_2]     = { 1, 1,   0, false, 0, 10401102, "g",        nop },
 
 	[SHOPKEEPER]  = { 9, 9,   9, false, 0, 99999997, "@",        nop },
 	[DIREBAT_1]   = { 2, 1,   9,  true, 0, 30302210, YELLOW "B", bat },

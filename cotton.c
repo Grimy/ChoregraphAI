@@ -183,6 +183,22 @@ static void kill(Monster *m, bool bomblike) {
 		bomb_plant(m->pos, 3);
 }
 
+static void bomb_tile(Tile *tile) {
+	if (tile->monster)
+		damage(tile->monster, 4, true);
+	if (tile->class == WALL || tile->class == WATER)
+		tile->class = FLOOR;
+	else if (tile->class == ICE)
+		tile->class = WATER;
+}
+
+static void bomb(Monster *this, __attribute__((unused)) Coords d) {
+	for (int x = this->pos.x - 1; x <= this->pos.x + 1; ++x)
+		for (int y = this->pos.y - 1; y <= this->pos.y + 1; ++y)
+			bomb_tile(&board[y][x]);
+	monster_remove(this);
+}
+
 // Deals damage to the given monster.
 static void damage(Monster *m, long dmg, bool bomblike) {
 	if (!bomblike && (m->class == BLADENOVICE || m->class == BLADEMASTER) && m->state < 2) {
@@ -194,8 +210,12 @@ static void damage(Monster *m, long dmg, bool bomblike) {
 	} else if (!(IS_MIMIC(m->class) && m->state < 2)) {
 		m->hp -= dmg;
 	}
+
 	if (m->class == OOZE_GOLEM)
 		TILE(player.pos).class = OOZE;
+	else if (m->class == STATUE_MINE)
+		bomb(m, spawn);
+
 	if (m->hp <= 0)
 		kill(m, bomblike);
 	else if (dmg && IS_KNOCKED_BACK(m->class))
