@@ -15,7 +15,7 @@
 // For display purposes, doors count as walls, but level edges don’t
 #define IS_WALL(tile) ((tile)->class == WALL && (tile)->hp < 5)
 
-static const int floor_colors[] = {[WATER] = 4, [TAR] = 7, [FIRE] = 1, [ICE] = 4, [OOZE] = 2};
+static const int floor_colors[] = {[WATER] = 3, [TAR] = 7, [FIRE] = 1, [ICE] = 4, [OOZE] = 2};
 
 // Picks an appropriate box-drawing glyph for a wall by looking at adjacent tiles.
 // For example, when tiles to the bottom and right are walls too, use '┌'.

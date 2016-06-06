@@ -15,7 +15,10 @@ static void player_turn() {
 	Tile *fire_tile = NULL;
 	if (TILE(player.pos).class == FIRE)
 		fire_tile = &TILE(player.pos);
-	display_prompt();
+	if (player.freeze)
+		player.freeze--;
+	else
+		display_prompt();
 	if (player.confused)
 		player.confused--;
 	if (&TILE(player.pos) == fire_tile)
@@ -24,6 +27,10 @@ static void player_turn() {
 
 static void enemy_turn(Monster *m) {
 	Coords d = player.pos - m->pos;
+	if (m->freeze) {
+		m->freeze--;
+		return;
+	}
 	if (!m->aggro) {
 		m->aggro = can_see(m->pos);
 		if (L2(d) > CLASS(m).radius)

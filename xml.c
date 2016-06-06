@@ -25,7 +25,7 @@ static void xml_process_node(xmlTextReaderPtr xml) {
 	int subtype = xml_attr(xml, "subtype");
 	Coords pos = (Coords) {xml_attr(xml, "x"), xml_attr(xml, "y")} + spawn;
 
-	type = type == 255 ? RIDER_3 : type;
+	type = type == 255 ? BLUE_DRAGON : type;
 
 	if (!strcmp(name, "trap"))
 		traps[trap_count++] = (Trap) {
@@ -36,7 +36,7 @@ static void xml_process_node(xmlTextReaderPtr xml) {
 
 	else if (!strcmp(name, "tile"))
 		TILE(pos) = (Tile) {
-			.class = type >= 100 ? WALL : type < 3 ? FLOOR : type,
+			.class = type >= 100 ? WALL : type < 2 ? FLOOR : type,
 			.hp = (int8_t[]) {[100] = 1, 1, 5, 0, 4, 4, -1, 2, 3, 5, 4, 0} [type],
 			.torch = xml_attr(xml, "torch"),
 			.zone = xml_attr(xml, "zone"),

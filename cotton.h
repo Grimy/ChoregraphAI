@@ -116,7 +116,7 @@ typedef struct monster {
 	bool vertical: 1;
 	unsigned state: 2;
 	unsigned confused: 4;
-	unsigned: 4;
+	unsigned freeze: 4;
 } Monster;
 
 typedef struct {
