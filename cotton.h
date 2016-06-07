@@ -83,10 +83,11 @@ typedef enum __attribute__((__packed__)) {
 
 // Human-readable names for tile types.
 // Note that WALL can be any wall type, including level edges and doors.
-typedef enum __attribute__((__packed__)) {
+typedef enum {
 	WALL = 0,
 	FLOOR = 1,
-	WATER = 2,
+	SHOP = 3,
+	WATER = 4,
 	TAR = 8,
 	STAIRS = 9,
 	FIRE = 10,
@@ -118,13 +119,12 @@ typedef struct monster {
 	Coords pos;
 	Coords prev_pos;
 	unsigned delay: 4;
+	unsigned confusion: 4;
+	unsigned freeze: 3;
+	unsigned state: 2;
 	bool aggro: 1;
 	bool vertical: 1;
-	unsigned state: 2;
-	unsigned confusion: 4;
-	unsigned freeze: 4;
-	bool trapped: 1;
-	unsigned long: 63;
+	bool untrapped: 1;
 } Monster;
 
 typedef struct {
@@ -133,14 +133,13 @@ typedef struct {
 	int8_t torch;
 	int8_t zone;
 	int8_t revealed;
-	unsigned: 24;
 	Monster *monster;
 } Tile;
 
 typedef struct {
+	TrapClass class;
 	Coords pos;
 	Coords dir;
-	TrapClass class;
 } Trap;
 
 typedef struct {
@@ -148,7 +147,7 @@ typedef struct {
 	uint8_t beat_delay;
 	uint8_t radius;
 	bool flying: 1;
-	unsigned dig: 7;
+	signed dig: 7;
 	uint32_t priority;
 	char *glyph;
 	void (*act) (Monster*, Coords);
@@ -158,7 +157,7 @@ static const ClassInfos class_infos[256];
 
 __extension__
 static Tile board[32][32] = {[0 ... 31] = {[0 ... 31] = {.class = WALL, .hp = 5}}};
-static const Coords spawn = {24, 9};
+static const Coords spawn = {16, 9};
 static Monster player = {.class = PLAYER, .hp = 1};
 static Monster monsters[256];
 static Trap traps[256];

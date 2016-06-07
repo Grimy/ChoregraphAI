@@ -16,10 +16,8 @@ static void player_turn() {
 	if (TILE(player.pos).class == FIRE)
 		fire_tile = &TILE(player.pos);
 	player.confusion -= SIGN(player.confusion);
-	if (player.freeze)
-		player.freeze--;
-	else
-		display_prompt();
+	player.freeze -= SIGN(player.freeze);
+	display_prompt();
 	if (&TILE(player.pos) == fire_tile)
 		damage(&player, 2, false);
 }
@@ -27,27 +25,23 @@ static void player_turn() {
 static void enemy_turn(Monster *m) {
 	Coords d = player.pos - m->pos;
 	m->confusion -= SIGN(m->confusion);
-	if (m->freeze) {
-		m->freeze--;
-		return;
-	}
+	m->freeze -= SIGN(m->freeze);
 	if (!m->aggro) {
 		m->aggro = can_see(m->pos);
 		if (L2(d) > CLASS(m).radius)
 			return;
 	}
-	if (m->delay) {
+	if (m->delay)
 		m->delay--;
-		return;
-	}
-	CLASS(m).act(m, d);
+	else if (!m->freeze)
+		CLASS(m).act(m, d);
 }
 
 static void trap_turn(Trap *this) {
 	Monster *m = TILE(this->pos).monster;
-	if (m == NULL || m->trapped || CLASS(m).flying)
+	if (m == NULL || m->untrapped || CLASS(m).flying)
 		return;
-	m->trapped = true;
+	m->untrapped = true;
 
 	switch (this->class) {
 	case OMNIBOUNCE: forced_move(m, DIRECTION(m->pos - m->prev_pos)); break;

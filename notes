@@ -1,39 +1,28 @@
-TO TEST:
-* Hellhounds jumping on spike traps
-* Confused slimes
-* Standing still on spike traps
-* Windmage + pain + omnibounce
-* Aggroing frozen enemies?
-* Forced-move on freeze
-* Blue-dragon freeze on player/normal enemy/bomber/red dragon
-* Damage while frozen on hot coals?
-* Diagonal movement + omnibounce traps
-* Zombie: turn-around, activation, interaction w/ bounce traps
-* 0-dmg attacks on pixies, mine-statues, goolem, monkeys
-* Enemies opening doors? While confused?
+TESTS:
 * Check fix: enemies digging while confused
-* Liches confusing through walls/enemies/crates?
-* Windmages pulling confused players?
-* Rifle + urn
-* benchmark % 169
-* when do beetles shed?
-* moles vs all floor types
-* all floor overrides vs shop floor
-* phasing damage on gargoyles
-* wind gargoyle priority over bounce traps/fire traps
+* benchmark (type % 100) + offset[type / 100]
 
-TO CODE:
-* Ice, Water, Tar
-* Elemental floor-changes
+FEATURES:
+* Ice
 * Beetle armor
 * Armored skeletons (attack direction!)
 * Trampling
+
+BUGFIXES:
+* traps should be destroyed by bombs/elementals/moles
+* blademaster lunge direction when knocked on a bounce trap
+* bombs should deal damage even at point-blank
+* moles can’t walk in water/tar
+* knockback should set delay to n+1 for non-armored enemies
+* knockback shouldn’t free enemies from tar/water
+
+REFACTORS:
 * Refactor harpy AI
-* Fix: should wait for input while frozen
-* Fix: traps should be destroyed by bombs/elementals
-* Fix: blademaster lunge direction when knocked on a bounce trap
-* Fix: bombs not dealing damage at point-blank
 * Consider renaming most AI functions
+
+TIL:
+* phasing makes wind/bomb gargoyles vanish, but not mine gargoyles
+* when a shovemonster’s forced_move fails, it damages the player
 
 REPORT:
 * Different aggression mechanics in the level editor

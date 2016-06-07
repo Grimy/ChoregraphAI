@@ -24,7 +24,7 @@ static void damage(Monster *m, long dmg, bool bomblike);
 // Keeps track of the monster’s previous position.
 static void move(Monster *m, Coords dest) {
 	TILE(m->pos).monster = NULL;
-	m->trapped = false;
+	m->untrapped = false;
 	m->prev_pos = m->pos;
 	m->pos = dest;
 	TILE(m->pos).monster = m;
@@ -87,10 +87,26 @@ static void enemy_attack(Monster *attacker) {
 	}
 }
 
+static bool before_move(Monster *m) {
+	if (m->freeze)
+		return false;
+	if (TILE(m->pos).class == WATER && !CLASS(m).flying) {
+		TILE(m->pos).class = FLOOR;
+		return false;
+	}
+	if (TILE(m->pos).class == TAR && !CLASS(m).flying && !m->untrapped) {
+		m->untrapped = true;
+		return false;
+	}
+	return true;
+}
+
 // Attempts to move the given monster by the given offset.
 // Will trigger attacking/digging if the destination contains the player/a wall.
 // On success, resets the enemy’s delay and returns true.
 static bool enemy_move(Monster *m, Coords offset) {
+	if (!before_move(m))
+		return false;
 	if (m->confusion)
 		offset = -offset;
 	Tile *dest = &TILE(m->pos + offset);
@@ -100,7 +116,7 @@ static bool enemy_move(Monster *m, Coords offset) {
 	else if ((success = can_move(m, offset)))
 		move(m, m->pos + offset);
 	else if (dest->class == WALL)
-		success = dig(dest, m->confusion ? 0 : CLASS(m).dig, false);
+		success = dig(dest, m->confusion ? -1 : CLASS(m).dig, false);
 	if (success)
 		m->delay = CLASS(m).beat_delay;
 	return success;
@@ -109,6 +125,8 @@ static bool enemy_move(Monster *m, Coords offset) {
 // Moves something by force (as caused by bounce traps, wind mages and knockback).
 // Unlike enemy_move, ignores confusion, delay, and digging.
 static void forced_move(Monster *m, Coords offset) {
+	if (!before_move(m))
+		return;
 	Tile *dest = &TILE(m->pos + offset);
 	if (dest->monster == &player)
 		enemy_attack(m);
@@ -215,7 +233,7 @@ static void kill(Monster *m, bool bomblike) {
 static void damage(Monster *m, long dmg, bool bomblike) {
 	if (m->class == WIND_STATUE) {
 		knockback(m);
-	} else if (m->class == MINE_STATUE || m->class == PIXIE) {
+	} else if (m->class == MINE_STATUE) {
 		bomb_tick(m, spawn);
 	} else if (m->class == BOMB_STATUE) {
 		knockback(m);
@@ -224,6 +242,8 @@ static void damage(Monster *m, long dmg, bool bomblike) {
 		knockback(m);
 	} else if (dmg == 0) {
 		return;
+	} else if (m->class == PIXIE) {
+		bomb_tick(m, spawn);
 	} else if (!bomblike && (m->class == BLADENOVICE || m->class == BLADEMASTER) && m->state < 2) {
 		knockback(m);
 		m->state = 1;
@@ -250,6 +270,8 @@ static void damage(Monster *m, long dmg, bool bomblike) {
 // Attempts to move the player by the given offset.
 // Will trigger attacking/digging if the destination contains an enemy/a wall.
 static void player_move(Coords offset) {
+	if (!before_move(&player))
+		return;
 	if (player.confusion)
 		offset = -offset;
 	Tile *dest = &TILE(player.pos + offset);
@@ -274,7 +296,7 @@ static void freeze(Tile *tile) {
 	if (tile->class == WATER)
 		tile->class = ICE;
 	if (tile->monster)
-		tile->monster->freeze = 4;
+		tile->monster->freeze = 5;
 }
 
 // Freezes each tile in a 3x5 cone.
