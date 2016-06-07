@@ -12,7 +12,8 @@
 
 #define IS_ENEMY(m) ((m) && (m) != &player)
 #define IS_OPAQUE(x, y) (board[y][x].class == WALL)
-#define IS_MIMIC(c) ((c) == TARMONSTER || (c) == WALL_MIMIC || (c) == FIRE_MIMIC || (c) == ICE_MIMIC)
+#define IS_MIMIC(c) ((c) == TARMONSTER || (c) == WALL_MIMIC || (c) == SEEK_STATUE \
+		|| (c) == FIRE_MIMIC || (c) == ICE_MIMIC)
 #define IS_KNOCKED_BACK(c) ((c) == MONKEY_2 || (c) == TELE_MONKEY \
 		|| (c) == ASSASSIN_2 || (c) == BANSHEE_1 || (c) == BANSHEE_2)
 #define BLOCKS_MOVEMENT(pos) (TILE(pos).class == WALL)
@@ -169,6 +170,26 @@ static void bomb_plant(Coords pos, uint8_t delay) {
 	monsters[monster_count++] = bomb;
 }
 
+static void bomb_tile(Tile *tile) {
+	if (tile->monster)
+		damage(tile->monster, 4, true);
+	if ((tile->class == WALL && tile->hp < 5) || tile->class == WATER)
+		tile->class = FLOOR;
+	else if (tile->class == ICE)
+		tile->class = WATER;
+}
+
+static void bomb_tick(Monster *this, __attribute__((unused)) Coords d) {
+	printf("Start bombing %d\n", this->class);
+	monster_remove(this);
+	for (int x = this->pos.x - 1; x <= this->pos.x + 1; ++x)
+		for (int y = this->pos.y - 1; y <= this->pos.y + 1; ++y) {
+			printf("%d, %d\n", x, y);
+			bomb_tile(&board[y][x]);
+		}
+	printf("Done bombing %d\n", this->class);
+}
+
 // Kills the given monster, handling any on-death effects.
 static void kill(Monster *m, bool bomblike) {
 	monster_remove(m);
@@ -183,25 +204,20 @@ static void kill(Monster *m, bool bomblike) {
 		bomb_plant(m->pos, 3);
 }
 
-static void bomb_tile(Tile *tile) {
-	if (tile->monster)
-		damage(tile->monster, 4, true);
-	if (tile->class == WALL || tile->class == WATER)
-		tile->class = FLOOR;
-	else if (tile->class == ICE)
-		tile->class = WATER;
-}
-
-static void bomb(Monster *this, __attribute__((unused)) Coords d) {
-	for (int x = this->pos.x - 1; x <= this->pos.x + 1; ++x)
-		for (int y = this->pos.y - 1; y <= this->pos.y + 1; ++y)
-			bomb_tile(&board[y][x]);
-	monster_remove(this);
-}
-
 // Deals damage to the given monster.
 static void damage(Monster *m, long dmg, bool bomblike) {
-	if (!bomblike && (m->class == BLADENOVICE || m->class == BLADEMASTER) && m->state < 2) {
+	if (m->class == WIND_STATUE) {
+		knockback(m);
+	} else if (m->class == MINE_STATUE) {
+		bomb_tick(m, spawn);
+	} else if (m->class == BOMB_STATUE) {
+		knockback(m);
+		m->delay = 2;
+	} else if (dmg < 3 && (m->class == CRATE_1 || m->class == CRATE_2)) {
+		knockback(m);
+	} else if (dmg == 0) {
+		// Do nothing
+	} else if (!bomblike && (m->class == BLADENOVICE || m->class == BLADEMASTER) && m->state < 2) {
 		knockback(m);
 		m->state = 1;
 	} else if (m->class >= RIDER_1 && m->class <= RIDER_3) {
@@ -213,12 +229,10 @@ static void damage(Monster *m, long dmg, bool bomblike) {
 
 	if (m->class == OOZE_GOLEM)
 		TILE(player.pos).class = OOZE;
-	else if (m->class == STATUE_MINE)
-		bomb(m, spawn);
 
 	if (m->hp <= 0)
 		kill(m, bomblike);
-	else if (dmg && IS_KNOCKED_BACK(m->class))
+	else if (IS_KNOCKED_BACK(m->class))
 		knockback(m);
 }
 

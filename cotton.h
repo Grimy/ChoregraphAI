@@ -59,7 +59,7 @@ typedef enum __attribute__((__packed__)) {
 	SPIDER,
 	WARLOCK_1, WARLOCK_2,
 	MUMMY,
-	STATUE_WIND, STATUE_SEEK, STATUE_BOMB, STATUE_MINE,
+	WIND_STATUE, SEEK_STATUE, BOMB_STATUE, MINE_STATUE,
 	CRATE_1, CRATE_2,
 	FREE_SPIDER,
 
@@ -91,7 +91,7 @@ typedef enum __attribute__((__packed__)) {
 
 // Human-readable names for traps.
 // BOUNCE includes all eight directional bounce traps, but not omni-bounce nor random-bounce.
-typedef enum __attribute__((__packed__)) {
+typedef enum {
 	OMNIBOUNCE,
 	BOUNCE,
 	SPIKE,
@@ -134,7 +134,6 @@ typedef struct {
 	Coords pos;
 	Coords dir;
 	TrapClass class;
-	unsigned: 24;
 } Trap;
 
 typedef struct {

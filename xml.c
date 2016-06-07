@@ -47,6 +47,7 @@ static void xml_process_node(xmlTextReaderPtr xml) {
 		monsters[monster_count++] = (Monster) {
 			.class = type,
 			.pos = pos,
+			.prev_pos = pos,
 		    .hp = class_infos[type].max_hp,
 		};
 }

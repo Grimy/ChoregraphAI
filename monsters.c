@@ -21,7 +21,7 @@ static void basic_seek(Monster *this, Coords d) {
 		d.y == 0 ? 0 :
 		d.x == 0 ? 1 :
 
-		// #2: avoid obstacles (when both axes are blocked, tie-break by L2 distance)
+		// #2: avoid obstacles (when both axes are blocked, tiebreak by L2 distance)
 		!can_move(this, vertical) ? !can_move(this, horizontal) && ABS(d.y) > ABS(d.x) :
 		!can_move(this, horizontal) ? 1 :
 
@@ -29,12 +29,9 @@ static void basic_seek(Monster *this, Coords d) {
 		this->pos.y == player.prev_pos.y || this->prev_pos.y == player.pos.y ? 0 :
 		this->pos.x == player.prev_pos.x || this->prev_pos.x == player.pos.x ? 1 :
 
-		// #4: don’t switch axes for a single tile
-		ABS(d.y) == 1 || ABS(d.x) == 1 ? this->vertical :
-
-		// #5: if prevpos aligns with the player’s prevpos, do something weird
-		this->prev_pos.y == player.prev_pos.y ? d.x > 0 && player.pos.x > spawn.x :
-		this->prev_pos.x == player.prev_pos.x ? ABS(d.y) != 2 :
+		// #4: if prevpos aligns with the player’s prevpos, tiebreak by L2 distance
+		this->prev_pos.y == player.prev_pos.y ? ABS(d.y) > ABS(d.x) :
+		this->prev_pos.x == player.prev_pos.x ? ABS(d.y) > ABS(d.x) :
 
 		// #6: keep moving along the same axis
 		this->vertical;
@@ -222,6 +219,18 @@ static void dragon(Monster *this, Coords d) {
 	this->state = can_breath(this) && can_see(this->pos) ? 3 : ABS(this->state - 1);
 }
 
+static void wind_statue(__attribute__((unused)) Monster *this, Coords d) {
+	if (L1(d) == 1)
+		forced_move(&player, d);
+}
+
+static void bomb_statue(Monster *this, Coords d) {
+	if (this->state)
+		bomb_tick(this, d);
+	else if (L1(d) == 1)
+		this->state = 1;
+}
+
 static void todo() {}
 static void nop() {}
 
@@ -306,10 +315,10 @@ static const ClassInfos class_infos[256] = {
 	[WARLOCK_1]   = { 1, 1,   9, false, 0, 10401202, "w",        basic_seek },
 	[WARLOCK_2]   = { 2, 1,   9, false, 0, 10401302, YELLOW "w", basic_seek },
 	[MUMMY]       = { 1, 1,   9, false, 0, 30201103, "M",        moore_seek },
-	[STATUE_WIND] = { 1, 0,   0, false, 0, 10401102, "g",        todo },
-	[STATUE_SEEK] = { 1, 0,   0, false, 0, 10401102, "g",        mimic },
-	[STATUE_BOMB] = { 1, 0,   0, false, 0, 10401102, "g",        todo },
-	[STATUE_MINE] = { 1, 0,   0, false, 0, 10401102, "g",        nop },
+	[WIND_STATUE] = { 1, 0,   0, false, 0, 10401102, CYAN "g",   wind_statue },
+	[SEEK_STATUE] = { 1, 0,   0, false, 0, 10401102, BLACK "g",  mimic },
+	[BOMB_STATUE] = { 1, 0,   0, false, 0, 10401102, YELLOW "g", bomb_statue },
+	[MINE_STATUE] = { 1, 0,   0, false, 0, 10401102, RED "g",    nop },
 	[CRATE_1]     = { 1, 1,   0, false, 0, 10401102, "g",        nop },
 	[CRATE_2]     = { 1, 1,   0, false, 0, 10401102, "g",        nop },
 
@@ -329,5 +338,5 @@ static const ClassInfos class_infos[256] = {
 	[OGRE]        = { 5, 3,  49,  true, 2, 30505115, GREEN "O",  basic_seek },
 
 	[PLAYER]      = { 1, 0,   0, false, 0,      ~0u, "@",        NULL },
-	[BOMB]        = { 0, 0,   0, false, 0,      ~1u, "o",        bomb },
+	[BOMB]        = { 0, 0,   0, false, 0,      ~1u, "o",        bomb_tick },
 };

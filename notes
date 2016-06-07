@@ -1,15 +1,7 @@
-TO TEST:
-* Different damage sources on proximity-mine and wind gargoyles
-* Are enemies pushed back by wind gargoyles?
-* Do elemental transform the floor before/after moving/digging/attacking/knockback?
-* Will dragons/nightmares trample monsters when they could avoid it?
-* Will golems bump into monsters when they could dig?
-* Hitting monkeys while on Ooze
-* `ABS(d.y) != 2` in basic_seek looks weird
-
 TO CODE:
 * Ice
 * Assassins
+* Elementals
 * Armored skeletons (attack direction!)
 * Chest mimics
 * Refactor harpy AI
@@ -19,6 +11,8 @@ TO CODE:
 
 REPORT:
 * Different aggression mechanics in the level editor
+* Elementals
+* mine-gargoyles/crates + dagger throw
 
 Harpy priority:
    N
