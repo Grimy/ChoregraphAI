@@ -24,6 +24,7 @@ static void damage(Monster *m, long dmg, bool bomblike);
 // Keeps track of the monster’s previous position.
 static void move(Monster *m, Coords dest) {
 	TILE(m->pos).monster = NULL;
+	m->trapped = false;
 	m->prev_pos = m->pos;
 	m->pos = dest;
 	TILE(m->pos).monster = m;
@@ -78,7 +79,7 @@ static void monster_remove(Monster *m) {
 static void enemy_attack(Monster *attacker) {
 	if (attacker->class == CONF_MONKEY) {
 		monster_remove(attacker);
-		player.confused = 4;
+		player.confusion = 4;
 	} else if (attacker->class == PIXIE) {
 		monster_remove(attacker);
 	} else {
@@ -90,6 +91,8 @@ static void enemy_attack(Monster *attacker) {
 // Will trigger attacking/digging if the destination contains the player/a wall.
 // On success, resets the enemy’s delay and returns true.
 static bool enemy_move(Monster *m, Coords offset) {
+	if (m->confusion)
+		offset = -offset;
 	Tile *dest = &TILE(m->pos + offset);
 	bool success = true;
 	if (dest->monster == &player)
@@ -97,7 +100,7 @@ static bool enemy_move(Monster *m, Coords offset) {
 	else if ((success = can_move(m, offset)))
 		move(m, m->pos + offset);
 	else if (dest->class == WALL)
-		success = dig(dest, CLASS(m).dig, false);
+		success = dig(dest, m->confusion ? 0 : CLASS(m).dig, false);
 	if (success)
 		m->delay = CLASS(m).beat_delay;
 	return success;
@@ -235,7 +238,7 @@ static void damage(Monster *m, long dmg, bool bomblike) {
 // Attempts to move the player by the given offset.
 // Will trigger attacking/digging if the destination contains an enemy/a wall.
 static void player_move(Coords offset) {
-	if (player.confused)
+	if (player.confusion)
 		offset = -offset;
 	Tile *dest = &TILE(player.pos + offset);
 	player.prev_pos = player.pos;

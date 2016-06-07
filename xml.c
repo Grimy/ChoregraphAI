@@ -26,11 +26,11 @@ static void xml_process_node(xmlTextReaderPtr xml) {
 	Coords pos = {xml_attr(xml, "x"), xml_attr(xml, "y")};
 
 	pos += spawn;
-	type = type == 255 ? PIXIE : type;
+	type = type == 255 ? LICH_2 : type;
 
 	if (!strcmp(name, "trap"))
 		traps[trap_count++] = (Trap) {
-			.class = subtype == 8 ? 0 : type,
+			.class = subtype == 8 ? OMNIBOUNCE : type,
 			.pos = pos,
 			.dir = trap_dirs[subtype & 7],
 		};

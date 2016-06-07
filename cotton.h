@@ -116,8 +116,10 @@ typedef struct monster {
 	bool aggro: 1;
 	bool vertical: 1;
 	unsigned state: 2;
-	unsigned confused: 4;
+	unsigned confusion: 4;
 	unsigned freeze: 4;
+	bool trapped: 1;
+	unsigned long: 63;
 } Monster;
 
 typedef struct {
@@ -134,7 +136,6 @@ typedef struct {
 	Coords pos;
 	Coords dir;
 	TrapClass class;
-	Monster *target;
 } Trap;
 
 typedef struct {

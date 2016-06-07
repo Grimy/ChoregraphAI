@@ -64,8 +64,12 @@ static void moore_seek(Monster *this, Coords d) {
 // Move in a random direction.
 // If the chosen direction is blocked, cycles through the other directions
 // in the order right > left > down > up (mnemonic: Ryan Loves to Dunk Us).
-static void bat(Monster *this, __attribute__((unused)) Coords d) {
+static void bat(Monster *this, Coords d) {
 	static const Coords moves[] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+	if (this->confusion) {
+		basic_seek(this, d);
+		return;
+	}
 	long rng = rand();
 	for (long i = 0; i < 4; ++i)
 		if (enemy_move(this, moves[(rng + i) & 3]))
@@ -97,8 +101,8 @@ static void parry(Monster *this, Coords d) {
 }
 
 static void lich(Monster *this, Coords d) {
-	if (L2(d) == 4 && !player.confused) {
-		player.confused = 5;
+	if (L2(d) == 4 && can_move(this, DIRECTION(d)) && !player.confusion) {
+		player.confusion = 5;
 		this->delay = 1;
 	} else {
 		basic_seek(this, d);

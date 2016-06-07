@@ -15,8 +15,7 @@ static void player_turn() {
 	Tile *fire_tile = NULL;
 	if (TILE(player.pos).class == FIRE)
 		fire_tile = &TILE(player.pos);
-	if (player.confused)
-		player.confused--;
+	player.confusion -= SIGN(player.confusion);
 	if (player.freeze)
 		player.freeze--;
 	else
@@ -27,6 +26,7 @@ static void player_turn() {
 
 static void enemy_turn(Monster *m) {
 	Coords d = player.pos - m->pos;
+	m->confusion -= SIGN(m->confusion);
 	if (m->freeze) {
 		m->freeze--;
 		return;
@@ -44,21 +44,22 @@ static void enemy_turn(Monster *m) {
 }
 
 static void trap_turn(Trap *this) {
-	Monster *target = TILE(this->pos).monster;
-	if (target == NULL || target == this->target || CLASS(target).flying)
+	Monster *m = TILE(this->pos).monster;
+	if (m == NULL || m->trapped || CLASS(m).flying)
 		return;
-	this->target = target;
+	m->trapped = true;
+
 	switch (this->class) {
-		case OMNIBOUNCE: break;
-		case BOUNCE: forced_move(target, this->dir); break;
-		case SPIKE: damage(target, 4, true); break;
-		case TRAPDOOR: damage(target, 4, true); break;
-		case CONFUSE: target->confused = 10; break;
-		case TELEPORT: break;
-		case TEMPO_DOWN: break;
-		case TEMPO_UP: break;
-		case BOMBTRAP: bomb_plant(this->pos, 2);
-		case FIREPIG: break;
+	case OMNIBOUNCE: forced_move(m, DIRECTION(m->pos - m->prev_pos)); break;
+	case BOUNCE:     forced_move(m, this->dir);                       break;
+	case SPIKE:      damage(m, 4, true);                              break;
+	case TRAPDOOR:   monster_remove(m);                               break;
+	case CONFUSE:    m->confusion = 10;                               break;
+	case TELEPORT:                                                    break;
+	case TEMPO_DOWN:                                                  break;
+	case TEMPO_UP:                                                    break;
+	case BOMBTRAP:   bomb_plant(this->pos, 2);                        break;
+	case FIREPIG:                                                     break;
 	}
 }
 

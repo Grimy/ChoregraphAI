@@ -1,16 +1,27 @@
 TO TEST:
+* Confused slimes
+* Standing still on spike traps
+* Windmage + pain + omnibounce
+* Aggroing frozen enemies?
+* Forced-move on freeze
+* Blue-dragon freeze on player/normal enemy/bomber/red dragon
+* Damage while frozen on hot coals?
+* Diagonal movement + omnibounce traps
 * Zombie: turn-around, activation, interaction w/ bounce traps
 * 0-dmg attacks on pixies vs mine-statues
+* Enemies opening doors? While confused?
+* Check-fixed enemies digging while confused
+* Liches confusing through walls/enemies/crates?
+* Windmages pulling confused players?
 
 TO CODE:
-* Ice
-* Assassins
-* Elementals
+* Ice, Water, Tar
+* Elemental floor-changes
 * Beetle armor
 * Armored skeletons (attack direction!)
 * Trampling
 * Refactor harpy AI
-* Fix enemies digging while confused
+* Fix not waiting for input while frozen
 * Consider renaming most AI functions
 
 REPORT:
