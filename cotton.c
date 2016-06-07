@@ -79,7 +79,7 @@ static void monster_remove(Monster *m) {
 static void enemy_attack(Monster *attacker) {
 	if (attacker->class == CONF_MONKEY) {
 		monster_remove(attacker);
-		player.confusion = 4;
+		player.confusion = 5;
 	} else if (attacker->class == PIXIE) {
 		monster_remove(attacker);
 	} else {

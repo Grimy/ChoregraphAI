@@ -20,12 +20,12 @@ static const int floor_colors[] = {[WATER] = 3, [TAR] = 7, [FIRE] = 1, [ICE] = 4
 // Picks an appropriate box-drawing glyph for a wall by looking at adjacent tiles.
 // For example, when tiles to the bottom and right are walls too, use '┌'.
 static void display_wall(Tile *wall) {
-	if (wall->hp == 0) {
-		putchar('+');
-		return;
+	switch (wall->hp) {
+	case 0: putchar('+');   return;
+	case 3: printf(BLACK);  break;
+	case 4: printf(YELLOW); break;
+	case 5: putchar(' ');   return;
 	}
-	if (wall->hp == 3)
-		printf(BLACK);
 	long glyph =
 		IS_WALL(wall - LENGTH(*board)) << 3 |
 		IS_WALL(wall + LENGTH(*board)) << 2 |
@@ -41,8 +41,6 @@ static void display_tile(Coords pos) {
 		printf("\033[4%dm", floor_colors[tile->class]);
 	if (tile->monster)
 		printf("%s", CLASS(tile->monster).glyph);
-	else if (tile->class == WALL && tile->hp == 5)
-		putchar(' ');
 	else if (!can_see(pos))
 		putchar(' ');
 	else if (tile->class == WALL)

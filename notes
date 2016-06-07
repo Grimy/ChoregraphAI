@@ -20,6 +20,7 @@ TO TEST:
 * moles vs all floor types
 * all floor overrides vs shop floor
 * phasing damage on gargoyles
+* wind gargoyle priority over bounce traps/fire traps
 
 TO CODE:
 * Ice, Water, Tar
@@ -28,8 +29,10 @@ TO CODE:
 * Armored skeletons (attack direction!)
 * Trampling
 * Refactor harpy AI
-* Fix not waiting for input while frozen
+* Fix: should wait for input while frozen
 * Fix: traps should be destroyed by bombs/elementals
+* Fix: blademaster lunge direction when knocked on a bounce trap
+* Fix: bombs not dealing damage at point-blank
 * Consider renaming most AI functions
 
 REPORT:
