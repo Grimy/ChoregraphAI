@@ -1,11 +1,15 @@
+TO TEST:
+* Zombie: turn-around, activation, interaction w/ bounce traps
+* 0-dmg attacks on pixies vs mine-statues
+
 TO CODE:
 * Ice
 * Assassins
 * Elementals
+* Beetle armor
 * Armored skeletons (attack direction!)
-* Chest mimics
+* Trampling
 * Refactor harpy AI
-* Fix player reconfused on same beat
 * Fix enemies digging while confused
 * Consider renaming most AI functions
 

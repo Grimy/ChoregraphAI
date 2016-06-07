@@ -98,7 +98,7 @@ static void parry(Monster *this, Coords d) {
 
 static void lich(Monster *this, Coords d) {
 	if (L2(d) == 4 && !player.confused) {
-		player.confused = 4;
+		player.confused = 5;
 		this->delay = 1;
 	} else {
 		basic_seek(this, d);
@@ -128,26 +128,26 @@ static void yeti(Monster *this, Coords d) {
 		enemy_attack(this);
 }
 
-static const Coords harpy_moves[] = {
-	{0, -1}, {-1, 0}, {1, 0}, {0, 1},
-	{-1, -1}, {1, -1}, {-1, 1}, {1, 1},
-	{0, -2}, {-2, 0}, {2, 0}, {0, 2},
-	{-1, -2}, {1, -2}, {-2, -1}, {2, -1}, {-2, 1}, {2, 1}, {-1, 2}, {1, 2},
-	{0, -3}, {-3, 0}, {3, 0}, {0, 3},
-};
 
 // Move up to 3 tiles toward the player.
 // Only attacks if the player was already adjacent. The destination must be visible.
 // Try to move as little as possible in L2 distance.
 static void harpy(Monster *this, Coords d) {
+	static const Coords moves[] = {
+		{0, -1}, {-1, 0}, {1, 0}, {0, 1},
+		{-1, -1}, {1, -1}, {-1, 1}, {1, 1},
+		{0, -2}, {-2, 0}, {2, 0}, {0, 2},
+		{-1, -2}, {1, -2}, {-2, -1}, {2, -1}, {-2, 1}, {2, 1}, {-1, 2}, {1, 2},
+		{0, -3}, {-3, 0}, {3, 0}, {0, 3},
+	};
 	if (L1(d) == 1) {
 		enemy_move(this, d);
 		return;
 	}
 	Coords best = {0, 0};
 	long min = L1(d);
-	for (long i = 0; i < LENGTH(harpy_moves); ++i) {
-		Coords move = harpy_moves[i];
+	for (long i = 0; i < LENGTH(moves); ++i) {
+		Coords move = moves[i];
 		if ((L2(move) == 9 || L2(move) == 4) && (
 				BLOCKS_MOVEMENT(this->pos + DIRECTION(move)) ||
 				BLOCKS_MOVEMENT(this->pos + 2*DIRECTION(move))))
@@ -164,6 +164,11 @@ static void harpy(Monster *this, Coords d) {
 		}
 	}
 	enemy_move(this, best);
+}
+
+static void zombie(Monster *this, __attribute__((unused)) Coords d) {
+	static const Coords moves[] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+	this->state ^= !enemy_move(this, moves[this->state]);
 }
 
 static void blue_slime(Monster *this, __attribute__((unused)) Coords d) {
@@ -248,8 +253,10 @@ static const ClassInfos class_infos[256] = {
 	[MONKEY_1]    = { 1, 0,   9, false, 0, 10004101, PURPLE "Y", basic_seek },
 	[MONKEY_2]    = { 2, 0,   9, false, 0, 10006103, "Y",        basic_seek },
 	[GHOST]       = { 1, 0,   9,  true, 0, 10201102, "8",        todo },
-	[ZOMBIE]      = { 1, 1,   9, false, 0, 10201201, GREEN "Z",  todo },
+	[ZOMBIE]      = { 1, 1, 225, false, 0, 10201201, GREEN "Z",  zombie },
 	[WRAITH]      = { 1, 0,   9,  true, 0, 10101102, RED "W",    basic_seek },
+	[MIMIC_1]     = { 1, 0,   0, false, 0, 10201100, YELLOW "m", mimic },
+	[MIMIC_2]     = { 1, 0,   0, false, 0, 10301100, BLUE "m",   mimic },
 
 	[SKELETANK_1] = { 1, 1,   9, false, 0, 10101202, "Z",        basic_seek },
 	[SKELETANK_2] = { 2, 1,   9, false, 0, 10302204, YELLOW "Z", basic_seek },

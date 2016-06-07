@@ -15,12 +15,12 @@ static void player_turn() {
 	Tile *fire_tile = NULL;
 	if (TILE(player.pos).class == FIRE)
 		fire_tile = &TILE(player.pos);
+	if (player.confused)
+		player.confused--;
 	if (player.freeze)
 		player.freeze--;
 	else
 		display_prompt();
-	if (player.confused)
-		player.confused--;
 	if (&TILE(player.pos) == fire_tile)
 		damage(&player, 2, false);
 }
@@ -45,14 +45,15 @@ static void enemy_turn(Monster *m) {
 
 static void trap_turn(Trap *this) {
 	Monster *target = TILE(this->pos).monster;
-	if (target == NULL || CLASS(target).flying)
+	if (target == NULL || target == this->target || CLASS(target).flying)
 		return;
+	this->target = target;
 	switch (this->class) {
 		case OMNIBOUNCE: break;
 		case BOUNCE: forced_move(target, this->dir); break;
 		case SPIKE: damage(target, 4, true); break;
 		case TRAPDOOR: damage(target, 4, true); break;
-		case CONFUSE: target->confused = 9; break;
+		case CONFUSE: target->confused = 10; break;
 		case TELEPORT: break;
 		case TEMPO_DOWN: break;
 		case TEMPO_UP: break;

@@ -16,7 +16,7 @@ typedef enum __attribute__((__packed__)) {
 	GHOST,
 	ZOMBIE,
 	WRAITH,
-	MIMIC_1, MIMIC_2, MIMIC_3,
+	MIMIC_1, MIMIC_2,
 
 	SKELETANK_1 = 100, SKELETANK_2, SKELETANK_3,
 	WINDMAGE_1, WINDMAGE_2, WINDMAGE_3,
@@ -134,6 +134,7 @@ typedef struct {
 	Coords pos;
 	Coords dir;
 	TrapClass class;
+	Monster *target;
 } Trap;
 
 typedef struct {

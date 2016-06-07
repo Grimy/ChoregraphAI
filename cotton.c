@@ -180,14 +180,10 @@ static void bomb_tile(Tile *tile) {
 }
 
 static void bomb_tick(Monster *this, __attribute__((unused)) Coords d) {
-	printf("Start bombing %d\n", this->class);
 	monster_remove(this);
 	for (int x = this->pos.x - 1; x <= this->pos.x + 1; ++x)
-		for (int y = this->pos.y - 1; y <= this->pos.y + 1; ++y) {
-			printf("%d, %d\n", x, y);
+		for (int y = this->pos.y - 1; y <= this->pos.y + 1; ++y)
 			bomb_tile(&board[y][x]);
-		}
-	printf("Done bombing %d\n", this->class);
 }
 
 // Kills the given monster, handling any on-death effects.
@@ -208,7 +204,7 @@ static void kill(Monster *m, bool bomblike) {
 static void damage(Monster *m, long dmg, bool bomblike) {
 	if (m->class == WIND_STATUE) {
 		knockback(m);
-	} else if (m->class == MINE_STATUE) {
+	} else if (m->class == MINE_STATUE || m->class == PIXIE) {
 		bomb_tick(m, spawn);
 	} else if (m->class == BOMB_STATUE) {
 		knockback(m);
