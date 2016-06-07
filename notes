@@ -1,4 +1,5 @@
 TO TEST:
+* Hellhounds jumping on spike traps
 * Confused slimes
 * Standing still on spike traps
 * Windmage + pain + omnibounce
@@ -8,11 +9,17 @@ TO TEST:
 * Damage while frozen on hot coals?
 * Diagonal movement + omnibounce traps
 * Zombie: turn-around, activation, interaction w/ bounce traps
-* 0-dmg attacks on pixies vs mine-statues
+* 0-dmg attacks on pixies, mine-statues, goolem, monkeys
 * Enemies opening doors? While confused?
-* Check-fixed enemies digging while confused
+* Check fix: enemies digging while confused
 * Liches confusing through walls/enemies/crates?
 * Windmages pulling confused players?
+* Rifle + urn
+* benchmark % 169
+* when do beetles shed?
+* moles vs all floor types
+* all floor overrides vs shop floor
+* phasing damage on gargoyles
 
 TO CODE:
 * Ice, Water, Tar
@@ -22,6 +29,7 @@ TO CODE:
 * Trampling
 * Refactor harpy AI
 * Fix not waiting for input while frozen
+* Fix: traps should be destroyed by bombs/elementals
 * Consider renaming most AI functions
 
 REPORT:

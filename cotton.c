@@ -189,6 +189,14 @@ static void bomb_tick(Monster *this, __attribute__((unused)) Coords d) {
 			bomb_tile(&board[y][x]);
 }
 
+static void tile_change(Tile *tile, TileClass new_class) {
+	tile->class =
+		tile->class == STAIRS ? STAIRS :
+		tile->class * new_class == FIRE * ICE ? WATER :
+		tile->class == WATER && new_class == FIRE ? FLOOR :
+		new_class;
+}
+
 // Kills the given monster, handling any on-death effects.
 static void kill(Monster *m, bool bomblike) {
 	monster_remove(m);
@@ -196,9 +204,9 @@ static void kill(Monster *m, bool bomblike) {
 	if (!bomblike && (m->class == WARLOCK_1 || m->class == WARLOCK_2))
 		move(&player, m->pos);
 	else if (m->class == ICE_SLIME || m->class == YETI)
-		tile->class = tile->class == FIRE ? WATER : ICE;
+		tile_change(tile, ICE);
 	else if (m->class == FIRE_SLIME || m->class == HELLHOUND)
-		tile->class = tile->class == ICE ? WATER : tile->class == WATER ? FLOOR : FIRE;
+		tile_change(tile, FIRE);
 	else if (m->class == BOMBER)
 		bomb_plant(m->pos, 3);
 }
@@ -215,19 +223,23 @@ static void damage(Monster *m, long dmg, bool bomblike) {
 	} else if (dmg < 3 && (m->class == CRATE_1 || m->class == CRATE_2)) {
 		knockback(m);
 	} else if (dmg == 0) {
-		// Do nothing
+		return;
 	} else if (!bomblike && (m->class == BLADENOVICE || m->class == BLADEMASTER) && m->state < 2) {
 		knockback(m);
 		m->state = 1;
 	} else if (m->class >= RIDER_1 && m->class <= RIDER_3) {
 		knockback(m);
 		m->class += SKELETANK_1 - RIDER_1;
-	} else if (!(IS_MIMIC(m->class) && m->state < 2)) {
+	} else if (IS_MIMIC(m->class) && m->state < 2) {
+		return;
+	} else if (m->class == MOLE && m->state == 0) {
+		return;
+	} else {
 		m->hp -= dmg;
 	}
 
 	if (m->class == OOZE_GOLEM)
-		TILE(player.pos).class = OOZE;
+		tile_change(&TILE(player.pos), OOZE);
 
 	if (m->hp <= 0)
 		kill(m, bomblike);

@@ -54,8 +54,8 @@ static void trap_turn(Trap *this) {
 	case BOUNCE:     forced_move(m, this->dir);                       break;
 	case SPIKE:      damage(m, 4, true);                              break;
 	case TRAPDOOR:   monster_remove(m);                               break;
-	case CONFUSE:    m->confusion = 10;                               break;
-	case TELEPORT:                                                    break;
+	case CONFUSE:    m->confusion = m->confusion ? m->confusion : 10; break;
+	case TELEPORT:   monster_remove(m);                               break;
 	case TEMPO_DOWN:                                                  break;
 	case TEMPO_UP:                                                    break;
 	case BOMBTRAP:   bomb_plant(this->pos, 2);                        break;

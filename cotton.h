@@ -9,6 +9,7 @@ typedef int8_t Coords __attribute__((ext_vector_type(2)));
 // Human-friendly names for monster classes.
 // Numerical values were arbitrarily picked to make parsing dungeon XML easier.
 typedef enum __attribute__((__packed__)) {
+	// Z1 enemies
 	GREEN_SLIME, BLUE_SLIME, YOLO_SLIME,
 	SKELETON_1, SKELETON_2, SKELETON_3,
 	BLUE_BAT, RED_BAT, GREEN_BAT,
@@ -18,6 +19,7 @@ typedef enum __attribute__((__packed__)) {
 	WRAITH,
 	MIMIC_1, MIMIC_2,
 
+	// Z2 enemies
 	SKELETANK_1 = 100, SKELETANK_2, SKELETANK_3,
 	WINDMAGE_1, WINDMAGE_2, WINDMAGE_3,
 	MUSHROOM_1, MUSHROOM_2,
@@ -30,6 +32,7 @@ typedef enum __attribute__((__packed__)) {
 	WALL_MIMIC,
 	LIGHTSHROOM, BOMBSHROOM,
 
+	// Z3 enemies
 	FIRE_SLIME = 200, ICE_SLIME,
 	RIDER_1, RIDER_2, RIDER_3,
 	EFREET, DJINN,
@@ -42,7 +45,9 @@ typedef enum __attribute__((__packed__)) {
 	FIRE_MIMIC, ICE_MIMIC,
 	FIRE_POT, ICE_POT,
 	SHOVE_2,
+	BEETLE,
 
+	// Z4 enemies
 	BOMBER = 44,
 	DIGGER,
 	BLACK_BAT,
@@ -52,8 +57,7 @@ typedef enum __attribute__((__packed__)) {
 	OOZE_GOLEM,
 	HARPY,
 	LICH_1, LICH_2, LICH_3,
-	CONF_MONKEY,
-	TELE_MONKEY,
+	CONF_MONKEY, TELE_MONKEY,
 	PIXIE,
 	SARCO_1, SARCO_2, SARCO_3,
 	SPIDER,
@@ -63,8 +67,7 @@ typedef enum __attribute__((__packed__)) {
 	CRATE_1, CRATE_2,
 	FREE_SPIDER,
 
-	SHOPKEEPER = 88,
-
+	// Minibosses
 	DIREBAT_1 = 144, DIREBAT_2,
 	DRAGON, RED_DRAGON, BLUE_DRAGON,
 	BANSHEE_1, BANSHEE_2,
@@ -72,6 +75,8 @@ typedef enum __attribute__((__packed__)) {
 	NIGHTMARE_1, NIGHTMARE_2,
 	MOMMY, OGRE,
 
+	// Other
+	SHOPKEEPER = 88,
 	PLAYER,
 	BOMB,
 } MonsterClass;

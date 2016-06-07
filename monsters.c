@@ -228,6 +228,35 @@ static void dragon(Monster *this, Coords d) {
 	this->state = can_breath(this) && can_see(this->pos) ? 3 : ABS(this->state - 1);
 }
 
+static void elemental(Monster *this, Coords d) {
+	tile_change(&TILE(this->pos), this->class == EFREET ? FIRE : ICE);
+	basic_seek(this, d);
+	tile_change(&TILE(this->pos), this->class == EFREET ? FIRE : ICE);
+}
+
+static void mole(Monster *this, Coords d) {
+	if (this->state != (L1(d) == 1))
+		this->state ^= 1;
+	else if (this->state)
+		enemy_move(this, d);
+	else
+		basic_seek(this, d);
+	tile_change(&TILE(this->pos), FLOOR);
+}
+
+static void beetle_shed(Monster *this) {
+	tile_change(&TILE(this->pos), this->class == FIRE_BEETLE ? FIRE : ICE);
+	this->class = BEETLE;
+}
+
+static void beetle(Monster *this, Coords d) {
+	if (L1(d) == 1)
+		beetle_shed(this);
+	basic_seek(this, d);
+	if (L1(player.pos - this->pos) == 1)
+		beetle_shed(this);
+}
+
 static void wind_statue(__attribute__((unused)) Monster *this, Coords d) {
 	if (L1(d) == 1)
 		forced_move(&player, d);
@@ -276,7 +305,7 @@ static const ClassInfos class_infos[256] = {
 	[ARMADILLO_2] = { 2, 0,   9, false, 2, 10302105, YELLOW "q", todo },
 	[CLONE]       = { 1, 0,   9, false, 0, 10301102, "@",        todo },
 	[TARMONSTER]  = { 1, 0,   9, false, 0, 10304103, "t",        mimic },
-	[MOLE]        = { 1, 0,   9,  true, 0,  1020113, "r",        todo },
+	[MOLE]        = { 1, 0,   9,  true, 0,  1020113, "r",        mole },
 	[WIGHT]       = { 1, 0,   9,  true, 0, 10201103, GREEN "W",  basic_seek },
 	[WALL_MIMIC]  = { 1, 0,   0, false, 0, 10201103, GREEN "m",  mimic },
 	[LIGHTSHROOM] = { 1, 9,   9, false, 0,        0, "%",        nop },
@@ -287,12 +316,13 @@ static const ClassInfos class_infos[256] = {
 	[RIDER_1]     = { 1, 0,   9,  true, 0, 10201102, "&",        basic_seek },
 	[RIDER_2]     = { 2, 0,   9,  true, 0, 10402104, YELLOW "&", basic_seek },
 	[RIDER_3]     = { 3, 0,   9,  true, 0, 10603106, BLACK "&",  basic_seek },
-	[EFREET]      = { 2, 2,   9,  true, 2, 20302302, RED "E",    basic_seek },
-	[DJINN]       = { 2, 2,   9,  true, 2, 20302302, CYAN "E",   basic_seek },
+	[EFREET]      = { 2, 2,   9,  true, 2, 20302302, RED "E",    elemental },
+	[DJINN]       = { 2, 2,   9,  true, 2, 20302302, CYAN "E",   elemental },
 	[ASSASSIN_1]  = { 1, 0,   9, false, 0, 10401103, PURPLE "G", todo },
 	[ASSASSIN_2]  = { 2, 0,   9, false, 0, 10602105, BLACK "G",  todo },
-	[FIRE_BEETLE] = { 3, 1,  49, false, 0, 10303202, RED "a",    basic_seek },
-	[ICE_BEETLE]  = { 3, 1,  49, false, 0, 10303202, CYAN "a",   basic_seek },
+	[FIRE_BEETLE] = { 3, 1,  49, false, 0, 10303202, RED "a",    beetle },
+	[ICE_BEETLE]  = { 3, 1,  49, false, 0, 10303202, CYAN "a",   beetle },
+	[BEETLE]      = { 3, 1,  49, false, 0, 10303202, "a",        basic_seek },
 	[HELLHOUND]   = { 1, 1,   9, false, 0, 10301202, RED "d",    moore_seek },
 	[SHOVE_1]     = { 2, 0,   9, false, 0, 10002102, PURPLE "~", basic_seek },
 	[SHOVE_2]     = { 3, 0,   9, false, 0, 10003102, BLACK "~",  basic_seek },
