@@ -86,13 +86,12 @@ static void black_bat(Monster *this, Coords d) {
 
 // basic_seek variant used by blademasters.
 // After parrying a melee hit, lunge two tiles in the direction the hit came from.
-static void parry(Monster *this, Coords d) {
+static void blademaster(Monster *this, Coords d) {
 	if (this->state == 0) {
 		basic_seek(this, d);
 	} else if (this->state == 1) {
-		Coords lunge = DIRECTION(player.prev_pos - this->pos);
-		enemy_move(this, lunge);
-		enemy_move(this, lunge);
+		enemy_move(this, DIRECTION(player.prev_pos - this->prev_pos));
+		enemy_move(this, DIRECTION(player.prev_pos - this->prev_pos));
 		this->state = 2;
 		this->delay = 0;
 	} else if (this->state == 2) {
@@ -341,8 +340,8 @@ static const ClassInfos class_infos[256] = {
 	[DIGGER]      = { 1, 1,   9, false,  2, 10101201, "G",        basic_seek },
 	[BLACK_BAT]   = { 1, 0,   9,  true, -1, 10401120, BLACK "B",  black_bat },
 	[ARMADILDO]   = { 3, 0,   9, false,  2, 10303104, ORANGE "q", todo },
-	[BLADENOVICE] = { 1, 1,   9, false, -1, 99999995, "b",        parry },
-	[BLADEMASTER] = { 2, 1,   9, false, -1, 99999996, "b",        parry },
+	[BLADENOVICE] = { 1, 1,   9, false, -1, 99999995, "b",        blademaster },
+	[BLADEMASTER] = { 2, 1,   9, false, -1, 99999996, "b",        blademaster },
 	[GHOUL]       = { 1, 0,   9,  true, -1, 10301102, "W",        moore_seek },
 	[OOZE_GOLEM]  = { 5, 3,   9,  true,  2, 20510407, GREEN "'",  basic_seek },
 	[HARPY]       = { 1, 1,   0,  true, -1, 10301203, GREEN "h",  harpy },
