@@ -46,9 +46,9 @@ static void diagonal_seek(Monster *this, Coords d) {
 	else if (d.x == 0)
 		MOVE(1, SIGN(d.y)) || MOVE(-1, SIGN(d.y));
 	else
-		MOVE(SIGN(d.x), SIGN(d.y)) ||
-		MOVE(1,  SIGN(d.y) * -SIGN(d.x)) ||
-		MOVE(-1, SIGN(d.y) * SIGN(d.x));
+		MOVE(SIGN(d.x), SIGN(d.y))
+		    || MOVE(1,  SIGN(d.y) * -SIGN(d.x))
+		    || MOVE(-1, SIGN(d.y) * SIGN(d.x));
 }
 
 // Move toward the player either cardinally or diagonally.
@@ -155,14 +155,14 @@ static void harpy(Monster *this, Coords d) {
 	long min = L1(d);
 	for (long i = 0; i < LENGTH(moves); ++i) {
 		Coords move = moves[i];
-		if ((L2(move) == 9 || L2(move) == 4) && (
-				BLOCKS_MOVEMENT(this->pos + DIRECTION(move)) ||
-				BLOCKS_MOVEMENT(this->pos + 2*DIRECTION(move))))
+		if ((L2(move) == 9 || L2(move) == 4)
+		    && (BLOCKS_MOVEMENT(this->pos + DIRECTION(move))
+		    || BLOCKS_MOVEMENT(this->pos + 2*DIRECTION(move))))
 			continue;
-		if (L2(move) == 5 &&
-				BLOCKS_MOVEMENT(this->pos + move / 2) && (
-				BLOCKS_MOVEMENT(this->pos + DIRECTION(move)) ||
-				BLOCKS_MOVEMENT(this->pos + DIRECTION(move) - move / 2)))
+		if (L2(move) == 5
+		    && BLOCKS_MOVEMENT(this->pos + move / 2)
+		    && (BLOCKS_MOVEMENT(this->pos + DIRECTION(move))
+		    || BLOCKS_MOVEMENT(this->pos + DIRECTION(move) - move / 2)))
 			continue;
 		long score = L1(d - move);
 		if (score && score < min && can_move(this, move)) {
@@ -207,9 +207,10 @@ static void mimic(Monster *this, Coords d) {
 }
 
 static bool can_breath(Monster *this) {
-	Coords d = player.pos - this->pos;
-	return this->state < 2 && (this->class == RED_DRAGON ? !d.y
-			: ABS(d.x) < 4 && ABS(d.y) < ABS(d.x) && !player.freeze);
+	int dx = ABS(player.pos.x - this->pos.x);
+	int dy = ABS(player.pos.y - this->pos.y);
+	bool red = this->class == RED_DRAGON;
+	return this->state < 2 && (red ? !dy : dx < 4 && dy < dx && !player.freeze);
 }
 
 static void breath_attack(Monster *this) {
@@ -239,8 +240,6 @@ static void elemental(Monster *this, Coords d) {
 static void mole(Monster *this, Coords d) {
 	if (this->state != (L1(d) == 1))
 		this->state ^= 1;
-	else if (this->state)
-		enemy_move(this, d);
 	else
 		basic_seek(this, d);
 }

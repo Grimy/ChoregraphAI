@@ -1,5 +1,7 @@
 TESTS:
 * armadillos, armadillos, armadillos
+* 0-dmg attack vs armadillos, blademasters
+* Phasing dagger vs Pixie, crates
 * Check fix: enemies digging while confused
 * BasicFlee: test all cases
 * Do slimes/zombies change direction after attacking the player?
@@ -19,7 +21,6 @@ BUGFIXES:
 * traps should be destroyed by bombs/elementals/moles
 * bombs should deal damage even at point-blank
 * moles can’t walk in water/tar
-* knockback should set delay to n+1 for non-armored enemies
 * knockback shouldn’t free enemies from tar/water
 
 REFACTORS:

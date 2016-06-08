@@ -1,0 +1,19 @@
+none = false
+move = true
+dig = false
+
+diagonal/moore:
+	hit = true
+	water/tar = true
+
+bats:
+	hit = true
+	water/tar = N/A
+
+armadillos:
+	hit = false
+	water/tar = false
+
+slimes:
+	hit = false (iirc)
+	water/tar = true (iirc)

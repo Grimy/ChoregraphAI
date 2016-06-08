@@ -26,12 +26,10 @@ static void display_wall(Tile *wall) {
 	case 4: printf(YELLOW); break;
 	case 5: putchar(' ');   return;
 	}
-	long glyph =
-		IS_WALL(wall - LENGTH(*board)) << 3 |
-		IS_WALL(wall + LENGTH(*board)) << 2 |
-		IS_WALL(wall - 1) << 1 |
-		IS_WALL(wall + 1);
-	printf("%3.3s", &"╳───│┌┐┬│└┘┴│├┤┼"[3*glyph]);
+	long glyph = 0;
+	for (PLUS_SHAPE(wall))
+		glyph = (glyph << 1) | (wall->class == WALL && wall->hp < 5);
+	printf("%3.3s", &"╳───│┌┐┬│└┘┴│├┤┼"[3 * (glyph & 15)]);
 }
 
 // Pretty-prints the tile at the given position.
@@ -53,8 +51,8 @@ static void display_tile(Coords pos) {
 // Clears and redraws the entire board.
 static void display_board(void) {
 	printf("\033[H\033[2J");
-	for (int8_t y = 0; y < LENGTH(board); ++y) {
-		for (int8_t x = 0; x < LENGTH(*board); ++x)
+	for (int8_t y = 1; y < LENGTH(board) - 1; ++y) {
+		for (int8_t x = 1; x < LENGTH(*board) - 1; ++x)
 			display_tile((Coords) {x, y});
 		putchar('\n');
 	}

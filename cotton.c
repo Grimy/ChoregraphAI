@@ -17,6 +17,7 @@
 #define IS_KNOCKED_BACK(c) ((c) == MONKEY_2 || (c) == TELE_MONKEY \
 		|| (c) == ASSASSIN_2 || (c) == BANSHEE_1 || (c) == BANSHEE_2)
 #define BLOCKS_MOVEMENT(pos) (TILE(pos).class == WALL)
+#define PLUS_SHAPE(tile) int i = 0; i < 5; (tile) += (int[]) {-32, 64, -33, 2, 0} [i++]
 
 static void damage(Monster *m, long dmg, bool bomblike);
 
@@ -54,12 +55,9 @@ static bool dig(Tile *wall, int digging_power, bool z4) {
 		wall->monster->class = FREE_SPIDER;
 		wall->monster->delay = 1;
 	}
-	if (!z4 && wall->zone == 4 && (wall->hp == 1 || wall->hp == 2)) {
-		dig(wall - 1, digging_power, true);
-		dig(wall + 1, digging_power, true);
-		dig(wall - LENGTH(*board), digging_power, true);
-		dig(wall + LENGTH(*board), digging_power, true);
-	}
+	if (!z4 && wall->zone == 4 && (wall->hp == 1 || wall->hp == 2))
+		for (PLUS_SHAPE(wall))
+			dig(wall, digging_power, true);
 	return true;
 }
 
@@ -150,8 +148,8 @@ static bool los(double x, double y) {
 		double err_x = ABS((cx + SIGN(dx) - x) * dy - (cy - y) * dx);
 		double err_y = ABS((cx - x) * dy - (cy + SIGN(dy) - y) * dx);
 		if ((ABS(err_x - err_y) < .001 && IS_OPAQUE(cx, cy + SIGN(dy)))
-			|| (err_x < err_y + .001 && IS_OPAQUE(cx += SIGN(dx), cy))
-			|| (err_y < err_x + .001 && IS_OPAQUE(cx, cy += SIGN(dy))))
+		    || (err_x < err_y + .001 && IS_OPAQUE(cx += SIGN(dx), cy))
+		    || (err_y < err_x + .001 && IS_OPAQUE(cx, cy += SIGN(dy))))
 			return false;
 	}
 	return true;
@@ -165,10 +163,10 @@ static bool can_see(Coords dest) {
 	if (dest.x < pos.x - 10 || dest.x > pos.x + 9 || dest.y < pos.y - 5 || dest.y > pos.y + 5)
 		return false;
 	return los(dest.x - .55, dest.y - .55)
-		|| los(dest.x + .55, dest.y - .55)
-		|| los(dest.x - .55, dest.y + .55)
-		|| los(dest.x + .55, dest.y + .55)
-		|| los(dest.x, dest.y);
+	    || los(dest.x + .55, dest.y - .55)
+	    || los(dest.x - .55, dest.y + .55)
+	    || los(dest.x + .55, dest.y + .55)
+	    || los(dest.x, dest.y);
 }
 
 // Compares the priorities of two monsters.
@@ -229,6 +227,8 @@ static void kill(Monster *m, bool bomblike) {
 		tile_change(tile, FIRE);
 	else if (m->class == BOMBER)
 		bomb_plant(m->pos, 3);
+	else if (m->class == PIXIE)
+		bomb_tick(m, spawn);
 }
 
 // Deals damage to the given monster.
@@ -242,10 +242,12 @@ static void damage(Monster *m, long dmg, bool bomblike) {
 		m->delay = 2;
 	} else if (dmg < 3 && (m->class == CRATE_1 || m->class == CRATE_2)) {
 		knockback(m);
+	} else if (IS_MIMIC(m->class) && m->state < 2) {
+		return;
+	} else if (m->class == MOLE && m->state == 0) {
+		return;
 	} else if (dmg == 0) {
 		return;
-	} else if (m->class == PIXIE) {
-		bomb_tick(m, spawn);
 	} else if (!bomblike && (m->class == BLADENOVICE || m->class == BLADEMASTER) && m->state < 2) {
 		knockback(m);
 		m->state = 1;
@@ -254,10 +256,6 @@ static void damage(Monster *m, long dmg, bool bomblike) {
 		m->class += SKELETANK_1 - RIDER_1;
 	} else if ((m->class == ARMADILLO_1 || m->class == ARMADILLO_2 || m->class == ARMADILDO) && m->state) {
 		m->prev_pos = player.pos;
-	} else if (IS_MIMIC(m->class) && m->state < 2) {
-		return;
-	} else if (m->class == MOLE && m->state == 0) {
-		return;
 	} else {
 		m->hp -= dmg;
 	}
