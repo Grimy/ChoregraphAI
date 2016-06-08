@@ -45,9 +45,9 @@ static bool can_move(Monster *m, Coords offset) {
 // Tries to dig away the given wall, replacing it with floor.
 // Returns whether the dig succeeded.
 static bool dig(Tile *wall, int digging_power, bool z4) {
-	if (wall->hp > digging_power)
+	if (wall->class != WALL || wall->hp > digging_power)
 		return false;
-	if (z4 && (wall->class != WALL || wall->hp == 0 || wall->hp > 2))
+	if (z4 && (wall->hp == 0 || wall->hp > 2))
 		return false;
 	wall->class = FLOOR;
 	if (wall->monster && wall->monster->class == SPIDER) {
@@ -105,21 +105,23 @@ static bool before_move(Monster *m) {
 // Will trigger attacking/digging if the destination contains the player/a wall.
 // On success, resets the enemy’s delay and returns true.
 static bool enemy_move(Monster *m, Coords offset) {
+	m->delay = CLASS(m).beat_delay;
 	if (!before_move(m))
-		return false;
+		return true;
 	if (m->confusion)
 		offset = -offset;
+
 	Tile *dest = &TILE(m->pos + offset);
-	bool success = true;
 	if (dest->monster == &player)
 		enemy_attack(m);
-	else if ((success = can_move(m, offset)))
+	else if (can_move(m, offset))
 		move(m, m->pos + offset);
-	else if (dest->class == WALL)
-		success = dig(dest, m->confusion ? -1 : CLASS(m).dig, false);
-	if (success)
-		m->delay = CLASS(m).beat_delay;
-	return success;
+	else if (dig(dest, m->confusion ? -1 : CLASS(m).dig, false))
+		return false;
+	else
+		return m->delay = 0;
+
+	return true;
 }
 
 // Moves something by force (as caused by bounce traps, wind mages and knockback).
@@ -250,6 +252,8 @@ static void damage(Monster *m, long dmg, bool bomblike) {
 	} else if (m->class >= RIDER_1 && m->class <= RIDER_3) {
 		knockback(m);
 		m->class += SKELETANK_1 - RIDER_1;
+	} else if ((m->class == ARMADILLO_1 || m->class == ARMADILLO_2 || m->class == ARMADILDO) && m->state) {
+		m->prev_pos = player.pos;
 	} else if (IS_MIMIC(m->class) && m->state < 2) {
 		return;
 	} else if (m->class == MOLE && m->state == 0) {

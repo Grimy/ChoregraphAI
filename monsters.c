@@ -191,9 +191,7 @@ static void yellow_slime(Monster *this, __attribute__((unused)) Coords d) {
 
 static void diagonal_slime(Monster *this, __attribute__((unused)) Coords d) {
 	static const Coords moves[] = {{1, 1}, {-1, 1}, {-1, -1}, {1, -1}};
-	bool ok = can_move(this, moves[this->state]);
-	enemy_move(this, moves[this->state]);
-	this->state += ok;
+	this->state += enemy_move(this, moves[this->state]);
 }
 
 // State 0: camouflaged
@@ -210,8 +208,8 @@ static void mimic(Monster *this, Coords d) {
 
 static bool can_breath(Monster *this) {
 	Coords d = player.pos - this->pos;
-	return this->state < 2 &&
-		(this->class == RED_DRAGON ? !d.y : ABS(d.x) < 4 && ABS(d.y) < ABS(d.x) && !player.freeze);
+	return this->state < 2 && (this->class == RED_DRAGON ? !d.y
+			: ABS(d.x) < 4 && ABS(d.y) < ABS(d.x) && !player.freeze);
 }
 
 static void breath_attack(Monster *this) {
@@ -272,6 +270,18 @@ static void bomb_statue(Monster *this, Coords d) {
 		this->state = 1;
 }
 
+static void armadillo(Monster *this, Coords d) {
+	if (this->state) {
+		if (!enemy_move(this, this->pos - this->prev_pos)) {
+			this->delay = 3;
+			this->state = 0;
+		}
+	} else if (d.x * d.y == 0 && can_see(this->pos)) {
+		this->state = 1;
+		enemy_move(this, DIRECTION(d));
+	}
+}
+
 static void todo() {}
 static void nop() {}
 
@@ -304,8 +314,8 @@ static const ClassInfos class_infos[256] = {
 	[MUSHROOM_2]  = { 3, 2,   9, false, -1, 10403303, PURPLE "%", mushroom },
 	[GOLEM_1]     = { 5, 3,   9,  true,  2, 20405404, "'",        basic_seek },
 	[GOLEM_2]     = { 7, 3,   9,  true,  2, 20607407, BLACK "'",  basic_seek },
-	[ARMADILLO_1] = { 1, 0,   9, false,  2, 10201102, "q",        todo },
-	[ARMADILLO_2] = { 2, 0,   9, false,  2, 10302105, YELLOW "q", todo },
+	[ARMADILLO_1] = { 1, 0,   9, false,  2, 10201102, "q",        armadillo },
+	[ARMADILLO_2] = { 2, 0,   9, false,  2, 10302105, YELLOW "q", armadillo },
 	[CLONE]       = { 1, 0,   9, false, -1, 10301102, "@",        todo },
 	[TARMONSTER]  = { 1, 0,   9, false, -1, 10304103, "t",        mimic },
 	[MOLE]        = { 1, 0,   9,  true, -1,  1020113, "r",        mole },

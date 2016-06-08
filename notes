@@ -1,5 +1,10 @@
 TESTS:
+* armadillos, armadillos, armadillos
 * Check fix: enemies digging while confused
+* BasicFlee: test all cases
+* Do slimes/zombies change direction after attacking the player?
+* Do slimes/zombies change direction after water/tar?
+* Can mages cast while stuck in tar?
 * Cat+leaping+blademaster
 * benchmark (type % 100) + offset[type / 100]
 
