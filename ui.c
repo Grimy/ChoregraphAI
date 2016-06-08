@@ -21,10 +21,18 @@ static const int floor_colors[] = {[SHOP] = 3, [WATER] = 4, [FIRE] = 1, [ICE] = 
 // For example, when tiles to the bottom and right are walls too, use '┌'.
 static void display_wall(Tile *wall) {
 	switch (wall->hp) {
-	case 0: putchar('+');   return;
-	case 3: printf(BLACK);  break;
-	case 4: printf(YELLOW); break;
-	case 5: putchar(' ');   return;
+	case 0:
+		putchar('+');
+		return;
+	case 3:
+		printf(BLACK);
+		break;
+	case 4:
+		printf(YELLOW);
+		break;
+	case 5:
+		putchar(' ');
+		return;
 	}
 	long glyph = 0;
 	for (PLUS_SHAPE(wall))
@@ -75,12 +83,22 @@ static void display_prompt() {
 		// return;
 	display_board();
 	switch (getchar()) {
-		case 'e': player_move((Coords) {-1,  0}); break;
-		case 'f': player_move((Coords) { 0,  1}); break;
-		case 'i': player_move((Coords) { 1,  0}); break;
-		case 'j': player_move((Coords) { 0, -1}); break;
-		case '<': bomb_plant(player.pos, 3); break;
-		case 't': exit(0); break;
-		default: break;
+	case 'e':
+		player_move(-1,  0);
+		break;
+	case 'f':
+		player_move( 0,  1);
+		break;
+	case 'i':
+		player_move( 1,  0);
+		break;
+	case 'j':
+		player_move( 0, -1);
+		break;
+	case '<':
+		bomb_plant(player.pos, 3);
+		break;
+	case 't':
+		exit(0);
 	}
 }

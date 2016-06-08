@@ -271,7 +271,8 @@ static void damage(Monster *m, long dmg, bool bomblike) {
 
 // Attempts to move the player by the given offset.
 // Will trigger attacking/digging if the destination contains an enemy/a wall.
-static void player_move(Coords offset) {
+static void player_move(int8_t x, int8_t y) {
+	Coords offset = {x, y};
 	if (!before_move(&player))
 		return;
 	if (player.confusion)

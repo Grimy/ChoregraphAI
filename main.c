@@ -44,16 +44,31 @@ static void trap_turn(Trap *this) {
 	m->untrapped = true;
 
 	switch (this->class) {
-	case OMNIBOUNCE: forced_move(m, DIRECTION(m->pos - m->prev_pos)); break;
-	case BOUNCE:     forced_move(m, this->dir);                       break;
-	case SPIKE:      damage(m, 4, true);                              break;
-	case TRAPDOOR:   monster_remove(m);                               break;
-	case CONFUSE:    if (!m->confusion) m->confusion = 10;            break;
-	case TELEPORT:   monster_remove(m);                               break;
-	case TEMPO_DOWN:                                                  break;
-	case TEMPO_UP:                                                    break;
-	case BOMBTRAP:   if (m == &player) bomb_plant(this->pos, 2);      break;
-	case FIREPIG:                                                     break;
+	case OMNIBOUNCE:
+		forced_move(m, DIRECTION(m->pos - m->prev_pos));
+		break;
+	case BOUNCE:
+		forced_move(m, this->dir);
+		break;
+	case SPIKE:
+		damage(m, 4, true);
+		break;
+	case TRAPDOOR:
+	case TELEPORT:
+		monster_remove(m);
+		break;
+	case CONFUSE:
+		if (!m->confusion)
+			m->confusion = 10;
+		break;
+	case BOMBTRAP:
+		if (m == &player)
+			bomb_plant(this->pos, 2);
+		break;
+	case TEMPO_DOWN:
+	case TEMPO_UP:
+	case FIREPIG:
+		break;
 	}
 }
 
