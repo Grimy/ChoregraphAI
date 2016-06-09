@@ -12,6 +12,3 @@ a.out: $(SOURCES)
 rtl.expand: $(SOURCES)
 	gcc -fdump-rtl-expand=$@ -I/usr/include/libxml2 -S main.c >/dev/null
 	rm main.s
-
-graph: rtl.expand
-	egypt --omit move,can_move $< | dot -Tpng | feh -FZ -

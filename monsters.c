@@ -269,12 +269,22 @@ static void bomb_statue(Monster *this, Coords d) {
 		this->state = 1;
 }
 
+static bool can_charge(Monster *this, Coords dest) {
+	if (dest.x != this->pos.x && dest.y != this->pos.y)
+		return false;
+	Coords move = DIRECTION(dest - this->pos);
+	for (Coords pos = this->pos + move; pos.x != dest.x || pos.y != dest.y; pos += move)
+		if (TILE(pos).class == WALL || TILE(pos).monster)
+			return false;
+	return true;
+}
+
 // State 0: passive
 // State 1: ready
 // State 2: charging
 static void armadillo(Monster *this, Coords d) {
 	int old_state = this->state;
-	if (this->state < 2 && d.x * d.y == 0 && can_see(this->pos)) {
+	if (this->state < 2 && can_charge(this, player.pos)) {
 		if (this->state)
 			enemy_move(this, DIRECTION(d));
 		else
@@ -288,6 +298,26 @@ static void armadillo(Monster *this, Coords d) {
 	}
 	if (old_state && this->confusion)
 		this->prev_pos = this->pos + this->pos - this->prev_pos;
+}
+
+// State 0: default
+// State 1: charging
+static void minotaur(Monster *this, Coords d) {
+	if (this->state == 0 && can_charge(this, player.pos)) {
+		this->state = 1;
+		this->prev_pos = this->pos - DIRECTION(d);
+	} else if (this->state == 0 && can_charge(this, player.prev_pos)) {
+		this->state = 1;
+		this->prev_pos = this->pos - DIRECTION(player.prev_pos - this->pos);
+	}
+	if (this->state == 1) {
+		if (!enemy_move(this, this->pos - this->prev_pos)) {
+			this->delay = 2;
+			this->state = 0;
+		}
+	} else {
+		basic_seek(this, d);
+	}
 }
 
 static void digger(Monster *this, Coords d) {
@@ -400,8 +430,8 @@ static const ClassInfos class_infos[256] = {
 	[BLUE_DRAGON] = { 6, 0,   0,  true,  4, 99999997, BLUE "D",   dragon },
 	[BANSHEE_1]   = { 3, 0,  49,  true, -1, 30403110, BLUE "8",   basic_seek },
 	[BANSHEE_2]   = { 4, 0,  49,  true, -1, 30604115, GREEN "8",  basic_seek },
-	[MINOTAUR_1]  = { 3, 0,  49,  true,  2, 30403110, "H",        todo },
-	[MINOTAUR_2]  = { 5, 0,  49,  true,  2, 30505115, BLACK "H",  todo },
+	[MINOTAUR_1]  = { 3, 0,  49,  true,  2, 30403110, "H",        minotaur },
+	[MINOTAUR_2]  = { 5, 0,  49,  true,  2, 30505115, BLACK "H",  minotaur },
 	[NIGHTMARE_1] = { 3, 1,  49,  true,  4, 30403210, BLACK "u",  basic_seek },
 	[NIGHTMARE_2] = { 5, 1,  49,  true,  4, 30505215, RED "u",    basic_seek },
 	[MOMMY]       = { 6, 3,  49,  true, -1, 30405215, BLACK "@",  basic_seek },

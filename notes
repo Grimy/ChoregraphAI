@@ -10,6 +10,7 @@ FEATURES:
 * Trampling
 
 BUGFIXES:
+* armadillos should not charge diagonally after a diagonal bounce trap
 * bats should stop trying directions after hitting the player
 * zombies should keep the same direction after hitting the player
 * diggers shouldn’t fall asleep after hitting the player
