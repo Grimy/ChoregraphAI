@@ -20,6 +20,7 @@
 #define PLUS_SHAPE(tile) int i = 0; i < 5; (tile) += (int[]) {-32, 64, -33, 2, 0} [i++]
 
 static void damage(Monster *m, long dmg, bool bomblike);
+static bool forced_move(Monster *m, Coords offset);
 
 // Moves the given monster to a specific position.
 // Keeps track of the monster’s previous position.
@@ -74,12 +75,23 @@ static void monster_remove(Monster *m) {
 // Handles an enemy attacking the player.
 // Usually boils down to `damage(&player, ...)`, but some enemies are special-cased.
 static void enemy_attack(Monster *attacker) {
-	if (attacker->class == CONF_MONKEY) {
+	Coords d = player.pos - attacker->pos;
+	switch (attacker->class) {
+	case CONF_MONKEY:
 		monster_remove(attacker);
 		player.confusion = 5;
-	} else if (attacker->class == PIXIE) {
+		break;
+	case PIXIE:
 		monster_remove(attacker);
-	} else {
+		break;
+	case SHOVE_1:
+	case SHOVE_2:
+		if (forced_move(&player, d))
+			move(attacker, attacker->pos + d);
+		else
+			damage(&player, 1, false);
+		break;
+	default:
 		damage(&player, 1, false);
 	}
 }
@@ -124,14 +136,17 @@ static bool enemy_move(Monster *m, Coords offset) {
 
 // Moves something by force (as caused by bounce traps, wind mages and knockback).
 // Unlike enemy_move, ignores confusion, delay, and digging.
-static void forced_move(Monster *m, Coords offset) {
+static bool forced_move(Monster *m, Coords offset) {
 	if (!before_move(m))
-		return;
+		return false;
 	Tile *dest = &TILE(m->pos + offset);
 	if (dest->monster == &player)
 		enemy_attack(m);
 	else if (!dest->monster && dest->class != WALL)
 		move(m, m->pos + offset);
+	else
+		return false;
+	return true;
 }
 
 // Checks whether the straight line from the player to the given position
