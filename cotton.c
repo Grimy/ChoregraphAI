@@ -26,7 +26,6 @@ static void damage(Monster *m, long dmg, bool bomblike);
 static void move(Monster *m, Coords dest) {
 	TILE(m->pos).monster = NULL;
 	m->untrapped = false;
-	m->prev_pos = m->pos;
 	m->pos = dest;
 	TILE(m->pos).monster = m;
 }
@@ -88,6 +87,7 @@ static void enemy_attack(Monster *attacker) {
 static bool before_move(Monster *m) {
 	if (m->freeze)
 		return false;
+	m->prev_pos = m->pos;
 	if (TILE(m->pos).class == WATER && !CLASS(m).flying) {
 		TILE(m->pos).class = FLOOR;
 		return false;
@@ -105,21 +105,21 @@ static bool before_move(Monster *m) {
 static bool enemy_move(Monster *m, Coords offset) {
 	m->delay = CLASS(m).beat_delay;
 	if (!before_move(m))
-		return true;
+		return false;
 	if (m->confusion)
 		offset = -offset;
 
 	Tile *dest = &TILE(m->pos + offset);
-	if (dest->monster == &player)
+	if (dest->monster == &player) {
 		enemy_attack(m);
-	else if (can_move(m, offset))
+	} else if (can_move(m, offset)) {
 		move(m, m->pos + offset);
-	else if (dig(dest, m->confusion ? -1 : CLASS(m).dig, false))
-		return false;
-	else
-		return m->delay = 0;
+		return true;
+	} else if (!dig(dest, m->confusion ? -1 : CLASS(m).dig, false)) {
+		m->delay = 0;
+	}
 
-	return true;
+	return false;
 }
 
 // Moves something by force (as caused by bounce traps, wind mages and knockback).
@@ -278,7 +278,6 @@ static void player_move(int8_t x, int8_t y) {
 	if (player.confusion)
 		offset = -offset;
 	Tile *dest = &TILE(player.pos + offset);
-	player.prev_pos = player.pos;
 	if (dest->class == WALL)
 		dig(dest, TILE(player.pos).class == OOZE ? 0 : 2, false);
 	else if (IS_ENEMY(dest->monster))

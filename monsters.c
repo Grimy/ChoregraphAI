@@ -1,6 +1,6 @@
 // monsters.c - defines all monsters in the game and their AIs
 
-#define MOVE(x, y) (enemy_move(this, (Coords) {(x), (y)}))
+#define MOVE(x, y) (can_move(this, (Coords) {(x), (y)}) && ~enemy_move(this, (Coords) {(x), (y)}))
 
 // Many things in the game follow the so-called “bomb order”:
 // 147
@@ -269,16 +269,33 @@ static void bomb_statue(Monster *this, Coords d) {
 		this->state = 1;
 }
 
+// State 0: passive
+// State 1: ready
+// State 2: charging
 static void armadillo(Monster *this, Coords d) {
-	if (this->state) {
-		if (!enemy_move(this, this->pos - this->prev_pos)) {
-			this->delay = 3;
-			this->state = 0;
-		}
-	} else if (d.x * d.y == 0 && can_see(this->pos)) {
-		this->state = 1;
-		enemy_move(this, DIRECTION(d));
+	int old_state = this->state;
+	if (this->state < 2 && d.x * d.y == 0 && can_see(this->pos)) {
+		if (this->state)
+			enemy_move(this, DIRECTION(d));
+		else
+			this->prev_pos = this->pos - DIRECTION(d);
+		this->state = 2;
+	} else if (this->state == 2 && !enemy_move(this, this->pos - this->prev_pos)) {
+		this->delay = 1;
+		this->state = 0;
+	} else if (this->state == 0) {
+		this->state = this->aggro;
 	}
+	if (old_state && this->confusion)
+		this->prev_pos = this->pos + this->pos - this->prev_pos;
+}
+
+static void digger(Monster *this, Coords d) {
+	this->vertical = d.y > (d.x + 1) / 3;
+	if (this->vertical)
+		MOVE(0, SIGN(d.y)) || MOVE(SIGN(d.x), 0) || MOVE(-SIGN(d.x), 0);
+	else
+		MOVE(SIGN(d.x), 0) || MOVE(0, SIGN(d.y)) || MOVE(0, -SIGN(d.y));
 }
 
 static void todo() {}
@@ -313,8 +330,8 @@ static const ClassInfos class_infos[256] = {
 	[MUSHROOM_2]  = { 3, 2,   9, false, -1, 10403303, PURPLE "%", mushroom },
 	[GOLEM_1]     = { 5, 3,   9,  true,  2, 20405404, "'",        basic_seek },
 	[GOLEM_2]     = { 7, 3,   9,  true,  2, 20607407, BLACK "'",  basic_seek },
-	[ARMADILLO_1] = { 1, 0,   9, false,  2, 10201102, "q",        armadillo },
-	[ARMADILLO_2] = { 2, 0,   9, false,  2, 10302105, YELLOW "q", armadillo },
+	[ARMADILLO_1] = { 1, 0, 225, false,  2, 10201102, "q",        armadillo },
+	[ARMADILLO_2] = { 2, 0, 225, false,  2, 10302105, YELLOW "q", armadillo },
 	[CLONE]       = { 1, 0,   9, false, -1, 10301102, "@",        todo },
 	[TARMONSTER]  = { 1, 0,   9, false, -1, 10304103, "t",        mimic },
 	[MOLE]        = { 1, 0,   9,  true, -1,  1020113, "r",        mole },
@@ -346,9 +363,9 @@ static const ClassInfos class_infos[256] = {
 	[ICE_POT]     = { 1, 0,   9, false, -1,        0, CYAN "(",   nop },
 
 	[BOMBER]      = { 1, 1,   0, false, -1, 99999998, RED "G",    diagonal_seek },
-	[DIGGER]      = { 1, 1,   9, false,  2, 10101201, "G",        basic_seek },
+	[DIGGER]      = { 1, 1,   9, false,  2, 10101201, "G",        digger },
 	[BLACK_BAT]   = { 1, 0,   9,  true, -1, 10401120, BLACK "B",  black_bat },
-	[ARMADILDO]   = { 3, 0,   9, false,  2, 10303104, ORANGE "q", todo },
+	[ARMADILDO]   = { 3, 0, 225, false,  2, 10303104, ORANGE "q", todo },
 	[BLADENOVICE] = { 1, 1,   9, false, -1, 99999995, "b",        blademaster },
 	[BLADEMASTER] = { 2, 1,   9, false, -1, 99999996, "b",        blademaster },
 	[GHOUL]       = { 1, 0,   9,  true, -1, 10301102, "W",        moore_seek },

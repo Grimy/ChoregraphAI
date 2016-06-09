@@ -1,19 +1,43 @@
-none = false
-move = true
-dig = false
+sleepers (accept this direction?)
 
-diagonal/moore:
+diagonal/moore (accept this direction?):
+	move = true
 	hit = true
 	water/tar = true
+	dig = N/A
+	none = false
 
-bats:
+bats (accept this direction?):
+	move = true
 	hit = true
 	water/tar = N/A
+	dig = N/A
+	none = false
 
-armadillos:
+armadillos (keep charging?):
+	move = true
 	hit = false
 	water/tar = false
+	dig = false
+	none = false
 
-slimes:
-	hit = false (iirc)
-	water/tar = true (iirc)
+slimes (change direction?):
+	move = true
+	hit = false
+	water/tar = false
+	dig = false
+	none = false
+
+zombies (keep direction?):
+	move = true
+	hit = true
+	water = false
+	dig = N/A
+	none = false
+
+sleepers (keep moving?)
+	move = true
+	hit = true
+	water/tar = false
+	dig = false
+	none = false

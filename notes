@@ -1,13 +1,5 @@
 TESTS:
-* armadillos, armadillos, armadillos
-* 0-dmg attack vs armadillos, blademasters
-* Phasing dagger vs Pixie, crates
-* Check fix: enemies digging while confused
 * BasicFlee: test all cases
-* Do slimes/zombies change direction after attacking the player?
-* Do slimes/zombies change direction after water/tar?
-* Can mages cast while stuck in tar?
-* Cat+leaping+blademaster
 * benchmark (type % 100) + offset[type / 100]
 
 FEATURES:
@@ -18,6 +10,10 @@ FEATURES:
 * Trampling
 
 BUGFIXES:
+* bats should stop trying directions after hitting the player
+* zombies should keep the same direction after hitting the player
+* diggers shouldn’t fall asleep after hitting the player
+* mages shouldn’t be able to cast while stuck in water/tar
 * traps should be destroyed by bombs/elementals/moles
 * bombs should deal damage even at point-blank
 * moles can’t walk in water/tar
@@ -25,15 +21,9 @@ BUGFIXES:
 
 REFACTORS:
 * Refactor harpy AI
-* Consider renaming most AI functions
-
-TIL:
-* phasing makes wind/bomb gargoyles vanish, but not mine gargoyles
-* when a shovemonster’s forced_move fails, it damages the player
 
 REPORT:
 * Different aggression mechanics in the level editor
-* Elementals
 * mine-gargoyles/crates + dagger throw
 
 Harpy priority:
