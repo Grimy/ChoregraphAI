@@ -216,7 +216,8 @@ static void bomb_tile(Tile *tile) {
 }
 
 static void bomb_tick(Monster *this, __attribute__((unused)) Coords d) {
-	monster_remove(this);
+	if (TILE(this->pos).monster == this)
+		monster_remove(this);
 	for (int x = this->pos.x - 1; x <= this->pos.x + 1; ++x)
 		for (int y = this->pos.y - 1; y <= this->pos.y + 1; ++y)
 			bomb_tile(&board[y][x]);
@@ -242,16 +243,19 @@ static void kill(Monster *m, bool bomblike) {
 		tile_change(tile, FIRE);
 	else if (m->class == BOMBER)
 		bomb_plant(m->pos, 3);
-	else if (m->class == PIXIE)
+	else if (m->class == PIXIE || m->class == BOMBSHROOM_)
 		bomb_tick(m, spawn);
 }
 
 // Deals damage to the given monster.
 static void damage(Monster *m, long dmg, bool bomblike) {
-	if (m->class == WIND_STATUE) {
-		knockback(m);
-	} else if (m->class == MINE_STATUE) {
+	if (m->class == MINE_STATUE) {
 		bomb_tick(m, spawn);
+	} else if (m->class == BOMBSHROOM) {
+		m->class = BOMBSHROOM_;
+		m->delay = 3;
+	} else if (m->class == WIND_STATUE) {
+		knockback(m);
 	} else if (m->class == BOMB_STATUE) {
 		knockback(m);
 		m->delay = 2;

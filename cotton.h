@@ -30,7 +30,7 @@ typedef enum __attribute__((__packed__)) {
 	MOLE,
 	WIGHT,
 	WALL_MIMIC,
-	LIGHTSHROOM, BOMBSHROOM,
+	LIGHTSHROOM, BOMBSHROOM, BOMBSHROOM_,
 
 	// Z3 enemies
 	FIRE_SLIME = 200, ICE_SLIME,
