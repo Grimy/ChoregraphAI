@@ -274,7 +274,7 @@ static void damage(Monster *m, long dmg, bool bomblike) {
 	} else if (m->class >= RIDER_1 && m->class <= RIDER_3) {
 		knockback(m);
 		m->class += SKELETANK_1 - RIDER_1;
-	} else if ((m->class == ARMADILLO_1 || m->class == ARMADILLO_2 || m->class == ARMADILDO) && m->state) {
+	} else if ((m->class == ARMADILLO_1 || m->class == ARMADILLO_2 || m->class == ARMADILDO) && m->state == 3) {
 		m->prev_pos = player.pos;
 	} else {
 		m->hp -= dmg;

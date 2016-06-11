@@ -269,32 +269,28 @@ static void bomb_statue(Monster *this, Coords d) {
 		this->state = 1;
 }
 
-static bool can_charge(Monster *this, Coords dest) {
-	if (dest.x != this->pos.x && dest.y != this->pos.y)
+static bool can_charge(Monster *this, Coords d) {
+	if (d.x * d.y != 0 && (ABS(d.x) != ABS(d.y) || this->class != ARMADILDO))
 		return false;
-	Coords move = DIRECTION(dest - this->pos);
+	Coords move = DIRECTION(d);
+	Coords dest = this->pos + d;
 	for (Coords pos = this->pos + move; pos.x != dest.x || pos.y != dest.y; pos += move)
 		if (TILE(pos).class == WALL || TILE(pos).monster)
 			return false;
+	this->prev_pos = this->pos - DIRECTION(d);
 	return true;
 }
 
 // State 0: passive
 // State 1: ready
-// State 2: charging
+// State 2: about to charge
+// State 3: charging
 static void armadillo(Monster *this, Coords d) {
 	int old_state = this->state;
-	if (this->state < 2 && can_charge(this, player.pos)) {
-		if (this->state)
-			enemy_move(this, DIRECTION(d));
-		else
-			this->prev_pos = this->pos - DIRECTION(d);
-		this->state = 2;
-	} else if (this->state == 2 && !enemy_move(this, this->pos - this->prev_pos)) {
+	this->state = this->state >= 2 ? 3 : can_charge(this, d) ? this->state + 2 : this->aggro;
+	if (this->state == 3 && !enemy_move(this, this->pos - this->prev_pos)) {
 		this->delay = 1;
 		this->state = 0;
-	} else if (this->state == 0) {
-		this->state = this->aggro;
 	}
 	if (old_state && this->confusion)
 		this->prev_pos = this->pos + this->pos - this->prev_pos;
@@ -303,12 +299,8 @@ static void armadillo(Monster *this, Coords d) {
 // State 0: default
 // State 1: charging
 static void minotaur(Monster *this, Coords d) {
-	if (this->state == 0 && can_charge(this, player.pos)) {
-		this->state = 1;
-		this->prev_pos = this->pos - DIRECTION(d);
-	} else if (this->state == 0 && can_charge(this, player.prev_pos)) {
-		this->state = 1;
-		this->prev_pos = this->pos - DIRECTION(player.prev_pos - this->pos);
+	if (this->state == 0) {
+		this->state = can_charge(this, d) || can_charge(this, player.prev_pos - this->pos);
 	}
 	if (this->state == 1) {
 		if (!enemy_move(this, this->pos - this->prev_pos)) {
@@ -401,7 +393,7 @@ static const ClassInfos class_infos[256] = {
 	[BOMBER]      = { 1, 1,   0, false, -1, 99999998, RED "G",    diagonal_seek },
 	[DIGGER]      = { 1, 1,   9, false,  2, 10101201, "G",        digger },
 	[BLACK_BAT]   = { 1, 0,   9,  true, -1, 10401120, BLACK "B",  black_bat },
-	[ARMADILDO]   = { 3, 0, 225, false,  2, 10303104, ORANGE "q", todo },
+	[ARMADILDO]   = { 3, 0, 225, false,  2, 10303104, ORANGE "q", armadillo },
 	[BLADENOVICE] = { 1, 1,   9, false, -1, 99999995, "b",        blademaster },
 	[BLADEMASTER] = { 2, 1,   9, false, -1, 99999996, "b",        blademaster },
 	[GHOUL]       = { 1, 0,   9,  true, -1, 10301102, "W",        moore_seek },

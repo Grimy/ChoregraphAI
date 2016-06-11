@@ -8,7 +8,3 @@ SOURCES = $(wildcard *.c *.h)
 
 a.out: $(SOURCES)
 	$(CC) $(CFLAGS) main.c
-
-rtl.expand: $(SOURCES)
-	gcc -fdump-rtl-expand=$@ -I/usr/include/libxml2 -S main.c >/dev/null
-	rm main.s
