@@ -15,7 +15,7 @@
 // For display purposes, doors count as walls, but level edges don’t
 #define IS_WALL(tile) ((tile)->class == WALL && (tile)->hp < 5)
 
-static const int floor_colors[] = {[SHOP] = 3, [WATER] = 4, [FIRE] = 1, [ICE] = 7, [OOZE] = 2};
+static const int floor_colors[] = {[SHOP] = 43, [WATER] = 44, [FIRE] = 41, [ICE] = 107, [OOZE] = 42};
 
 // Picks an appropriate box-drawing glyph for a wall by looking at adjacent tiles.
 // For example, when tiles to the bottom and right are walls too, use '┌'.
@@ -44,7 +44,7 @@ static void display_wall(Tile *wall) {
 static void display_tile(Coords pos) {
 	Tile *tile = &TILE(pos);
 	if (tile->class > FLOOR)
-		printf("\033[4%dm", floor_colors[tile->class]);
+		printf("\033[%dm", floor_colors[tile->class]);
 	if (tile->monster)
 		printf("%s", CLASS(tile->monster).glyph);
 	else if (!can_see(pos))
@@ -75,30 +75,12 @@ static void display_board(void) {
 }
 
 // Updates the interface, then prompts the user for a command.
-static void display_prompt() {
+static char display_prompt() {
 	// static long turn = 0;
 	// if (++turn >= 1000000)
 		// exit(0);
 	// if (turn)
 		// return;
 	display_board();
-	switch (getchar()) {
-	case 'e':
-		player_move(-1,  0);
-		break;
-	case 'f':
-		player_move( 0,  1);
-		break;
-	case 'i':
-		player_move( 1,  0);
-		break;
-	case 'j':
-		player_move( 0, -1);
-		break;
-	case '<':
-		bomb_plant(player.pos, 3);
-		break;
-	case 't':
-		exit(0);
-	}
+	return (char) (getchar());
 }

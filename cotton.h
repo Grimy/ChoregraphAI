@@ -162,3 +162,6 @@ static Monster player = {.class = PLAYER, .hp = 1};
 static Monster monsters[256];
 static Trap traps[256];
 static uint64_t monster_count = 0;
+
+static bool player_moved;
+static bool sliding_on_ice;

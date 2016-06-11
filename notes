@@ -3,7 +3,6 @@ TESTS:
 * benchmark (type % 100) + offset[type / 100]
 
 FEATURES:
-* Ice
 * Z3 digging
 * Beetle armor
 * Armored skeletons (attack direction!)

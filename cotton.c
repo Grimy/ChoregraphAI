@@ -288,17 +288,19 @@ static void damage(Monster *m, long dmg, bool bomblike) {
 // Will trigger attacking/digging if the destination contains an enemy/a wall.
 static void player_move(int8_t x, int8_t y) {
 	Coords offset = {x, y};
-	if (!before_move(&player))
+	if (sliding_on_ice || !before_move(&player))
 		return;
 	if (player.confusion)
 		offset = -offset;
 	Tile *dest = &TILE(player.pos + offset);
-	if (dest->class == WALL)
+	if (dest->class == WALL) {
 		dig(dest, TILE(player.pos).class == OOZE ? 0 : 2, false);
-	else if (IS_ENEMY(dest->monster))
+	} else if (IS_ENEMY(dest->monster)) {
 		damage(dest->monster, TILE(player.pos).class == OOZE ? 0 : 1, false);
-	else
+	} else {
 		move(&player, player.pos + offset);
+		player_moved = true;
+	}
 }
 
 // Deals bomb-like damage to all monsters on a horizontal line).

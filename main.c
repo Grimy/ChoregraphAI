@@ -12,14 +12,37 @@
 #include "xml.c"
 
 static void player_turn() {
-	Tile *fire_tile = NULL;
-	if (TILE(player.pos).class == FIRE)
-		fire_tile = &TILE(player.pos);
 	player.confusion -= SIGN(player.confusion);
 	player.freeze -= SIGN(player.freeze);
-	display_prompt();
-	if (&TILE(player.pos) == fire_tile)
+
+	switch (display_prompt()) {
+	case 'e':
+		player_move(-1,  0);
+		break;
+	case 'f':
+		player_move( 0,  1);
+		break;
+	case 'i':
+		player_move( 1,  0);
+		break;
+	case 'j':
+		player_move( 0, -1);
+		break;
+	case '<':
+		bomb_plant(player.pos, 3);
+		break;
+	case 't':
+		exit(0);
+	}
+
+	if (sliding_on_ice)
+		player_moved = forced_move(&player, DIRECTION(player.pos - player.prev_pos));
+	else if (!player_moved && TILE(player.pos).class == FIRE)
 		damage(&player, 2, false);
+
+	sliding_on_ice = player_moved && TILE(player.pos).class == ICE
+		&& can_move(&player, DIRECTION(player.pos - player.prev_pos));
+	player_moved = false;
 }
 
 static void enemy_turn(Monster *m) {

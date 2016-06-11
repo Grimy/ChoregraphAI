@@ -17,7 +17,7 @@ static int8_t xml_attr(xmlTextReaderPtr xml, char* attr) {
 // Converts a single XML node into an appropriate object (Trap, Tile or Monster).
 static void xml_process_node(xmlTextReaderPtr xml) {
 	static const Coords trap_dirs[] = {
-		{1, 0}, {-1, 0}, {0, -1}, {0, 1}, {1, 1}, {-1, 1}, {1, -1}, {-1, -1}
+		{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, 1}, {1, -1}, {-1, -1}
 	};
 	static uint64_t trap_count = 0;
 	const char *name = (const char*) xmlTextReaderConstName(xml);
