@@ -323,9 +323,14 @@ static void minotaur(Monster *this, Coords d) {
 static void digger(Monster *this, Coords d) {
 	this->vertical = d.y > (d.x + 1) / 3;
 	if (this->vertical)
-		MOVE(0, SIGN(d.y)) || MOVE(SIGN(d.x), 0) || MOVE(-SIGN(d.x), 0);
+		MOVE(0, -SIGN(d.y)) || MOVE(-SIGN(d.x), 0) || MOVE(SIGN(d.x), 0);
 	else
-		MOVE(SIGN(d.x), 0) || MOVE(0, SIGN(d.y)) || MOVE(0, -SIGN(d.y));
+		MOVE(-SIGN(d.x), 0) || MOVE(0, -SIGN(d.y)) || MOVE(0, SIGN(d.y));
+}
+
+static void clone(Monster *this, __attribute__((unused)) Coords d) {
+	if (player_moved)
+		enemy_move(this, -DIRECTION(player.pos - player.prev_pos));
 }
 
 static void todo() {}
@@ -362,7 +367,7 @@ static const ClassInfos class_infos[256] = {
 	[GOLEM_2]     = { 7, 3,   9,  true,  2, 20607407, BLACK "'",  basic_seek },
 	[ARMADILLO_1] = { 1, 0, 225, false,  2, 10201102, "q",        armadillo },
 	[ARMADILLO_2] = { 2, 0, 225, false,  2, 10302105, YELLOW "q", armadillo },
-	[CLONE]       = { 1, 0,   9, false, -1, 10301102, "@",        todo },
+	[CLONE]       = { 1, 0,   9, false, -1, 10301102, "@",        clone },
 	[TARMONSTER]  = { 1, 0,   9, false, -1, 10304103, "t",        mimic },
 	[MOLE]        = { 1, 0,   9,  true, -1,  1020113, "r",        mole },
 	[WIGHT]       = { 1, 0,   9,  true, -1, 10201103, GREEN "W",  basic_seek },

@@ -14,6 +14,7 @@
 static void player_turn() {
 	player.confusion -= SIGN(player.confusion);
 	player.freeze -= SIGN(player.freeze);
+	player_moved = false;
 
 	switch (display_prompt()) {
 	case 'e':
@@ -42,7 +43,6 @@ static void player_turn() {
 
 	sliding_on_ice = player_moved && TILE(player.pos).class == ICE
 		&& can_move(&player, DIRECTION(player.pos - player.prev_pos));
-	player_moved = false;
 }
 
 static void enemy_turn(Monster *m) {
