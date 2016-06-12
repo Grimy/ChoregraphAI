@@ -2,9 +2,6 @@
 
 #include <libxml/xmlreader.h>
 
-// TODO: tile 106 = ???
-// TODO: tile 111 = metal doors
-
 // Returns the numeric value of a named attribute of the current node.
 // If the attribute is absent, it defaults to 0.
 static int8_t xml_attr(xmlTextReaderPtr xml, char* attr) {
@@ -19,6 +16,8 @@ static void xml_process_node(xmlTextReaderPtr xml) {
 	static const Coords trap_dirs[] = {
 		{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, 1}, {1, -1}, {-1, -1}
 	};
+	static const int8_t wall_hp[] = {1, 1, 5, 0, 4, 4, 0, 2, 3, 5, 4, 0};
+
 	static uint64_t trap_count = 0;
 	const char *name = (const char*) xmlTextReaderConstName(xml);
 	uint8_t type = (uint8_t) xml_attr(xml, "type");
@@ -26,7 +25,7 @@ static void xml_process_node(xmlTextReaderPtr xml) {
 	Coords pos = {xml_attr(xml, "x"), xml_attr(xml, "y")};
 
 	pos += spawn;
-	type = type == 255 ? MINOTAUR_1 : type;
+	type = type == 255 ? DIGGER : type;
 
 	if (!strcmp(name, "trap"))
 		traps[trap_count++] = (Trap) {
@@ -38,7 +37,7 @@ static void xml_process_node(xmlTextReaderPtr xml) {
 	else if (!strcmp(name, "tile"))
 		TILE(pos) = (Tile) {
 			.class = type >= 100 ? WALL : type < 2 ? FLOOR : type,
-			.hp = (int8_t[]) {[100] = 1, 1, 5, 0, 4, 4, -1, 2, 3, 5, 4, 0} [type],
+			.hp = type >= 100 ? wall_hp[type - 100] : 0,
 			.torch = xml_attr(xml, "torch"),
 			.zone = xml_attr(xml, "zone"),
 		};

@@ -313,11 +313,27 @@ static void minotaur(Monster *this, Coords d) {
 }
 
 static void digger(Monster *this, Coords d) {
+	if (this->state == 0) {
+		this->state = L2(d) <= 9;
+		return;
+	}
+	if (this->state == 1) {
+		this->state = 2;
+		this->delay = 2;
+		return;
+	}
+	Coords moves[4] = {{-SIGN(d.x), 0}, {0, -SIGN(d.y)}, {0, SIGN(d.y)}, {SIGN(d.x), 0}};
+	Coords move = {0, 0};
 	this->vertical = d.y > (d.x + 1) / 3;
-	if (this->vertical)
-		MOVE(0, -SIGN(d.y)) || MOVE(-SIGN(d.x), 0) || MOVE(SIGN(d.x), 0);
-	else
-		MOVE(-SIGN(d.x), 0) || MOVE(0, -SIGN(d.y)) || MOVE(0, SIGN(d.y));
+	for (int i = 0; i < 4; ++i) {
+		move = moves[i ^ this->vertical];
+		if (!TILE(this->pos + move).monster)
+			break;
+	}
+	if (!enemy_move(this, move)) {
+		this->state = 1;
+		this->delay = 3;
+	}
 }
 
 static void clone(Monster *this, __attribute__((unused)) Coords d) {

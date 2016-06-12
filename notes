@@ -7,6 +7,7 @@ FEATURES:
 * Beetle armor
 * Armored skeletons (attack direction!)
 * Trampling
+* Metal doors (type=111)
 
 BUGFIXES:
 * armadillos should not charge diagonally after a diagonal bounce trap
