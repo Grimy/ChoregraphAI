@@ -341,6 +341,12 @@ static void clone(Monster *this, __attribute__((unused)) Coords d) {
 		enemy_move(this, -DIRECTION(player.pos - player.prev_pos));
 }
 
+static void ghost(Monster *this, Coords d) {
+	this->state = (L1(d) + this->state) > L1(player.prev_pos - this->pos);
+	if (this->state)
+		basic_seek(this, d);
+}
+
 static void todo() {}
 static void nop() {}
 
@@ -357,7 +363,7 @@ static const ClassInfos class_infos[256] = {
 	[GREEN_BAT]   = { 1, 0,   9,  true, -1, 10301120, GREEN "B",  bat },
 	[MONKEY_1]    = { 1, 0,   9, false, -1, 10004101, PURPLE "Y", basic_seek },
 	[MONKEY_2]    = { 2, 0,   9, false, -1, 10006103, "Y",        basic_seek },
-	[GHOST]       = { 1, 0,   9,  true, -1, 10201102, "8",        todo },
+	[GHOST]       = { 1, 0,   9,  true, -1, 10201102, "8",        ghost },
 	[ZOMBIE]      = { 1, 1, 225, false, -1, 10201201, GREEN "Z",  zombie },
 	[WRAITH]      = { 1, 0,   9,  true, -1, 10101102, RED "W",    basic_seek },
 	[MIMIC_1]     = { 1, 0,   0, false, -1, 10201100, YELLOW "m", mimic },

@@ -25,7 +25,7 @@ static void xml_process_node(xmlTextReaderPtr xml) {
 	Coords pos = {xml_attr(xml, "x"), xml_attr(xml, "y")};
 
 	pos += spawn;
-	type = type == 255 ? DIGGER : type;
+	type = type == 255 ? GHOST : type;
 
 	if (!strcmp(name, "trap"))
 		traps[trap_count++] = (Trap) {

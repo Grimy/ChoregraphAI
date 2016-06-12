@@ -264,7 +264,7 @@ static void damage(Monster *m, long dmg, bool bomblike) {
 		knockback(m);
 	} else if (IS_MIMIC(m->class) && m->state < 2) {
 		return;
-	} else if (m->class == MOLE && m->state == 0) {
+	} else if ((m->class == MOLE || m->class == GHOST) && m->state == 0) {
 		return;
 	} else if (dmg == 0) {
 		return;
