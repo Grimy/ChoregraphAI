@@ -324,15 +324,12 @@ static void fireball(Coords pos, int8_t dir) {
 			damage(tile->monster, 5, true);
 }
 
-// Changes water to ice and freezes monsters on the given tile.
 static void freeze(Tile *tile) {
-	if (tile->class == WATER)
-		tile->class = ICE;
 	if (tile->monster)
 		tile->monster->freeze = 5;
 }
 
-// Freezes each tile in a 3x5 cone.
+// Freezes all monsters in a 3x5 cone.
 static void cone_of_cold(Coords pos, int8_t dir) {
 	for (int8_t x = 1; x <= 3; ++x)
 		for (int8_t y = 1 - x; y < x; ++y)

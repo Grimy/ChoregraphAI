@@ -28,10 +28,7 @@ BUGFIXES:
 
 REFACTORS:
 * Refactor harpy AI
-
-REPORT:
-* Different aggression mechanics in the level editor
-* mine-gargoyles/crates + dagger throw
+* Unify shapes (plus, cone, …)
 
 Harpy priority:
    N
