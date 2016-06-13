@@ -165,3 +165,4 @@ static uint64_t monster_count = 0;
 
 static bool player_moved;
 static bool sliding_on_ice;
+static bool miniboss_defeated;

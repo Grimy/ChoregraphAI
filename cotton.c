@@ -22,6 +22,11 @@
 static void damage(Monster *m, long dmg, bool bomblike);
 static bool forced_move(Monster *m, Coords offset);
 
+static void __attribute__((noreturn)) error(char* message) {
+	fprintf(stderr, "%s\n", message);
+	exit(1);
+}
+
 // Moves the given monster to a specific position.
 // Keeps track of the monster’s previous position.
 static void move(Monster *m, Coords dest) {
@@ -64,7 +69,7 @@ static bool dig(Tile *wall, int digging_power, bool z4) {
 // Removes a monster from both the board and the priority queue.
 static void monster_remove(Monster *m) {
 	if (m == &player)
-		exit(1);
+		error("You died.");
 	TILE(m->pos).monster = NULL;
 	Monster *prev = &player;
 	while (prev->next != m)
@@ -246,6 +251,8 @@ static void kill(Monster *m, bool bomblike) {
 		tile_change(tile, FIRE);
 	else if (m->class == BOMBER)
 		bomb_plant(m->pos, 3);
+	else if (m->class >= DIREBAT_1 && m->class <= OGRE)
+		miniboss_defeated = true;
 }
 
 // Deals damage to the given monster.

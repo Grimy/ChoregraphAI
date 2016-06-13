@@ -61,7 +61,7 @@ static void xml_parse(char *file) {
 		if (xmlTextReaderNodeType(xml) == 1)
 			xml_process_node(xml);
 	if (xmlTextReaderRead(xml) < 0)
-		exit(1);
+		error("Invalid XML file");
 	xmlFreeTextReader(xml);
 	move(&player, spawn);
 }

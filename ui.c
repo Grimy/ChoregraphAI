@@ -16,7 +16,7 @@
 #define IS_WALL(tile) ((tile)->class == WALL && (tile)->hp < 5)
 
 static const int floor_colors[] = {
-	[SHOP] = 43,
+	[STAIRS] = 105, [SHOP] = 43,
 	[WATER] = 44, [TAR] = 40,
 	[FIRE] = 41, [ICE] = 107,
 	[OOZE] = 42,
@@ -87,5 +87,8 @@ static char display_prompt() {
 	// if (turn)
 		// return;
 	display_board();
-	return (char) (getchar());
+	int input = getchar();
+	if (input == EOF)
+		error("End of input");
+	return (char) input;
 }

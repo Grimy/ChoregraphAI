@@ -32,8 +32,8 @@ static void player_turn() {
 	case '<':
 		bomb_plant(player.pos, 3);
 		break;
-	case 't':
-		exit(0);
+	default:
+		error("See you soon!");
 	}
 
 	if (sliding_on_ice)
@@ -43,6 +43,9 @@ static void player_turn() {
 
 	sliding_on_ice = player_moved && TILE(player.pos).class == ICE
 		&& can_move(&player, DIRECTION(player.pos - player.prev_pos));
+
+	if (TILE(player.pos).class == STAIRS && miniboss_defeated)
+		abort();
 }
 
 static void enemy_turn(Monster *m) {
@@ -109,7 +112,7 @@ static void do_beat(void) {
 // Runs the simulation on the given custom dungeon file.
 int main(int argc, char **argv) {
 	if (argc != 2)
-		exit(argc);
+		error("Usage: cotton <dungeon_file.xml>");
 	xml_parse(argv[1]);
 	qsort(monsters, monster_count, sizeof(*monsters), compare_priorities);
 	for (Monster *m = monsters; m->hp; ++m) {
@@ -117,6 +120,7 @@ int main(int argc, char **argv) {
 		(m == monsters ? &player : m - 1)->next = m;
 	}
 	system("stty -echo -icanon eol \1");
+
 	while (true)
 		do_beat();
 }

@@ -362,7 +362,9 @@ static void assassin(Monster *this, Coords d) {
 	(this->state ? basic_seek : basic_flee)(this, d);
 }
 
-static void todo() {}
+static void sarcophagus() {
+}
+
 static void nop() {}
 
 static const ClassInfos class_infos[256] = {
@@ -442,9 +444,9 @@ static const ClassInfos class_infos[256] = {
 	[CONF_MONKEY] = { 1, 0,   9, false, -1, 10004103, GREEN "Y",  basic_seek },
 	[TELE_MONKEY] = { 2, 0,   9, false, -1, 10002103, PINK "Y",   basic_seek },
 	[PIXIE]       = { 1, 0,   9,  true, -1, 10401102, "n",        basic_seek },
-	[SARCO_1]     = { 1, 9,   9, false, -1, 10101805, "|",        todo },
-	[SARCO_2]     = { 2, 9,   9, false, -1, 10102910, YELLOW "|", todo },
-	[SARCO_3]     = { 3, 9,   9, false, -1, 10103915, BLACK "|",  todo },
+	[SARCO_1]     = { 1, 9,   9, false, -1, 10101805, "|",        sarcophagus },
+	[SARCO_2]     = { 2, 9,   9, false, -1, 10102910, YELLOW "|", sarcophagus },
+	[SARCO_3]     = { 3, 9,   9, false, -1, 10103915, BLACK "|",  sarcophagus },
 	[SPIDER]      = { 1, 1,   9, false, -1, 10401202, YELLOW "s", basic_seek },
 	[FREE_SPIDER] = { 1, 0,   9, false, -1, 10401202, YELLOW "s", diagonal_seek },
 	[WARLOCK_1]   = { 1, 1,   9, false, -1, 10401202, "w",        basic_seek },

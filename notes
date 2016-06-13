@@ -8,8 +8,14 @@ FEATURES:
 * Armored skeletons (attack direction!)
 * Trampling
 * Metal doors (type=111)
+* Fire traps
+* Headless skeletons
+* Mummy summoning
 
 BUGFIXES:
+* CRASH on efeffef<<<<<<
+* CRASH on bomb trap
+* Non-player bombs crash the game?
 * armadillos should not charge diagonally after a diagonal bounce trap
 * bats should stop trying directions after hitting the player
 * zombies should keep the same direction after hitting the player
