@@ -39,6 +39,17 @@ static void basic_seek(Monster *this, Coords d) {
 	enemy_move(this, this->vertical ? vertical : horizontal);
 }
 
+static void basic_flee(Monster *this, Coords d) {
+	if (d.y == 0)
+		MOVE(-SIGN(d.x), 0) || MOVE(0, -1) || MOVE(0, 1);
+	else if (d.x == 0)
+		MOVE(0, -SIGN(d.y)) || MOVE(-1, 0) || MOVE(1, 0);
+	else if (ABS(d.y) > ABS(d.x))
+		MOVE(0, -SIGN(d.y)) || MOVE(-SIGN(d.x), 0);
+	else
+		MOVE(-SIGN(d.x), 0) || MOVE(0, -SIGN(d.y));
+}
+
 // Move diagonally toward the player. The tiebreaker is *reverse* bomb-order.
 static void diagonal_seek(Monster *this, Coords d) {
 	if (d.y == 0)
@@ -84,7 +95,6 @@ static void black_bat(Monster *this, Coords d) {
 		bat(this, d);
 }
 
-// basic_seek variant used by blademasters.
 // After parrying a melee hit, lunge two tiles in the direction the hit came from.
 static void blademaster(Monster *this, Coords d) {
 	if (this->state == 0) {
@@ -325,7 +335,7 @@ static void digger(Monster *this, Coords d) {
 	Coords moves[4] = {{-SIGN(d.x), 0}, {0, -SIGN(d.y)}, {0, SIGN(d.y)}, {SIGN(d.x), 0}};
 	Coords move = {0, 0};
 	this->vertical = d.y > (d.x + 1) / 3;
-	for (int i = 0; i < 4; ++i) {
+	for (int i = 0; i < 3; ++i) {
 		move = moves[i ^ this->vertical];
 		if (!TILE(this->pos + move).monster)
 			break;
@@ -345,6 +355,11 @@ static void ghost(Monster *this, Coords d) {
 	this->state = (L1(d) + this->state) > L1(player.prev_pos - this->pos);
 	if (this->state)
 		basic_seek(this, d);
+}
+
+static void assassin(Monster *this, Coords d) {
+	this->state = L1(d) == 1 || (L1(d) + this->state) > L1(player.prev_pos - this->pos);
+	(this->state ? basic_seek : basic_flee)(this, d);
 }
 
 static void todo() {}
@@ -397,8 +412,8 @@ static const ClassInfos class_infos[256] = {
 	[RIDER_3]     = { 3, 0,   9,  true, -1, 10603106, BLACK "&",  basic_seek },
 	[EFREET]      = { 2, 2,   9,  true,  2, 20302302, RED "E",    elemental },
 	[DJINN]       = { 2, 2,   9,  true,  2, 20302302, CYAN "E",   elemental },
-	[ASSASSIN_1]  = { 1, 0,   9, false, -1, 10401103, PURPLE "G", todo },
-	[ASSASSIN_2]  = { 2, 0,   9, false, -1, 10602105, BLACK "G",  todo },
+	[ASSASSIN_1]  = { 1, 0,   9, false, -1, 10401103, PURPLE "G", assassin },
+	[ASSASSIN_2]  = { 2, 0,   9, false, -1, 10602105, BLACK "G",  assassin },
 	[FIRE_BEETLE] = { 3, 1,  49, false, -1, 10303202, RED "a",    beetle },
 	[ICE_BEETLE]  = { 3, 1,  49, false, -1, 10303202, CYAN "a",   beetle },
 	[BEETLE]      = { 3, 1,  49, false, -1, 10303202, "a",        basic_seek },
