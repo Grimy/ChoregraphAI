@@ -12,6 +12,9 @@
 #include "xml.c"
 
 static void player_turn() {
+	if (TILE(player.pos).class == STAIRS && miniboss_defeated)
+		abort();
+
 	player.confusion -= SIGN(player.confusion);
 	player.freeze -= SIGN(player.freeze);
 	player_moved = false;
