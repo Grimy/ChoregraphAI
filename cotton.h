@@ -18,6 +18,7 @@ typedef enum __attribute__((__packed__)) {
 	ZOMBIE,
 	WRAITH,
 	MIMIC_1, MIMIC_2,
+	HEADLESS,
 
 	// Z2 enemies
 	SKELETANK_1 = 100, SKELETANK_2, SKELETANK_3,

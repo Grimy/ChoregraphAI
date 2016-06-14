@@ -2,22 +2,25 @@
 
 #define LENGTH(array) ((long) (sizeof(array) / sizeof(*(array))))
 #define SIGN(x) (((x) > 0) - ((x) < 0))
-#define DIRECTION(pos) ((Coords) {SIGN((pos).x), SIGN((pos).y)})
 #define ABS(x) ((x) < 0 ? -(x) : (x))
+
+#define DIRECTION(pos) ((Coords) {SIGN((pos).x), SIGN((pos).y)})
 #define L1(pos) (ABS((pos).x) + ABS((pos).y))
 #define L2(pos) ((pos).x * (pos).x + (pos).y * (pos).y)
 
-#define TILE(pos) (board[(pos).y][(pos).x])
+#define TILE(pos) (board[(pos).x][(pos).y])
 #define CLASS(m) (class_infos[(m)->class])
 
 #define IS_ENEMY(m) ((m) && (m) != &player)
-#define IS_OPAQUE(x, y) (board[y][x].class == WALL)
+#define IS_OPAQUE(x, y) (board[x][y].class == WALL)
 #define IS_MIMIC(c) ((c) == TARMONSTER || (c) == WALL_MIMIC || (c) == SEEK_STATUE \
 		|| (c) == FIRE_MIMIC || (c) == ICE_MIMIC)
 #define IS_KNOCKED_BACK(c) ((c) == MONKEY_2 || (c) == TELE_MONKEY \
 		|| (c) == ASSASSIN_2 || (c) == BANSHEE_1 || (c) == BANSHEE_2)
 #define BLOCKS_MOVEMENT(pos) (TILE(pos).class == WALL)
-#define PLUS_SHAPE(tile) int i = 0; i < 5; (tile) += (int[]) {-32, 64, -33, 2, 0} [i++]
+
+static const int64_t plus_shape[] = {-32, -1, 1, 32};
+static const int64_t cone_shape[] = {32, 63, 64, 65, 94, 95, 96, 97, 98};
 
 static void damage(Monster *m, long dmg, bool bomblike);
 static bool forced_move(Monster *m, Coords offset);
@@ -61,8 +64,8 @@ static bool dig(Tile *wall, int digging_power, bool z4) {
 		wall->monster->delay = 1;
 	}
 	if (!z4 && wall->zone == 4 && (wall->hp == 1 || wall->hp == 2))
-		for (PLUS_SHAPE(wall))
-			dig(wall, digging_power, true);
+		for (int i = 0; i < LENGTH(plus_shape); ++i)
+			dig(wall + plus_shape[i], digging_power, true);
 	return true;
 }
 
@@ -222,7 +225,7 @@ static void bomb_tick(Monster *this, __attribute__((unused)) Coords d) {
 		TILE(this->pos).monster = NULL;
 	for (int x = this->pos.x - 1; x <= this->pos.x + 1; ++x)
 		for (int y = this->pos.y - 1; y <= this->pos.y + 1; ++y)
-			bomb_tile(&board[y][x]);
+			bomb_tile(&board[x][y]);
 	monster_remove(this);
 }
 
@@ -284,6 +287,13 @@ static void damage(Monster *m, long dmg, bool bomblike) {
 		m->class += SKELETANK_1 - RIDER_1;
 	} else if ((m->class == ARMADILLO_1 || m->class == ARMADILLO_2 || m->class == ARMADILDO) && m->state == 3) {
 		m->prev_pos = player.pos;
+	} else if (m->class == ICE_BEETLE || m->class == FIRE_BEETLE) {
+		TileClass hazard = m->class == FIRE_BEETLE ? FIRE : ICE;
+		Tile *tile = &TILE(m->pos);
+		tile_change(tile, hazard);
+		for (int i = 0; i < LENGTH(plus_shape); ++i)
+			tile_change(tile + plus_shape[i], hazard);
+		knockback(m);
 	} else {
 		m->hp -= dmg;
 	}
@@ -291,10 +301,14 @@ static void damage(Monster *m, long dmg, bool bomblike) {
 	if (m->class == OOZE_GOLEM)
 		tile_change(&TILE(player.pos), OOZE);
 
-	if (m->hp <= 0)
+	if (m->hp <= 0) {
 		kill(m, bomblike);
-	else if (IS_KNOCKED_BACK(m->class))
+	} else if (m->hp == 1 && m->class >= SKELETON_1 && m->class <= SKELETON_3) {
+		m->class = HEADLESS;
+		m->prev_pos = player.pos;
+	} else if (IS_KNOCKED_BACK(m->class)) {
 		knockback(m);
+	}
 }
 
 // Attempts to move the player by the given offset.
@@ -324,14 +338,11 @@ static void fireball(Coords pos, int8_t dir) {
 			damage(tile->monster, 5, true);
 }
 
-static void freeze(Tile *tile) {
-	if (tile->monster)
-		tile->monster->freeze = 5;
-}
-
 // Freezes all monsters in a 3x5 cone.
 static void cone_of_cold(Coords pos, int8_t dir) {
-	for (int8_t x = 1; x <= 3; ++x)
-		for (int8_t y = 1 - x; y < x; ++y)
-			freeze(&TILE(pos + ((Coords) {x * dir, y})));
+	for (int i = 0; i < LENGTH(cone_shape); ++i) {
+		Tile *tile = &TILE(pos) + dir * cone_shape[i];
+		if (tile->monster)
+			tile->monster->freeze = 5;
+	}
 }

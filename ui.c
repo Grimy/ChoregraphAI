@@ -40,9 +40,9 @@ static void display_wall(Tile *wall) {
 		return;
 	}
 	long glyph = 0;
-	for (PLUS_SHAPE(wall))
-		glyph = (glyph << 1) | (wall->class == WALL && wall->hp < 5);
-	printf("%3.3s", &"╳───│┌┐┬│└┘┴│├┤┼"[3 * (glyph & 15)]);
+	for (int i = 0; i < LENGTH(plus_shape); ++i)
+		glyph |= IS_WALL(wall + plus_shape[i]) << i;
+	printf("%3.3s", &"╳─│┘│┐│┤──└┴┌┬├┼"[3 * glyph]);
 }
 
 // Pretty-prints the tile at the given position.

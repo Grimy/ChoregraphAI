@@ -364,6 +364,12 @@ static void assassin(Monster *this, Coords d) {
 	(this->state ? basic_seek : basic_flee)(this, d);
 }
 
+static void headless(Monster *this, __attribute__((unused)) Coords d) {
+	Coords prev_pos = this->prev_pos;
+	if (!enemy_move(this, this->pos - this->prev_pos))
+		this->prev_pos = prev_pos;
+}
+
 static void sarcophagus() {
 }
 
@@ -387,6 +393,7 @@ static const ClassInfos class_infos[256] = {
 	[WRAITH]      = { 1, 0,   9,  true, -1, 10101102, RED "W",    basic_seek },
 	[MIMIC_1]     = { 1, 0,   0, false, -1, 10201100, YELLOW "m", mimic },
 	[MIMIC_2]     = { 1, 0,   0, false, -1, 10301100, BLUE "m",   mimic },
+	[HEADLESS]    = { 1, 0,   0, false, -1, 10302203, "∠",        headless },
 
 	[SKELETANK_1] = { 1, 1,   9, false, -1, 10101202, "Z",        basic_seek },
 	[SKELETANK_2] = { 2, 1,   9, false, -1, 10302204, YELLOW "Z", basic_seek },
