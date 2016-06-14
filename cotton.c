@@ -102,9 +102,9 @@ static void enemy_attack(Monster *attacker) {
 }
 
 static bool before_move(Monster *m) {
+	m->prev_pos = m->pos;
 	if (m->freeze)
 		return false;
-	m->prev_pos = m->pos;
 	if (TILE(m->pos).class == WATER && !CLASS(m).flying) {
 		TILE(m->pos).class = FLOOR;
 		return false;
