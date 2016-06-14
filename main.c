@@ -1,9 +1,9 @@
 // main.c - initialization, main game loop
 
+#include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include "cotton.h"
 #include "cotton.c"
@@ -31,6 +31,8 @@ static void player_turn() {
 		break;
 	case '<':
 		bomb_plant(player.pos, 3);
+		break;
+	case 'z':
 		break;
 	default:
 		error("See you soon!");

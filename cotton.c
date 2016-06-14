@@ -66,11 +66,8 @@ static bool dig(Tile *wall, int digging_power, bool z4) {
 	return true;
 }
 
-// Removes a monster from both the board and the priority queue.
+// Removes a monster from the priority queue.
 static void monster_remove(Monster *m) {
-	if (m == &player)
-		error("You died.");
-	TILE(m->pos).monster = NULL;
 	Monster *prev = &player;
 	while (prev->next != m)
 		prev = prev->next;
@@ -83,10 +80,10 @@ static void enemy_attack(Monster *attacker) {
 	Coords d = player.pos - attacker->pos;
 	switch (attacker->class) {
 	case CONF_MONKEY:
-		monster_remove(attacker);
 		player.confusion = 5;
-		break;
+		/* FALLTHROUGH */
 	case PIXIE:
+		TILE(attacker->pos).monster = NULL;
 		monster_remove(attacker);
 		break;
 	case SHOVE_1:
@@ -221,10 +218,12 @@ static void bomb_tile(Tile *tile) {
 }
 
 static void bomb_tick(Monster *this, __attribute__((unused)) Coords d) {
-	monster_remove(this);
+	if (TILE(this->pos).monster == this)
+		TILE(this->pos).monster = NULL;
 	for (int x = this->pos.x - 1; x <= this->pos.x + 1; ++x)
 		for (int y = this->pos.y - 1; y <= this->pos.y + 1; ++y)
 			bomb_tile(&board[y][x]);
+	monster_remove(this);
 }
 
 static void tile_change(Tile *tile, TileClass new_class) {
@@ -237,18 +236,20 @@ static void tile_change(Tile *tile, TileClass new_class) {
 
 // Kills the given monster, handling any on-death effects.
 static void kill(Monster *m, bool bomblike) {
+	if (m == &player)
+		error("You died.");
 	if (m->class == PIXIE || m->class == BOMBSHROOM_) {
 		bomb_tick(m, spawn);
 		return;
 	}
+	TILE(m->pos).monster = NULL;
 	monster_remove(m);
-	Tile *tile = &TILE(m->pos);
 	if (!bomblike && (m->class == WARLOCK_1 || m->class == WARLOCK_2))
 		move(&player, m->pos);
 	else if (m->class == ICE_SLIME || m->class == YETI)
-		tile_change(tile, ICE);
+		tile_change(&TILE(m->pos), ICE);
 	else if (m->class == FIRE_SLIME || m->class == HELLHOUND)
-		tile_change(tile, FIRE);
+		tile_change(&TILE(m->pos), FIRE);
 	else if (m->class == BOMBER)
 		bomb_plant(m->pos, 3);
 	else if (m->class >= DIREBAT_1 && m->class <= OGRE)
@@ -317,6 +318,7 @@ static void player_move(int8_t x, int8_t y) {
 
 // Deals bomb-like damage to all monsters on a horizontal line).
 static void fireball(Coords pos, int8_t dir) {
+	assert(dir != 0);
 	for (Tile *tile = &TILE(pos) + dir; tile->class != WALL; tile += dir)
 		if (tile->monster)
 			damage(tile->monster, 5, true);

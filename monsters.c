@@ -26,8 +26,10 @@ static void basic_seek(Monster *this, Coords d) {
 		!can_move(this, horizontal) ? 1 :
 
 		// #3: if pos aligns with the player’s prevpos or vice-versa, switch axes
-		this->pos.y == player.prev_pos.y || this->prev_pos.y == player.pos.y ? 0 :
-		this->pos.x == player.prev_pos.x || this->prev_pos.x == player.pos.x ? 1 :
+		this->pos.y == player.prev_pos.y ? 0 :
+		this->pos.x == player.prev_pos.x ? 1 :
+		this->prev_pos.y == player.pos.y ? 0 :
+		this->prev_pos.x == player.pos.x ? 1 :
 
 		// #4: if prevpos aligns with the player’s prevpos, tiebreak by L2 distance
 		this->prev_pos.y == player.prev_pos.y ? ABS(d.y) > ABS(d.x) :
@@ -224,7 +226,7 @@ static bool can_breath(Monster *this) {
 }
 
 static void breath_attack(Monster *this) {
-	int8_t direction = SIGN(player.prev_pos.x - this->pos.x);
+	int8_t direction = SIGN(player.pos.x - this->pos.x);
 	(this->class == RED_DRAGON ? fireball : cone_of_cold)(this->pos, direction);
 	this->delay = 1;
 }

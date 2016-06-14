@@ -1,5 +1,6 @@
 // xml.c - deals with custom dungeon XML files
 
+#include <string.h>
 #include <libxml/xmlreader.h>
 
 // Returns the numeric value of a named attribute of the current node.
@@ -25,7 +26,7 @@ static void xml_process_node(xmlTextReaderPtr xml) {
 	Coords pos = {xml_attr(xml, "x"), xml_attr(xml, "y")};
 
 	pos += spawn;
-	type = type == 255 ? ASSASSIN_2 : type;
+	type = type == 255 ? BOMBER : type;
 
 	if (!strcmp(name, "trap"))
 		traps[trap_count++] = (Trap) {
