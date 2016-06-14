@@ -305,6 +305,7 @@ static void damage(Monster *m, long dmg, bool bomblike) {
 		kill(m, bomblike);
 	} else if (m->hp == 1 && m->class >= SKELETON_1 && m->class <= SKELETON_3) {
 		m->class = HEADLESS;
+		m->delay = 0;
 		m->prev_pos = player.pos;
 	} else if (IS_KNOCKED_BACK(m->class)) {
 		knockback(m);
