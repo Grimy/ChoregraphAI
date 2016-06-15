@@ -43,6 +43,7 @@ static void move(Monster *m, Coords dest) {
 // The code assumes that only spiders can be inside walls. This will need to
 // change before adding phasing enemies.
 static bool can_move(Monster *m, Coords offset) {
+	assert(offset.x || offset.y);
 	Tile dest = TILE(m->pos + offset);
 	if (dest.monster)
 		return dest.monster == &player;
@@ -142,17 +143,19 @@ static bool enemy_move(Monster *m, Coords offset) {
 // Moves something by force (as caused by bounce traps, wind mages and knockback).
 // Unlike enemy_move, ignores confusion, delay, and digging.
 static bool forced_move(Monster *m, Coords offset) {
+	assert(offset.x || offset.y);
 	if (!before_move(m))
 		return false;
 	Tile *dest = &TILE(m->pos + offset);
-	if (dest->monster == &player)
+	if (dest->monster == &player) {
 		enemy_attack(m);
-	else if (!dest->monster && dest->class != WALL)
+		return true;
+	} else if (!dest->monster && dest->class != WALL) {
+		m->prev_pos = m->pos;
 		move(m, m->pos + offset);
-	else
-		return false;
-	m->prev_pos = m->pos;
-	return true;
+		return true;
+	}
+	return false;
 }
 
 // Checks whether the straight line from the player to the given position
@@ -316,10 +319,12 @@ static void damage(Monster *m, long dmg, bool bomblike) {
 // Attempts to move the player by the given offset.
 // Will trigger attacking/digging if the destination contains an enemy/a wall.
 static void player_move(int8_t x, int8_t y) {
-	Coords offset = {x, y};
-	player.prev_pos = player.pos;
-	if (sliding_on_ice || !before_move(&player))
+	if (sliding_on_ice)
 		return;
+	player.prev_pos = player.pos;
+	if (!before_move(&player))
+		return;
+	Coords offset = {x, y};
 	if (player.confusion)
 		offset = -offset;
 	Tile *dest = &TILE(player.pos + offset);
