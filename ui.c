@@ -15,6 +15,7 @@
 // For display purposes, doors count as walls, but level edges don’t
 #define IS_WALL(tile) ((tile)->class == WALL && (tile)->hp < 5)
 
+#ifdef INTERACTIVE
 static const int floor_colors[] = {
 	[STAIRS] = 105, [SHOP] = 43,
 	[WATER] = 44, [TAR] = 40,
@@ -84,14 +85,30 @@ static void display_board(void) {
 
 // Updates the interface, then prompts the user for a command.
 static char display_prompt() {
-	// static long turn = 0;
-	// if (++turn >= 1000000)
-		// exit(0);
-	// if (turn)
-		// return;
 	display_board();
 	int input = getchar();
 	if (input == EOF)
 		error("End of input");
 	return (char) input;
 }
+#endif
+
+#ifdef BRUTE_FORCE
+// Tries all possible inputs
+static char display_prompt() {
+	if (current_beat > 8)
+		return 't';
+	const char inputs[] = "efij<";
+	int status;
+	for (int i = 0; i < 5; ++i) {
+		if (!fork())
+			return inputs[i];
+		wait(&status);
+		if (WEXITSTATUS(status) == 0) {
+			printf("%c", inputs[i]);
+			exit(0);
+		}
+	}
+	return 't';
+}
+#endif

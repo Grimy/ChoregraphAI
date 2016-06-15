@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <sys/wait.h>
 
 #include "cotton.h"
 #include "cotton.c"
@@ -13,7 +15,7 @@
 
 static void player_turn() {
 	if (TILE(player.pos).class == STAIRS && miniboss_defeated)
-		abort();
+		exit(0);
 
 	player.confusion -= SIGN(player.confusion);
 	player.freeze -= SIGN(player.freeze);
@@ -50,7 +52,7 @@ static void player_turn() {
 		&& can_move(&player, DIRECTION(player.pos - player.prev_pos));
 
 	if (TILE(player.pos).class == STAIRS && miniboss_defeated)
-		abort();
+		exit(0);
 }
 
 static void enemy_turn(Monster *m) {
@@ -107,6 +109,7 @@ static void trap_turn(Trap *this) {
 // During each beat, the player acts first, enemies second and traps last.
 // Enemies act in decreasing priority order. Traps have an arbitrary order.
 static void do_beat(void) {
+	++current_beat;
 	player_turn();
 	for (Monster *m = player.next; m; m = m->next)
 		enemy_turn(m);

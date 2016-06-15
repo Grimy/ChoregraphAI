@@ -7,4 +7,4 @@ CFLAGS += -O1 -ggdb -fsanitize=address,leak,undefined
 SOURCES = $(wildcard *.c *.h)
 
 a.out: $(SOURCES)
-	$(CC) $(CFLAGS) main.c
+	$(CC) $(CFLAGS) -DINTERACTIVE main.c

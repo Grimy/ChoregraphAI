@@ -26,7 +26,11 @@ static void damage(Monster *m, long dmg, bool bomblike);
 static bool forced_move(Monster *m, Coords offset);
 
 static void __attribute__((noreturn)) error(char* message) {
+#ifdef INTERACTIVE
 	fprintf(stderr, "%s\n", message);
+#else
+	(void) message;
+#endif
 	exit(1);
 }
 
