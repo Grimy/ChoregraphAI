@@ -59,7 +59,10 @@ static bool dig(Tile *wall, int digging_power, bool z4) {
 		return false;
 	if (z4 && (wall->hp == 0 || wall->hp > 2))
 		return false;
-	wall->class = FLOOR;
+	wall->class =
+		wall->hp == 2 && wall->zone == 2 ? FIRE :
+		wall->hp == 2 && wall->zone == 3 ? ICE :
+		FLOOR;
 	if (wall->monster && wall->monster->class == SPIDER) {
 		wall->monster->class = FREE_SPIDER;
 		wall->monster->delay = 1;

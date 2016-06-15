@@ -29,6 +29,9 @@ static void display_wall(Tile *wall) {
 	case 0:
 		putchar('+');
 		return;
+	case 2:
+		printf(wall->zone == 2 ? RED : wall->zone == 3 ? CYAN : "");
+		break;
 	case 3:
 		printf(BLACK);
 		break;
