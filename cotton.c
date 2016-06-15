@@ -334,9 +334,9 @@ static void player_move(int8_t x, int8_t y) {
 // Deals bomb-like damage to all monsters on a horizontal line).
 static void fireball(Coords pos, int8_t dir) {
 	assert(dir != 0);
-	for (Tile *tile = &TILE(pos) + dir; tile->class != WALL; tile += dir)
-		if (tile->monster)
-			damage(tile->monster, 5, true);
+	for (pos.x += dir; TILE(pos).class != WALL; pos.x += dir)
+		if (TILE(pos).monster)
+			damage(TILE(pos).monster, 5, true);
 }
 
 // Freezes all monsters in a 3x5 cone.
