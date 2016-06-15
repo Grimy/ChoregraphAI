@@ -10,6 +10,7 @@ FEATURES:
 * Metal doors (type=111)
 * Fire traps
 * Mummy summoning
+* basic_seek spawn-asymmetry
 
 BUGFIXES:
 * CRASH on efeffef<<<<<<

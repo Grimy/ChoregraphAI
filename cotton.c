@@ -102,7 +102,6 @@ static void enemy_attack(Monster *attacker) {
 }
 
 static bool before_move(Monster *m) {
-	m->prev_pos = m->pos;
 	if (m->freeze)
 		return false;
 	if (TILE(m->pos).class == WATER && !CLASS(m).flying) {
@@ -120,6 +119,7 @@ static bool before_move(Monster *m) {
 // Will trigger attacking/digging if the destination contains the player/a wall.
 // On success, resets the enemy’s delay and returns true.
 static bool enemy_move(Monster *m, Coords offset) {
+	m->prev_pos = m->pos;
 	m->delay = CLASS(m).beat_delay;
 	if (!before_move(m))
 		return false;
@@ -151,6 +151,7 @@ static bool forced_move(Monster *m, Coords offset) {
 		move(m, m->pos + offset);
 	else
 		return false;
+	m->prev_pos = m->pos;
 	return true;
 }
 
@@ -316,6 +317,7 @@ static void damage(Monster *m, long dmg, bool bomblike) {
 // Will trigger attacking/digging if the destination contains an enemy/a wall.
 static void player_move(int8_t x, int8_t y) {
 	Coords offset = {x, y};
+	player.prev_pos = player.pos;
 	if (sliding_on_ice || !before_move(&player))
 		return;
 	if (player.confusion)
