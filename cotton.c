@@ -43,7 +43,7 @@ static void move(Monster *m, Coords dest) {
 // The code assumes that only spiders can be inside walls. This will need to
 // change before adding phasing enemies.
 static bool can_move(Monster *m, Coords offset) {
-	assert(offset.x || offset.y);
+	assert(m != &player || offset.x || offset.y);
 	Tile dest = TILE(m->pos + offset);
 	if (dest.monster)
 		return dest.monster == &player;
