@@ -23,13 +23,6 @@ BUGFIXES:
 * moles shouldn’t be able to move through water/tar
 * knockback shouldn’t free enemies from water/tar
 
-AFL:
-* deterministic swaps
-* havoc swaps
-* ins16, ins32
-* del16, del32
-* fitness function
-
 REFACTORS:
 * Refactor harpy AI
 

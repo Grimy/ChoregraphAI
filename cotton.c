@@ -268,6 +268,8 @@ static void kill(Monster *m, bool bomblike) {
 		bomb_plant(m->pos, 3);
 	else if (m->class >= DIREBAT_1 && m->class <= OGRE)
 		miniboss_defeated = true;
+	else if (m->class == HARPY)
+		harpies_defeated++;
 }
 
 // Deals damage to the given monster.
@@ -340,8 +342,19 @@ static void player_move(int8_t x, int8_t y) {
 	} else if (IS_ENEMY(dest->monster)) {
 		damage(dest->monster, TILE(player.pos).class == OOZE ? 0 : 1, false);
 	} else {
-		move(&player, player.pos + offset);
 		player_moved = true;
+		move(&player, player.pos + offset);
+		int steps = 4;
+		while (--steps && can_move(&player, offset))
+			move(&player, player.pos + offset);
+		Monster *m = TILE(player.pos + offset).monster;
+		if (steps && m) {
+			knockback(m);
+			damage(m, 4, true);
+		}
+		int digging_power = TILE(player.pos).class == OOZE ? 0 : 2;
+		for (int i = 0; i < LENGTH(plus_shape); ++i)
+			dig(&TILE(player.pos) + plus_shape[i], digging_power, false);
 	}
 }
 

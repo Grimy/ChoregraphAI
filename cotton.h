@@ -162,9 +162,10 @@ static const Coords spawn = {23, 9};
 static Monster player = {.class = PLAYER, .hp = 1};
 static Monster monsters[256];
 static Trap traps[256];
-static uint64_t monster_count = 0;
+static uint64_t monster_count;
 
 static bool player_moved;
 static bool sliding_on_ice;
 static bool miniboss_defeated;
+static uint64_t harpies_defeated;
 static int current_beat;
