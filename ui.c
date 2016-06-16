@@ -1,17 +1,6 @@
 // ui.c - manages terminal input/output
 // All output code assumes an ANSI-compatible UTF-8 terminal.
 
-// ANSI codes to enable color output in the terminal
-#define RED    "\033[31m"
-#define YELLOW "\033[33m"
-#define BLUE   "\033[34m"
-#define PINK   "\033[35m"
-#define BLACK  "\033[90m"
-#define ORANGE "\033[91m"
-#define GREEN  "\033[92m"
-#define CYAN   "\033[94m"
-#define PURPLE "\033[95m"
-
 // For display purposes, doors count as walls, but level edges don’t
 #define IS_WALL(tile) ((tile)->class == WALL && (tile)->hp < 5)
 
@@ -62,12 +51,12 @@ static void display_tile(Coords pos) {
 		display_wall(tile);
 	else
 		putchar('.');
-	printf("\033[m");
+	printf(WHITE);
 }
 
 // Clears and redraws the entire board.
 static void display_board(void) {
-	printf("\033[H\033[2J");
+	printf(TERM_CLEAR);
 	for (int8_t y = 1; y < LENGTH(board) - 1; ++y) {
 		for (int8_t x = 1; x < LENGTH(*board) - 1; ++x)
 			display_tile((Coords) {x, y});
@@ -80,7 +69,7 @@ static void display_board(void) {
 		char *glyph = &"■▫◭◭◆▫⇐⇒◭●●↖↑↗←▫→↙↓↘"[3 * glyph_index];
 		printf("\033[%d;%dH%3.3s", t->pos.y, t->pos.x, glyph);
 	}
-	printf("\033[H");
+	printf(TERM_HOME);
 }
 
 // Updates the interface, then prompts the user for a command.

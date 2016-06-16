@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
+#include "types.h"
 #include "cotton.h"
 #include "cotton.c"
 #include "ui.c"

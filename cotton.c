@@ -1,9 +1,5 @@
 // cotton.c - core game logic
 
-#define LENGTH(array) ((long) (sizeof(array) / sizeof(*(array))))
-#define SIGN(x) (((x) > 0) - ((x) < 0))
-#define ABS(x) ((x) < 0 ? -(x) : (x))
-
 #define DIRECTION(pos) ((Coords) {SIGN((pos).x), SIGN((pos).y)})
 #define L1(pos) (ABS((pos).x) + ABS((pos).y))
 #define L2(pos) ((pos).x * (pos).x + (pos).y * (pos).y)

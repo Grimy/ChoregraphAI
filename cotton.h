@@ -1,8 +1,5 @@
 // cotton.h - types and global vars definitions
 
-// Boolean type.
-typedef enum {false, true} bool;
-
 // A pair of cartesian coordinates.
 typedef int8_t Coords __attribute__((ext_vector_type(2)));
 
