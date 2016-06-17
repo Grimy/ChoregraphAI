@@ -1,8 +1,8 @@
 // Fuzzing parameters
 #define MAX_LENGTH        32
 #define MAX_PASSES        2048
-#define MAX_BACKTRACK     2
-#define STACKING          (queue_cycle + 1)
+#define MAX_BACKTRACK     3
+#define STACKING          (queue_cycle + 2)
 
 #include <sched.h>
 #include <string.h>
@@ -204,6 +204,7 @@ static void run_simulation()
 
 	if (!pid) {
 		fclose(stderr);
+		srandom(0);
 		for (;;)
 			do_beat();
 	}
@@ -222,15 +223,15 @@ static void run_simulation()
 	u8 game_over = !(WEXITSTATUS(status) >> 7);
 	status = WEXITSTATUS(status) & 0x7F;
 
+	add_to_tree(game_over);
+	add_to_queue((u16) (status) + (u16) len);
+
 	if (status == 0 && len <= best->score) {
 		total_routes++;
 		last_route_time = get_cur_time();
-		write(routes_fd, out_buf, len);
+		write(routes_fd, DQ(queue_top), strlen(DQ(queue_top)));
 		write(routes_fd, "\n", 1);
 	}
-
-	add_to_tree(game_over);
-	add_to_queue((u16) (status) + (u16) len);
 }
 
 // Updates the stats screen.

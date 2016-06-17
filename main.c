@@ -109,12 +109,12 @@ static void trap_turn(Trap *this) {
 // During each beat, the player acts first, enemies second and traps last.
 // Enemies act in decreasing priority order. Traps have an arbitrary order.
 static void do_beat(void) {
-	++current_beat;
 	player_turn();
 	for (Monster *m = player.next; m; m = m->next)
 		enemy_turn(m);
 	for (Trap *t = traps; t->pos.x; ++t)
 		trap_turn(t);
+	++current_beat;
 }
 
 // Runs the simulation on the given custom dungeon file.

@@ -18,9 +18,6 @@
 static const int64_t plus_shape[] = {-32, -1, 1, 32};
 static const int64_t cone_shape[] = {32, 63, 64, 65, 94, 95, 96, 97, 98};
 
-static void damage(Monster *m, long dmg, bool bomblike);
-static bool forced_move(Monster *m, Coords offset);
-
 static void __attribute__((noreturn)) error(char* message) {
 	fprintf(stderr, "%s\n", message);
 	int status = 10 + 2 * L1(player.pos - stairs) + 10 * !player.hp;

@@ -168,4 +168,7 @@ static bool miniboss_defeated;
 static u64 harpies_defeated;
 static u32 current_beat;
 
+// Some pre-declarations
 static void do_beat(void);
+static void damage(Monster *m, long dmg, bool bomblike);
+static bool forced_move(Monster *m, Coords offset);
