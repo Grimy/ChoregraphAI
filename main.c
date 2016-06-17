@@ -61,7 +61,7 @@ static void enemy_turn(Monster *m) {
 	m->freeze -= SIGN(m->freeze);
 	if (!m->aggro) {
 		m->aggro = can_see(m->pos);
-		if (L2(d) > CLASS(m).radius)
+		if (L2(d) > CLASS(m).radius && !bomb_exploded)
 			return;
 	}
 	if (m->delay)
@@ -110,6 +110,7 @@ static void trap_turn(Trap *this) {
 // Enemies act in decreasing priority order. Traps have an arbitrary order.
 static void do_beat(void) {
 	player_turn();
+	bomb_exploded = false;
 	for (Monster *m = player.next; m; m = m->next)
 		enemy_turn(m);
 	for (Trap *t = traps; t->pos.x; ++t)

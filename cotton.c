@@ -230,6 +230,7 @@ static void bomb_tick(Monster *this, __attribute__((unused)) Coords d) {
 		for (int y = this->pos.y - 1; y <= this->pos.y + 1; ++y)
 			bomb_tile(&board[x][y]);
 	monster_remove(this);
+	bomb_exploded = true;
 }
 
 static void tile_change(Tile *tile, TileClass new_class) {

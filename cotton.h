@@ -163,6 +163,7 @@ static Trap traps[256];
 static u64 monster_count;
 
 static bool player_moved;
+static bool bomb_exploded;
 static bool sliding_on_ice;
 static bool miniboss_defeated;
 static u64 harpies_defeated;
