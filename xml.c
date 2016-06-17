@@ -35,13 +35,16 @@ static void xml_process_node(xmlTextReaderPtr xml) {
 			.dir = trap_dirs[subtype & 7],
 		};
 
-	else if (!strcmp(name, "tile"))
+	else if (!strcmp(name, "tile")) {
 		TILE(pos) = (Tile) {
 			.class = type >= 100 ? WALL : type < 2 ? FLOOR : type,
 			.hp = type >= 100 ? wall_hp[type - 100] : 0,
 			.torch = xml_attr(xml, "torch"),
 			.zone = xml_attr(xml, "zone"),
 		};
+		if (type == STAIRS)
+			stairs = pos;
+	}
 
 	else if (!strcmp(name, "enemy"))
 		monsters[monster_count++] = (Monster) {

@@ -22,12 +22,15 @@ static void damage(Monster *m, long dmg, bool bomblike);
 static bool forced_move(Monster *m, Coords offset);
 
 static void __attribute__((noreturn)) error(char* message) {
-#ifdef INTERACTIVE
-	fprintf(stderr, "%s\n", message);
-#else
+#ifdef GENETIC
 	(void) message;
+#else
+	fprintf(stderr, "%s\n", message);
 #endif
-	exit(1);
+	int status = 10 + 2 * L1(player.pos - stairs) + 10 * !player.hp;
+	if (!miniboss_defeated)
+		status += 8 - harpies_defeated;
+	exit(status + (player.hp ? 128 : 0));
 }
 
 // Moves the given monster to a specific position.
@@ -88,7 +91,7 @@ static void enemy_attack(Monster *attacker) {
 	switch (attacker->class) {
 	case CONF_MONKEY:
 		player.confusion = 5;
-		/* FALLTHROUGH */
+		// FALLTHROUGH
 	case PIXIE:
 		TILE(attacker->pos).monster = NULL;
 		monster_remove(attacker);
@@ -245,7 +248,7 @@ static void tile_change(Tile *tile, TileClass new_class) {
 }
 
 // Kills the given monster, handling any on-death effects.
-static void kill(Monster *m, bool bomblike) {
+static void monster_kill(Monster *m, bool bomblike) {
 	if (m == &player)
 		error("You died.");
 	if (m->class == PIXIE || m->class == BOMBSHROOM_) {
@@ -311,7 +314,7 @@ static void damage(Monster *m, long dmg, bool bomblike) {
 		tile_change(&TILE(player.pos), OOZE);
 
 	if (m->hp <= 0) {
-		kill(m, bomblike);
+		monster_kill(m, bomblike);
 	} else if (m->hp == 1 && m->class >= SKELETON_1 && m->class <= SKELETON_3) {
 		m->class = HEADLESS;
 		m->delay = 0;

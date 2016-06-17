@@ -47,21 +47,21 @@ typedef int64_t  s64;
 #define PFATAL(...) FATAL(__VA_ARGS__, strerror(errno))
 
 // Error-checking versions of open(), read() and write() that call FATAL()
-#define ck_open(pathname, flags, mode) ({ \
+#define ck_open(pathname, flags, mode) __extension__ ({ \
 		s32 _res = open(pathname, flags, mode); \
 		if (_res < 0) PFATAL("Unable to open %s: %s", pathname); \
 		_res; })
 
 #define ck_read(fd, buf, len, fn) do { \
-	s32 _len = (len); \
-	s32 _res = read(fd, buf, _len); \
+	s64 _len = (len); \
+	s64 _res = read(fd, buf, (u64) _len); \
 	if (_res < 0) PFATAL("Error reading %s: %s", fn); \
 	else if (_res != _len) FATAL("Short read from %s", fn); \
 } while (0)
 
 #define ck_write(fd, buf, len, fn) do { \
-	s32 _len = (len); \
-	s32 _res = write(fd, buf, _len); \
+	s64 _len = (len); \
+	s64 _res = write(fd, buf, (u64) _len); \
 	if (_res < 0) PFATAL("Error writing %s: %s", fn); \
 	else if (_res != _len) FATAL("Short write to %s", fn); \
 } while (0)

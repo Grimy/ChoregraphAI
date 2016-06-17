@@ -113,7 +113,7 @@ typedef enum {
 typedef struct monster {
 	struct monster *next;
 	MonsterClass class;
-	int8_t hp;
+	s8 hp;
 	Coords pos;
 	Coords prev_pos;
 	unsigned delay: 4;
@@ -127,10 +127,10 @@ typedef struct monster {
 
 typedef struct {
 	TileClass class;
-	int8_t hp;
-	int8_t torch;
-	int8_t zone;
-	int8_t revealed;
+	s8 hp;
+	s8 torch;
+	s8 zone;
+	s8 revealed;
 	Monster *monster;
 } Tile;
 
@@ -141,12 +141,12 @@ typedef struct {
 } Trap;
 
 typedef struct {
-	int8_t max_hp;
-	uint8_t beat_delay;
-	uint8_t radius;
+	s8 max_hp;
+	u8 beat_delay;
+	u8 radius;
 	bool flying: 1;
 	signed dig: 7;
-	uint32_t priority;
+	u32 priority;
 	char *glyph;
 	void (*act) (Monster*, Coords);
 } ClassInfos;
@@ -156,13 +156,14 @@ static const ClassInfos class_infos[256];
 __extension__
 static Tile board[32][32] = {[0 ... 31] = {[0 ... 31] = {.class = WALL, .hp = 5}}};
 static const Coords spawn = {23, 9};
+static Coords stairs;
 static Monster player = {.class = PLAYER, .hp = 1};
 static Monster monsters[256];
 static Trap traps[256];
-static uint64_t monster_count;
+static u64 monster_count;
 
 static bool player_moved;
 static bool sliding_on_ice;
 static bool miniboss_defeated;
-static uint64_t harpies_defeated;
-static int current_beat;
+static u64 harpies_defeated;
+static u32 current_beat;

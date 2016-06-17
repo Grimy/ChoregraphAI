@@ -75,10 +75,7 @@ static void display_board(void) {
 // Updates the interface, then prompts the user for a command.
 static char display_prompt() {
 	display_board();
-	int input = getchar();
-	if (input == EOF)
-		error("End of input");
-	return (char) input;
+	return (char) getchar();
 }
 #endif
 
@@ -100,4 +97,8 @@ static char display_prompt() {
 	}
 	return 't';
 }
+#endif
+
+#ifdef GENETIC
+static char display_prompt();
 #endif

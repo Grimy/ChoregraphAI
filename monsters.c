@@ -163,7 +163,7 @@ static void harpy(Monster *this, Coords d) {
 		enemy_move(this, d);
 		return;
 	}
-	Coords best = {0, 0};
+	Coords best_move = {0, 0};
 	long min = L1(d);
 	for (long i = 0; i < LENGTH(moves); ++i) {
 		Coords move = moves[i];
@@ -179,10 +179,10 @@ static void harpy(Monster *this, Coords d) {
 		long score = L1(d - move);
 		if (score && score < min && can_move(this, move)) {
 			min = score;
-			best = move;
+			best_move = move;
 		}
 	}
-	enemy_move(this, best);
+	enemy_move(this, best_move);
 }
 
 static void zombie(Monster *this, __attribute__((unused)) Coords d) {
@@ -348,7 +348,7 @@ static void digger(Monster *this, Coords d) {
 	}
 }
 
-static void clone(Monster *this, __attribute__((unused)) Coords d) {
+static void mirror(Monster *this, __attribute__((unused)) Coords d) {
 	if (player_moved)
 		enemy_move(this, -DIRECTION(player.pos - player.prev_pos));
 }
@@ -407,7 +407,7 @@ static const ClassInfos class_infos[256] = {
 	[GOLEM_2]     = { 7, 3,   9,  true,  2, 20607407, BLACK "'",  basic_seek },
 	[ARMADILLO_1] = { 1, 0, 225, false,  2, 10201102, "q",        armadillo },
 	[ARMADILLO_2] = { 2, 0, 225, false,  2, 10302105, YELLOW "q", armadillo },
-	[CLONE]       = { 1, 0,   9, false, -1, 10301102, "@",        clone },
+	[CLONE]       = { 1, 0,   9, false, -1, 10301102, "@",        mirror },
 	[TARMONSTER]  = { 1, 0,   9, false, -1, 10304103, "t",        mimic },
 	[MOLE]        = { 1, 0,   9,  true, -1,  1020113, "r",        mole },
 	[WIGHT]       = { 1, 0,   9,  true, -1, 10201103, GREEN "W",  basic_seek },

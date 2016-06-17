@@ -1,10 +1,17 @@
-CC = clang
-CFLAGS += -I/usr/include/libxml2 -lxml2 -Wno-documentation -Wno-documentation-unknown-command -Wno-reserved-id-macro
-CFLAGS += -std=c99 -pedantic -march=native -fstrict-aliasing -fstrict-overflow
-CFLAGS += -Weverything -Werror -Wno-unknown-warning-option -Wno-c++-compat -Wno-switch-enum
-# CFLAGS += -Ofast -fno-asynchronous-unwind-tables
-CFLAGS += -O1 -ggdb -fsanitize=address,leak,undefined
-SOURCES = $(wildcard *.c *.h)
+CFLAGS += -std=c99 -Weverything -Werror -march=native -mtune=native
+CFLAGS += -fstrict-aliasing -fstrict-overflow -fno-asynchronous-unwind-tables
+CFLAGS += -Wno-unknown-warning-option -Wno-c++-compat -Wno-switch-enum
+CFLAGS += -I/usr/include/libxml2 -lxml2
+CFLAGS += -Wno-documentation -Wno-documentation-unknown-command -Wno-reserved-id-macro
+CFLAGS += -Wno-float-equal -D_GNU_SOURCE -Wno-disabled-macro-expansion
 
-a.out: $(SOURCES)
-	$(CC) $(CFLAGS) -DINTERACTIVE main.c
+SOURCES = $(wildcard *.c) $(wildcard *.h)
+
+.PHONY: all
+all: a.out solve
+
+a.out: $(SOURCES) Makefile
+	clang $(CFLAGS) -DINTERACTIVE -O1 -g -fsanitize=address,leak,undefined -o $@ main.c
+
+solve: $(SOURCES) Makefile
+	clang $(CFLAGS) -DGENETIC -Ofast -funroll-loops -o $@ main.c
