@@ -167,3 +167,5 @@ static bool sliding_on_ice;
 static bool miniboss_defeated;
 static u64 harpies_defeated;
 static u32 current_beat;
+
+static void do_beat(void);

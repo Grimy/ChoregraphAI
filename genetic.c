@@ -1,12 +1,8 @@
-#define CRASH             255
-#define RESEED_RNG        10000
-#define CPU_AFF           0
-
 // Fuzzing parameters
-#define HAVOC_MAX         2048
-#define MAX_FILE          32
+#define MAX_LENGTH        32
+#define MAX_PASSES        2048
 #define MAX_BACKTRACK     2
-#define HAVOC_STACKING    (queue_cycle + 1)
+#define STACKING          (queue_cycle + 1)
 
 #include <sched.h>
 #include <string.h>
@@ -15,7 +11,7 @@
 
 struct queue_entry {
 	struct queue_entry *next;         // Next element, if any
-	u8 input[MAX_FILE];               // Test input
+	u8 input[MAX_LENGTH];             // Test input
 	u64 depth;                        // Path depth
 	u32 len;                          // Input length
 	u8 was_fuzzed;                    // Had any fuzzing done yet?
@@ -29,15 +25,15 @@ struct tree_node {
 	bool game_over;
 };
 
-static u8 out_buf[MAX_FILE];
+enum { UPDATE, DELETE, INSERT };
+
+static u8 out_buf[MAX_LENGTH];
 static u32 len;
 
 static s32 crashes_fd;                // Persistent fd for crashes
 static s32 routes_fd;                 // Persistent fd for routes
-static s32 urandom_fd;                // Persistent fd for /dev/urandom
 static s32 fsrv_ctl_fd;               // Fork server control pipe (write)
 static s32 fsrv_st_fd;                // Fork server status pipe (read)
-static s32 forksrv_pid;               // PID of the fork server
 
 static s64 queues_stems;              // Total number of queued testcases
 static s64 queued_favored;            // Paths deemed favorable
@@ -94,10 +90,10 @@ static void add_to_tree(bool game_over) {
 	t->game_over = game_over;
 }
 
-/* Possible inputs */
+// Possible inputs
 static u8 inputs[5] = "efji<";
 
-/* Get unix time in microseconds */
+// Returns the current time in microseconds since the epoch
 static s64 get_cur_time(void)
 {
 	static struct timeval tv;
@@ -105,35 +101,7 @@ static s64 get_cur_time(void)
 	return tv.tv_sec * 1000000L + tv.tv_usec;
 }
 
-/* Set CPU affinity (on systems that support it). */
-static void set_cpu_affinity(u32 cpu_id)
-{
-	cpu_set_t c;
-
-	CPU_ZERO(&c);
-	CPU_SET(cpu_id, &c);
-	if (sched_setaffinity(0, sizeof(c), &c))
-		PFATAL("sched_setaffinity failed: %s");
-}
-
-/* Generate a random number (from 0 to limit - 1). This may
-   have slight bias. */
-static inline u64 UR(u64 limit)
-{
-	static s32 rand_cnt;
-	assert(limit > 0);
-
-	if (!rand_cnt--) {
-		u32 seed[2];
-		ck_read(urandom_fd, &seed, sizeof(seed), "/dev/urandom");
-		srandom(seed[0]);
-		rand_cnt = (RESEED_RNG / 2) + (seed[1] % RESEED_RNG);
-	}
-
-	return (u64) random() % limit;
-}
-
-/* Describe integer. The value returned should be five characters or less. */
+// Describe integer. The value returned is always five characters or less.
 static char* DI(s64 val)
 {
 	static char buf[6];
@@ -146,9 +114,9 @@ static char* DI(s64 val)
 	return buf;
 }
 
-/* Describe queue entry. */
+// Describe queue entry.
 static char* DQ(struct queue_entry *q) {
-	static char buf[3*MAX_FILE + 1];
+	static char buf[3*MAX_LENGTH + 1];
 	char *p = stpcpy(buf, DI(q->score));
 	*p++ = ' ';
 
@@ -165,6 +133,7 @@ static char* DQ(struct queue_entry *q) {
 	return buf;
 }
 
+// Describe ratio.
 static char* DR(s64 part, s64 total)
 {
 	static char buf[12];
@@ -174,7 +143,7 @@ static char* DR(s64 part, s64 total)
 	return buf;
 }
 
-/* Describe time delta. Returns one static buffer, 34 chars of less. */
+// Describe time difference.
 static char* DTD(s64 cur_us, s64 event_us)
 {
 	static char tmp[24];
@@ -191,7 +160,7 @@ static char* DTD(s64 cur_us, s64 event_us)
 	return tmp;
 }
 
-/* Append new test case to the queue. */
+// Appends the current mutation to the queue. */
 static void add_to_queue(u16 score)
 {
 	if (best && score > best->score + MAX_BACKTRACK)
@@ -222,27 +191,49 @@ static void add_to_queue(u16 score)
 	last_path_time = get_cur_time();
 }
 
-/* Execute target application, monitoring for timeouts. Return status
-   information. */
-static u8 run_target()
+// Forks to the simulator using the current input, saves the results
+static void run_simulation()
 {
-	s64 pid = fork();
-	s32 status;
+	// Check for duplicates
+	if (exists_in_tree())
+		return;
 
-	if (!pid)
+	s32 status;
+	s64 pid = fork();
+	total_execs++;
+
+	if (!pid) {
+		fclose(stderr);
 		for (;;)
 			do_beat();
+	}
 	if (pid < 0)
-		PFATAL("fork() failed: %s");
+		error("fork() failed");
 	wait(&status);
 
-	/* Report outcome to caller. */
-	total_execs++;
-	return WIFSIGNALED(status) ? CRASH : WEXITSTATUS(status);
+	if (WIFSIGNALED(status)) {
+		total_crashes++;
+		last_crash_time = get_cur_time();
+		write(crashes_fd, out_buf, len);
+		write(crashes_fd, "\n", 1);
+		return;
+	}
+
+	u8 game_over = !(WEXITSTATUS(status) >> 7);
+	status = WEXITSTATUS(status) & 0x7F;
+
+	if (status == 0 && len <= best->score) {
+		total_routes++;
+		last_route_time = get_cur_time();
+		write(routes_fd, out_buf, len);
+		write(routes_fd, "\n", 1);
+	}
+
+	add_to_tree(game_over);
+	add_to_queue((u16) (status) + (u16) len);
 }
 
-/* A spiffy retro stats screen! This is called every stats_update_freq
-   execve() calls, plus in several other circumstances. */
+// Updates the stats screen.
 static void show_stats(void)
 {
 	static s64 last_us;
@@ -251,19 +242,18 @@ static void show_stats(void)
 #define RIGHT "│ %10s: %s%s" BLACK TERM_JUMP(54) "│\n"
 #define LINE  "│ %11s: " WHITE "%s" BLACK TERM_JUMP(54) "│\n"
 
-	/* Don’t update at more than 60FPS */
+	// Don’t update at more than 60FPS
 	s64 cur_us = get_cur_time();
 	if (cur_us < last_us + 1000000 / 60)
 		return;
 
-	/* Calculate smoothed exec speed stats. */
+	// Compute the average execution speed
 	double cur_avg = (double) (total_execs - last_execs) * 1000000 / (cur_us - MAX(last_us, start_time));
 	if (cur_avg < 1000000)
-		avg_exec = avg_exec * .99 + cur_avg * (avg_exec != 0 ? .01 : 1);
+		avg_exec = avg_exec * .9 + cur_avg * (avg_exec != 0 ? .1 : 1);
 	last_us = cur_us;
 	last_execs = total_execs;
 
-	/* Now, for the visuals... */
 	printf(TERM_HOME YELLOW "\n                       cotton fuzzer\n\n" BLACK);
 	printf("┌─" GREEN " process timing " BLACK "──────────┬──");
 	printf(GREEN " overall results " BLACK "─────┐\n");
@@ -276,115 +266,76 @@ static void show_stats(void)
 	printf(LEFT,  "latest route", DTD(cur_us, last_route_time));
 	printf(RIGHT, "routes",       total_routes ? GREEN : WHITE, DI(total_routes));
 	printf(LEFT,  "latest crash", DTD(cur_us, last_crash_time));
-	printf(RIGHT, "crashes", total_crashes ? RED : WHITE, DI(total_crashes));
+	printf(RIGHT, "crashes",      total_crashes ? RED : WHITE, DI(total_crashes));
 	printf("├─" GREEN " stage progress " BLACK "──────────┴────────────────────────┤\n");
 	printf(LINE,  "best route",   DQ(best));
 	printf(LINE,  "now fuzzing",  DQ(queue_cur));
 	printf(LINE,  "total execs",  DI(total_execs));
 	printf(LINE,  "exec/sec",     DI((s64) avg_exec));
 	printf("└────────────────────────────────────────────────────┘\n");
-
-	/* Hallelujah! */
-	fflush(0);
 }
 
-/* Write a modified test case, run program, process results. Handle
-   error conditions, returning 1 if it's time to bail out. This is
-   a helper function for fuzz_one(). */
-static void common_fuzz_stuff()
-{
-	// Check for duplicates
-	if (exists_in_tree())
-		return;
-
-	u8 status = run_target();
-
-	if (status == CRASH) {
-		total_crashes++;
-		last_crash_time = get_cur_time();
-		write(crashes_fd, out_buf, len);
-		write(crashes_fd, "\n", 1);
-	}
-	else if (status == 0 && len <= best->score) {
-		total_routes++;
-		last_route_time = get_cur_time();
-		write(routes_fd, out_buf, len);
-		write(routes_fd, "\n", 1);
-	}
-	u8 game_over = !(status >> 7);
-	status &= 0x7F;
-
-	add_to_tree(game_over);
-	add_to_queue(status + (u8) len);
-}
-
+// Applies a single mutation to the current stem
 static void mutate()
 {
 	u64 del_from, insert_at;
 
-	switch (len < 2 ? 2 : UR(3)) {
-		/* Update a single byte. */
-		case 0:
-			out_buf[UR(len)] = inputs[UR(LENGTH(inputs))];
-			break;
+	switch (len < 2 ? INSERT : RNG(3)) {
+	case UPDATE:
+		assert(LENGTH(inputs) == 5);
+		assert(len > 1);
+		out_buf[RNG(len)] = inputs[RNG(LENGTH(inputs))];
+		break;
 
-		/* Delete a single byte. */
-		case 1:
-			del_from = UR(len);
-			memmove(out_buf + del_from, out_buf + del_from + 1, len - del_from - 1);
-			len--;
-			break;
+	case DELETE:
+		assert(LENGTH(inputs) == 5);
+		assert(len > 1);
+		del_from = RNG(len);
+		memmove(out_buf + del_from, out_buf + del_from + 1, len - del_from - 1);
+		len--;
+		break;
 
-		/* Insert a single byte. */
-		case 2:
-			assert(len < MAX_FILE);
-			insert_at = UR(len + 1);
-			memmove(out_buf + insert_at + 1, out_buf + insert_at, len - insert_at);
-			out_buf[insert_at] = inputs[UR(LENGTH(inputs))];
-			len++;
-			break;
+	case INSERT:
+		assert(LENGTH(inputs) == 5);
+		assert(len < MAX_LENGTH);
+		insert_at = RNG(len + 1);
+		memmove(out_buf + insert_at + 1, out_buf + insert_at, len - insert_at);
+		out_buf[insert_at] = inputs[RNG(LENGTH(inputs))];
+		len++;
+		break;
 	}
 }
 
-/* Take the current entry from the queue, fuzz it for a while. */
+// Take the current entry from the queue, mutate it randomly
 static void fuzz_one()
 {
-	if (queue_cur->was_fuzzed && pending_stems && UR(20))
+	if (queue_cur->was_fuzzed && pending_stems && RNG(20))
 		return;
 
-	if (!queue_cur->favored && pending_favored && UR(20))
+	if (!queue_cur->favored && pending_favored && RNG(20))
 		return;
 
 	len = queue_cur->len;
 	memcpy(out_buf, queue_cur->input, len);
 
-	/* Inserting 8-bit integers. */
+	// Try adding each possible input at the end
 	for (u64 i = 0; i < LENGTH(inputs); i++) {
 		out_buf[len] = inputs[i];
 		++len;
-		common_fuzz_stuff();
+		run_simulation();
 		--len;
 	}
 
-	/* We essentially just do several thousand runs (depending on perf_score)
-	   where we take the input file and make random stacked tweaks. */
-	u64 havoc_passes = HAVOC_MAX / (1 + queue_cur->score - best->score);
-
-	for (u64 pass = 0; pass < havoc_passes; ++pass) {
-		s64 mutation_count = 2 << UR((u64) HAVOC_STACKING);
-
-		for (s64 i = 0; i < mutation_count; ++i)
+	// Randomly mutate the stem
+	for (u64 passes = MAX_PASSES / (1 + queue_cur->score - best->score); passes; --passes) {
+		for (s64 mutations = 2 << RNG((u64) STACKING); mutations; --mutations)
 			mutate();
-
-		common_fuzz_stuff();
-
-		/* Restore out_buf to its original state. */
+		run_simulation();
 		len = queue_cur->len;
 		memcpy(out_buf, queue_cur->input, len);
 	}
 
-	/* Update pending_stems count if we made it through the calibration
-	   cycle and have not seen this entry before. */
+	// Mark the stem as done (no longer pending)
 	if (!queue_cur->was_fuzzed) {
 		queue_cur->was_fuzzed = 1;
 		pending_stems--;
@@ -392,14 +343,27 @@ static void fuzz_one()
 	}
 }
 
-/* Prepare persistent fds. */
-static void setup_fds(void)
+// Pulls an input from the current mutation
+static char player_input()
 {
-	crashes_fd = ck_open("crashes", O_WRONLY | O_CREAT | O_TRUNC, 0600);
-	routes_fd  = ck_open("routes",  O_WRONLY | O_CREAT | O_TRUNC, 0600);
-	urandom_fd = ck_open("/dev/urandom", O_RDONLY, 0);
+	return current_beat < len ? (char) out_buf[current_beat] : 0;
 }
 
-static char display_prompt() {
-	return current_beat < len ? (char) out_buf[current_beat] : 0;
+static void __attribute__((noreturn)) init() {
+	add_to_queue(200);
+
+	crashes_fd = open("crashes", O_WRONLY | O_CREAT | O_TRUNC, 0600);
+	routes_fd  = open("routes",  O_WRONLY | O_CREAT | O_TRUNC, 0600);
+	start_time = get_cur_time();
+	queue_cur = queue;
+
+	for (;;) {
+		fuzz_one();
+		show_stats();
+		queue_cur = queue_cur->next;
+		if (!queue_cur) {
+			queue_cycle++;
+			queue_cur = queue;
+		}
+	}
 }

@@ -83,7 +83,7 @@ static void bat(Monster *this, Coords d) {
 		basic_seek(this, d);
 		return;
 	}
-	long rng = rand();
+	long rng = RNG(4);
 	for (long i = 0; i < 4; ++i)
 		if (enemy_move(this, moves[(rng + i) & 3]))
 			return;

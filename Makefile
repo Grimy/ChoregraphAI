@@ -11,7 +11,9 @@ SOURCES = $(wildcard *.c) $(wildcard *.h)
 all: a.out solve
 
 a.out: $(SOURCES) Makefile
-	clang $(CFLAGS) -DINTERACTIVE -O1 -g -fsanitize=address,leak,undefined -o $@ main.c
+	clang $(CFLAGS) -DUI='"ui.c"' -O1 -g -fsanitize=address,leak,undefined -o $@ main.c
 
 solve: $(SOURCES) Makefile
-	clang $(CFLAGS) -DGENETIC -Ofast -funroll-loops -o $@ main.c
+	clang $(CFLAGS) -DUI='"genetic.c"' -O3 -funroll-loops -o $@ main.c
+
+# taskset 0x1 ./solve ...

@@ -22,11 +22,7 @@ static void damage(Monster *m, long dmg, bool bomblike);
 static bool forced_move(Monster *m, Coords offset);
 
 static void __attribute__((noreturn)) error(char* message) {
-#ifdef GENETIC
-	(void) message;
-#else
 	fprintf(stderr, "%s\n", message);
-#endif
 	int status = 10 + 2 * L1(player.pos - stairs) + 10 * !player.hp;
 	if (!miniboss_defeated)
 		status += 8 - harpies_defeated;

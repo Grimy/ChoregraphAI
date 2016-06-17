@@ -9,9 +9,9 @@
 #include "base.h"
 #include "cotton.h"
 #include "cotton.c"
-#include "ui.c"
 #include "monsters.c"
 #include "xml.c"
+#include UI
 
 static void player_turn() {
 	if (TILE(player.pos).class == STAIRS && miniboss_defeated)
@@ -21,7 +21,7 @@ static void player_turn() {
 	player.freeze -= SIGN(player.freeze);
 	player_moved = false;
 
-	switch (display_prompt()) {
+	switch (player_input()) {
 	case 'e':
 		player_move(-1,  0);
 		break;
@@ -117,10 +117,6 @@ static void do_beat(void) {
 		trap_turn(t);
 }
 
-#ifdef GENETIC
-#include "genetic.c"
-#endif
-
 // Runs the simulation on the given custom dungeon file.
 int main(int argc, char **argv) {
 	if (argc != 2)
@@ -131,28 +127,6 @@ int main(int argc, char **argv) {
 		TILE(m->pos).monster = m;
 		(m == monsters ? &player : m - 1)->next = m;
 	}
-#ifdef INTERACTIVE
-	system("stty -echo -icanon eol \1");
-	for (;;)
-		do_beat();
-#endif
-#ifdef GENETIC
-	add_to_queue(200);
-	set_cpu_affinity(CPU_AFF);
-	setup_fds();
-
 	printf(TERM_CLEAR);
-	start_time = get_cur_time();
-	queue_cur = queue;
-
-	for (;;) {
-		fuzz_one();
-		show_stats();
-		queue_cur = queue_cur->next;
-		if (!queue_cur) {
-			queue_cycle++;
-			queue_cur = queue;
-		}
-	}
-#endif
+	init();
 }

@@ -4,7 +4,6 @@
 // For display purposes, doors count as walls, but level edges don’t
 #define IS_WALL(tile) ((tile)->class == WALL && (tile)->hp < 5)
 
-#ifdef INTERACTIVE
 static const int floor_colors[] = {
 	[STAIRS] = 105, [SHOP] = 43,
 	[WATER] = 44, [TAR] = 40,
@@ -56,7 +55,7 @@ static void display_tile(Coords pos) {
 
 // Clears and redraws the entire board.
 static void display_board(void) {
-	printf(TERM_CLEAR);
+	printf(TERM_HOME);
 	for (int8_t y = 1; y < LENGTH(board) - 1; ++y) {
 		for (int8_t x = 1; x < LENGTH(*board) - 1; ++x)
 			display_tile((Coords) {x, y});
@@ -69,36 +68,16 @@ static void display_board(void) {
 		char *glyph = &"■▫◭◭◆▫⇐⇒◭●●↖↑↗←▫→↙↓↘"[3 * glyph_index];
 		printf("\033[%d;%dH%3.3s", t->pos.y, t->pos.x, glyph);
 	}
-	printf(TERM_HOME);
 }
 
 // Updates the interface, then prompts the user for a command.
-static char display_prompt() {
+static char player_input() {
 	display_board();
 	return (char) getchar();
 }
-#endif
 
-#ifdef BRUTE_FORCE
-// Tries all possible inputs
-static char display_prompt() {
-	if (current_beat > 8)
-		return 't';
-	const char inputs[] = "efij<";
-	int status;
-	for (int i = 0; i < 5; ++i) {
-		if (!fork())
-			return inputs[i];
-		wait(&status);
-		if (WEXITSTATUS(status) == 0) {
-			printf("%c", inputs[i]);
-			exit(0);
-		}
-	}
-	return 't';
+static void __attribute__((noreturn)) init() {
+	system("stty -echo -icanon eol \1");
+	for (;;)
+		do_beat();
 }
-#endif
-
-#ifdef GENETIC
-static char display_prompt();
-#endif

@@ -20,6 +20,7 @@ typedef int64_t  s64;
 #define MAX(a, b)     ((a) > (b) ? (a) : (b))
 #define SIGN(x)       (((x) > 0) - ((x) < 0))
 #define ABS(x)        ((x) < 0 ? -(x) : (x))
+#define RNG(limit)    ((u64) random() % (limit))
 
 // Terminal ANSI codes
 #define WHITE  "\033[m"
