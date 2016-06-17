@@ -255,7 +255,7 @@ static void show_stats(void)
 	last_us = cur_us;
 	last_execs = total_execs;
 
-	printf(TERM_HOME YELLOW "\n                       cotton fuzzer\n\n" BLACK);
+	printf(TERM_HOME YELLOW "\n                     ChoregraphAI\n\n" BLACK);
 	printf("┌─" GREEN " process timing " BLACK "──────────┬──");
 	printf(GREEN " overall results " BLACK "─────┐\n");
 	printf(LEFT,  "run time",     DTD(cur_us, start_time));

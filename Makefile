@@ -16,4 +16,5 @@ a.out: $(SOURCES) Makefile
 solve: $(SOURCES) Makefile
 	clang $(CFLAGS) -DUI='"genetic.c"' -O3 -funroll-loops -o $@ main.c
 
+# echo performance | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
 # taskset 0x1 ./solve ...
