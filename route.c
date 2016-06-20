@@ -133,5 +133,6 @@ static void init()
 		explore(route);
 		free(route);
 	}
+	timestamp();
 	printf("%ld/%ld: %u\n", queued_routes, queued_routes, cur_score);
 }

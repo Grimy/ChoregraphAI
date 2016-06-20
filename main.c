@@ -1,5 +1,8 @@
 // main.c - initialization, main game loop
 
+#define IS_MAGE(c) (((c) >= WINDMAGE_1 && (c) <= WINDMAGE_3) || \
+		((c) >= LICH_1 && (c) <= LICH_3) || (c) == HARPY)
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,6 +43,7 @@ static void player_turn(u8 input)
 		bomb_plant(player.pos, 3);
 		break;
 	case 5:
+		boots_on ^= 1;
 		break;
 	}
 
@@ -62,7 +66,8 @@ static void enemy_turn(Monster *m)
 	m->freeze -= SIGN(m->freeze);
 	if (!m->aggro) {
 		m->aggro = can_see(m->pos);
-		if (L2(d) > CLASS(m).radius && !bomb_exploded)
+		if (!(m->aggro && (m->delay || m->class == BLUE_DRAGON || bomb_exploded))
+		    && L2(d) > CLASS(m).radius)
 			return;
 	}
 	if (m->delay)
@@ -73,6 +78,9 @@ static void enemy_turn(Monster *m)
 
 static void trap_turn(Trap *this)
 {
+	if (TILE(this->pos).traps_destroyed)
+		return;
+
 	Monster *m = TILE(this->pos).monster;
 	if (m == NULL || m->untrapped || CLASS(m).flying)
 		return;

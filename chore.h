@@ -132,9 +132,11 @@ typedef struct monster {
 typedef struct {
 	TileClass class;
 	i8 hp;
-	i8 torch;
 	i8 zone;
-	i8 revealed;
+	bool torch: 1;
+	bool revealed: 1;
+	bool traps_destroyed: 1;
+	bool: 13;
 	Monster *monster;
 } Tile;
 
@@ -170,6 +172,7 @@ static bool player_moved;
 static bool bomb_exploded;
 static bool sliding_on_ice;
 static bool miniboss_defeated;
+static bool boots_on = true;
 static u64 harpies_defeated;
 static u32 current_beat;
 

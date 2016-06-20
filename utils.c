@@ -80,7 +80,7 @@ static void enemy_attack(Monster *attacker)
 	Coords d = player.pos - attacker->pos;
 	switch (attacker->class) {
 	case CONF_MONKEY:
-		player.confusion = 5;
+		player.confusion = 2;
 		// FALLTHROUGH
 	case PIXIE:
 		TILE(attacker->pos).monster = NULL;
@@ -187,6 +187,9 @@ static bool can_see(Coords dest)
 	Coords pos = player.pos;
 	if (dest.x < pos.x - 10 || dest.x > pos.x + 9 || dest.y < pos.y - 5 || dest.y > pos.y + 5)
 		return false;
+	// Miner’s Cap
+	if (L2(dest - pos) <= 9)
+		return true;
 	return los(dest.x - .55, dest.y - .55)
 	    || los(dest.x + .55, dest.y - .55)
 	    || los(dest.x - .55, dest.y + .55)
@@ -221,6 +224,7 @@ static void bomb_plant(Coords pos, u8 delay)
 
 static void bomb_tile(Tile *tile)
 {
+	tile->traps_destroyed = true;
 	if (tile->monster)
 		damage(tile->monster, 4, true);
 	if ((tile->class == WALL && tile->hp < 5) || tile->class == WATER)
@@ -247,6 +251,7 @@ static void tile_change(Tile *tile, TileClass new_class)
 		tile->class * new_class == FIRE * ICE ? WATER :
 		tile->class == WATER && new_class == FIRE ? FLOOR :
 		new_class;
+	tile->traps_destroyed = true;
 }
 
 // Kills the given monster, handling any on-death effects.
@@ -328,6 +333,18 @@ static void damage(Monster *m, i64 dmg, bool bomblike)
 	}
 }
 
+static void lunge(Coords offset) {
+	// lunging
+	i64 steps = 4;
+	while (--steps && can_move(&player, offset))
+		move(&player, player.pos + offset);
+	Monster *m = TILE(player.pos + offset).monster;
+	if (steps && m) {
+		knockback(m);
+		damage(m, 4, true);
+	}
+}
+
 // Attempts to move the player by the given offset.
 // Will trigger attacking/digging if the destination contains an enemy/a wall.
 static void player_move(i8 x, i8 y)
@@ -344,18 +361,12 @@ static void player_move(i8 x, i8 y)
 	if (dest->class == WALL) {
 		dig(dest, TILE(player.pos).class == OOZE ? 0 : 2, false);
 	} else if (IS_ENEMY(dest->monster)) {
-		damage(dest->monster, TILE(player.pos).class == OOZE ? 0 : 1, false);
+		damage(dest->monster, TILE(player.pos).class == OOZE ? 0 : 5, false);
 	} else {
 		player_moved = true;
 		move(&player, player.pos + offset);
-		i64 steps = 4;
-		while (--steps && can_move(&player, offset))
-			move(&player, player.pos + offset);
-		Monster *m = TILE(player.pos + offset).monster;
-		if (steps && m) {
-			knockback(m);
-			damage(m, 4, true);
-		}
+		if (boots_on)
+			lunge(offset);
 		i64 digging_power = TILE(player.pos).class == OOZE ? 0 : 2;
 		for (i64 i = 0; i < LENGTH(plus_shape); ++i)
 			dig(&TILE(player.pos) + plus_shape[i], digging_power, false);

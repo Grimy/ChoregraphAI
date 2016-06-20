@@ -65,7 +65,7 @@ static void display_board(void)
 	}
 
 	for (Trap *t = traps; t->pos.x; ++t) {
-		if (TILE(t->pos).monster)
+		if (TILE(t->pos).monster || TILE(t->pos).traps_destroyed)
 			continue;
 		i64 glyph_index = t->class == BOUNCE ? 15 + 3*t->dir.y + t->dir.x : t->class;
 		char *glyph = &"■▫◭◭◆▫⇐⇒◭●●↖↑↗←▫→↙↓↘"[3 * glyph_index];
@@ -78,7 +78,7 @@ static void display_board(void)
 // Main loop; alternatively updates the interface and prompts the user for a command.
 static void init()
 {
-	const char *inputs = "efij<";
+	const char *inputs = "efij< z";
 	char *p;
 
 	printf(TERM_CLEAR);

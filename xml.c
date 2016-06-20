@@ -27,7 +27,7 @@ static void xml_process_node(xmlTextReaderPtr xml)
 	Coords pos = {xml_attr(xml, "x"), xml_attr(xml, "y")};
 
 	pos += spawn;
-	type = type == 255 ? SKELETON_3 : type;
+	type = type == 255 ? RED_DRAGON : type;
 
 	if (!strcmp(name, "trap"))
 		traps[trap_count++] = (Trap) {
@@ -40,7 +40,7 @@ static void xml_process_node(xmlTextReaderPtr xml)
 		TILE(pos) = (Tile) {
 			.class = type >= 100 ? WALL : type < 2 ? FLOOR : type,
 			.hp = type >= 100 ? wall_hp[type - 100] : 0,
-			.torch = xml_attr(xml, "torch"),
+			.torch = (u8) xml_attr(xml, "torch"),
 			.zone = xml_attr(xml, "zone"),
 		};
 		if (type == STAIRS)
@@ -53,6 +53,7 @@ static void xml_process_node(xmlTextReaderPtr xml)
 			.pos = pos,
 			.prev_pos = pos,
 			.hp = class_infos[type].max_hp,
+			.delay = IS_MAGE(type),
 		};
 }
 

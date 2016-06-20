@@ -36,7 +36,7 @@ static void basic_seek(Monster *this, Coords d)
 		this->prev_pos.y == player.prev_pos.y ? ABS(d.y) > ABS(d.x) :
 		this->prev_pos.x == player.prev_pos.x ? ABS(d.y) > ABS(d.x) :
 
-		// #6: keep moving along the same axis
+		// #5: keep moving along the same axis
 		this->vertical;
 
 	enemy_move(this, this->vertical ? vertical : horizontal);
@@ -248,7 +248,6 @@ static void breath_attack(Monster *this)
 {
 	i8 direction = SIGN(player.pos.x - this->pos.x);
 	(this->class == RED_DRAGON ? fireball : cone_of_cold)(this->pos, direction);
-	this->delay = 1;
 }
 
 // Dragons normally chase the player cardinally every two beats (see basic_seek).
@@ -257,11 +256,16 @@ static void breath_attack(Monster *this)
 // They then resume chasing, but can’t charge another breath in the next two beats.
 static void dragon(Monster *this, Coords d)
 {
-	if (this->state == 0 || this->state == 2)
+	static u64 exhausted = 4;
+	exhausted -= this->aggro && exhausted;
+	if (this->state == 0) {
 		basic_seek(this, d);
-	else if (this->state == 3)
+	} else if (this->state == 2) {
 		breath_attack(this);
-	this->state = can_breath(this) && can_see(this->pos) ? 3 : ABS(this->state - 1);
+		exhausted = 3;
+	}
+	this->state = !exhausted && can_breath(this) && can_see(this->pos) ? 2 :
+		this->state != 1;
 }
 
 static void elemental(Monster *this, Coords d)
