@@ -20,10 +20,12 @@ static const int64_t cone_shape[] = {32, 63, 64, 65, 94, 95, 96, 97, 98};
 
 static void __attribute__((noreturn)) error(char* message) {
 	fprintf(stderr, "%s\n", message);
-	int status = 10 + 2 * L1(player.pos - stairs) + 10 * !player.hp;
+	if (player.hp <= 0)
+		exit(255);
+	s32 status = 2 * (s32) current_beat + L1(player.pos - stairs);
 	if (!miniboss_defeated)
 		status += 8 - harpies_defeated;
-	exit(status + (player.hp ? 128 : 0));
+	exit(status);
 }
 
 // Moves the given monster to a specific position.

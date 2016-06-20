@@ -77,6 +77,7 @@ static char player_input() {
 }
 
 static void __attribute__((noreturn)) init() {
+	printf(TERM_CLEAR);
 	system("stty -echo -icanon eol \1");
 	for (;;)
 		do_beat();

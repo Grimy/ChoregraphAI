@@ -128,6 +128,5 @@ int main(int argc, char **argv) {
 		TILE(m->pos).monster = m;
 		(m == monsters ? &player : m - 1)->next = m;
 	}
-	printf(TERM_CLEAR);
 	init();
 }
