@@ -14,7 +14,8 @@
 #include "xml.c"
 #include UI
 
-static void player_turn(u8 input) {
+static void player_turn(u8 input)
+{
 	if (TILE(player.pos).class == STAIRS && miniboss_defeated)
 		exit(VICTORY);
 
@@ -54,7 +55,8 @@ static void player_turn(u8 input) {
 		exit(VICTORY);
 }
 
-static void enemy_turn(Monster *m) {
+static void enemy_turn(Monster *m)
+{
 	Coords d = player.pos - m->pos;
 	m->confusion -= SIGN(m->confusion);
 	m->freeze -= SIGN(m->freeze);
@@ -69,7 +71,8 @@ static void enemy_turn(Monster *m) {
 		CLASS(m).act(m, d);
 }
 
-static void trap_turn(Trap *this) {
+static void trap_turn(Trap *this)
+{
 	Monster *m = TILE(this->pos).monster;
 	if (m == NULL || m->untrapped || CLASS(m).flying)
 		return;
@@ -107,7 +110,8 @@ static void trap_turn(Trap *this) {
 // Runs one full beat of the game.
 // During each beat, the player acts first, enemies second and traps last.
 // Enemies act in decreasing priority order. Traps have an arbitrary order.
-static void do_beat(u8 input) {
+static void do_beat(u8 input)
+{
 	player_turn(input);
 	bomb_exploded = false;
 	for (Monster *m = player.next; m; m = m->next)

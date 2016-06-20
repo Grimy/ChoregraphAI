@@ -39,7 +39,8 @@ static char* prettify_route(Route *route)
 }
 
 // Prints the time since the program started to STDOUT
-static void timestamp() {
+static void timestamp()
+{
 	i64 hundredths = (get_cur_time() - start_time) / 10000;
 	i64 seconds = (hundredths / 100) % 60;
 	i64 minutes = (hundredths / 100 / 60) % 60;
@@ -59,7 +60,8 @@ static void add_to_queue(Route *route, u16 score)
 }
 
 // Removes the best route from the priority queue and returns it
-static Route* pop_queue() {
+static Route* pop_queue()
+{
 	while (routes[cur_score] == NULL)
 		if (++cur_score > MAX_SCORE)
 			return NULL;

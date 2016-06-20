@@ -12,7 +12,8 @@
 // Move cardinally toward the player.
 // Try to keep moving along the same axis, unless the monster’s current or
 // previous position is aligned with the player’s current or previous position.
-static void basic_seek(Monster *this, Coords d) {
+static void basic_seek(Monster *this, Coords d)
+{
 	Coords vertical = {0, SIGN(d.y)};
 	Coords horizontal = {SIGN(d.x), 0};
 
@@ -41,7 +42,8 @@ static void basic_seek(Monster *this, Coords d) {
 	enemy_move(this, this->vertical ? vertical : horizontal);
 }
 
-static void basic_flee(Monster *this, Coords d) {
+static void basic_flee(Monster *this, Coords d)
+{
 	if (d.y == 0)
 		MOVE(-SIGN(d.x), 0) || MOVE(0, -1) || MOVE(0, 1);
 	else if (d.x == 0)
@@ -53,7 +55,8 @@ static void basic_flee(Monster *this, Coords d) {
 }
 
 // Move diagonally toward the player. The tiebreaker is *reverse* bomb-order.
-static void diagonal_seek(Monster *this, Coords d) {
+static void diagonal_seek(Monster *this, Coords d)
+{
 	if (d.y == 0)
 		MOVE(SIGN(d.x), 1) || MOVE(SIGN(d.x), -1);
 	else if (d.x == 0)
@@ -65,7 +68,8 @@ static void diagonal_seek(Monster *this, Coords d) {
 }
 
 // Move toward the player either cardinally or diagonally.
-static void moore_seek(Monster *this, Coords d) {
+static void moore_seek(Monster *this, Coords d)
+{
 	if (MOVE(SIGN(d.x), SIGN(d.y)))
 		return;
 	if (d.x < 0)
@@ -77,7 +81,8 @@ static void moore_seek(Monster *this, Coords d) {
 // Move in a random direction.
 // If the chosen direction is blocked, cycles through the other directions
 // in the order right > left > down > up (mnemonic: Ryan Loves to Dunk Us).
-static void bat(Monster *this, Coords d) {
+static void bat(Monster *this, Coords d)
+{
 	static const Coords moves[] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
 	if (this->confusion) {
 		basic_seek(this, d);
@@ -90,7 +95,8 @@ static void bat(Monster *this, Coords d) {
 }
 
 // Attack the player if possible, otherwise move randomly.
-static void black_bat(Monster *this, Coords d) {
+static void black_bat(Monster *this, Coords d)
+{
 	if (L1(d) == 1)
 		enemy_move(this, d);
 	else
@@ -98,7 +104,8 @@ static void black_bat(Monster *this, Coords d) {
 }
 
 // After parrying a melee hit, lunge two tiles in the direction the hit came from.
-static void blademaster(Monster *this, Coords d) {
+static void blademaster(Monster *this, Coords d)
+{
 	if (this->state == 0) {
 		basic_seek(this, d);
 	} else if (this->state == 1) {
@@ -111,11 +118,13 @@ static void blademaster(Monster *this, Coords d) {
 	}
 }
 
-static bool can_cast(Monster *this, Coords d) {
+static bool can_cast(Monster *this, Coords d)
+{
 	return L2(d) == 4 && can_move(this, DIRECTION(d)) && !this->confusion;
 }
 
-static void lich(Monster *this, Coords d) {
+static void lich(Monster *this, Coords d)
+{
 	if (can_cast(this, d) && !player.confusion) {
 		player.confusion = 5;
 		this->delay = 1;
@@ -124,7 +133,8 @@ static void lich(Monster *this, Coords d) {
 	}
 }
 
-static void windmage(Monster *this, Coords d) {
+static void windmage(Monster *this, Coords d)
+{
 	if (can_cast(this, d)) {
 		forced_move(&player, -DIRECTION(d));
 		this->delay = 1;
@@ -134,14 +144,16 @@ static void windmage(Monster *this, Coords d) {
 }
 
 // Attack in a 3x3 zone without moving.
-static void mushroom(Monster *this, Coords d) {
+static void mushroom(Monster *this, Coords d)
+{
 	if (L2(d) < 4)
 		enemy_attack(this);
 	this->delay = CLASS(this).beat_delay;
 }
 
 // Chase the player, then attack in a 3x3 zone.
-static void yeti(Monster *this, Coords d) {
+static void yeti(Monster *this, Coords d)
+{
 	basic_seek(this, d);
 	if (L2(player.pos - this->pos) < 4)
 		enemy_attack(this);
@@ -151,7 +163,8 @@ static void yeti(Monster *this, Coords d) {
 // Move up to 3 tiles toward the player.
 // Only attacks if the player was already adjacent. The destination must be visible.
 // Try to move as little as possible in L2 distance.
-static void harpy(Monster *this, Coords d) {
+static void harpy(Monster *this, Coords d)
+{
 	static const Coords moves[] = {
 		{-1, 0}, {0, -1}, {0, 1}, {1, 0},
 		{-1, -1}, {-1, 1}, {1, -1}, {1, 1},
@@ -185,23 +198,27 @@ static void harpy(Monster *this, Coords d) {
 	enemy_move(this, best_move);
 }
 
-static void zombie(Monster *this, __attribute__((unused)) Coords d) {
+static void zombie(Monster *this, __attribute__((unused)) Coords d)
+{
 	static const Coords moves[] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
 	this->state ^= !enemy_move(this, moves[this->state]);
 	this->delay = 1;
 }
 
-static void blue_slime(Monster *this, __attribute__((unused)) Coords d) {
+static void blue_slime(Monster *this, __attribute__((unused)) Coords d)
+{
 	static const Coords moves[] = {{0, -1}, {0, 1}, {0, -1}, {0, 1}};
 	this->state += enemy_move(this, moves[this->state]);
 }
 
-static void yellow_slime(Monster *this, __attribute__((unused)) Coords d) {
+static void yellow_slime(Monster *this, __attribute__((unused)) Coords d)
+{
 	static const Coords moves[] = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}};
 	this->state += enemy_move(this, moves[this->state]);
 }
 
-static void diagonal_slime(Monster *this, __attribute__((unused)) Coords d) {
+static void diagonal_slime(Monster *this, __attribute__((unused)) Coords d)
+{
 	static const Coords moves[] = {{1, 1}, {-1, 1}, {-1, -1}, {1, -1}};
 	this->state += enemy_move(this, moves[this->state]);
 }
@@ -209,7 +226,8 @@ static void diagonal_slime(Monster *this, __attribute__((unused)) Coords d) {
 // State 0: camouflaged
 // State 1: invulnerable (right after waking up)
 // State 2: chasing the player
-static void mimic(Monster *this, Coords d) {
+static void mimic(Monster *this, Coords d)
+{
 	if (this->state) {
 		this->state = 2;
 		basic_seek(this, d);
@@ -218,14 +236,16 @@ static void mimic(Monster *this, Coords d) {
 	}
 }
 
-static bool can_breath(Monster *this) {
+static bool can_breath(Monster *this)
+{
 	i64 dx = ABS(player.pos.x - this->pos.x);
 	i64 dy = ABS(player.pos.y - this->pos.y);
 	bool red = this->class == RED_DRAGON;
 	return this->state < 2 && (red ? !dy : dx < 4 && dy < dx && !player.freeze);
 }
 
-static void breath_attack(Monster *this) {
+static void breath_attack(Monster *this)
+{
 	i8 direction = SIGN(player.pos.x - this->pos.x);
 	(this->class == RED_DRAGON ? fireball : cone_of_cold)(this->pos, direction);
 	this->delay = 1;
@@ -235,7 +255,8 @@ static void breath_attack(Monster *this) {
 // However, as soon as the player is in breath range, they’ll charge a breath attack,
 // then fire it on the next beat.
 // They then resume chasing, but can’t charge another breath in the next two beats.
-static void dragon(Monster *this, Coords d) {
+static void dragon(Monster *this, Coords d)
+{
 	if (this->state == 0 || this->state == 2)
 		basic_seek(this, d);
 	else if (this->state == 3)
@@ -243,25 +264,29 @@ static void dragon(Monster *this, Coords d) {
 	this->state = can_breath(this) && can_see(this->pos) ? 3 : ABS(this->state - 1);
 }
 
-static void elemental(Monster *this, Coords d) {
+static void elemental(Monster *this, Coords d)
+{
 	tile_change(&TILE(this->pos), this->class == EFREET ? FIRE : ICE);
 	basic_seek(this, d);
 	tile_change(&TILE(this->pos), this->class == EFREET ? FIRE : ICE);
 }
 
-static void mole(Monster *this, Coords d) {
+static void mole(Monster *this, Coords d)
+{
 	if (this->state != (L1(d) == 1))
 		this->state ^= 1;
 	else
 		basic_seek(this, d);
 }
 
-static void beetle_shed(Monster *this) {
+static void beetle_shed(Monster *this)
+{
 	tile_change(&TILE(this->pos), this->class == FIRE_BEETLE ? FIRE : ICE);
 	this->class = BEETLE;
 }
 
-static void beetle(Monster *this, Coords d) {
+static void beetle(Monster *this, Coords d)
+{
 	if (L1(d) == 1)
 		beetle_shed(this);
 	basic_seek(this, d);
@@ -269,19 +294,22 @@ static void beetle(Monster *this, Coords d) {
 		beetle_shed(this);
 }
 
-static void wind_statue(__attribute__((unused)) Monster *this, Coords d) {
+static void wind_statue(__attribute__((unused)) Monster *this, Coords d)
+{
 	if (L1(d) == 1)
 		forced_move(&player, d);
 }
 
-static void bomb_statue(Monster *this, Coords d) {
+static void bomb_statue(Monster *this, Coords d)
+{
 	if (this->state)
 		bomb_tick(this, d);
 	else if (L1(d) == 1)
 		this->state = 1;
 }
 
-static bool can_charge(Monster *this, Coords d) {
+static bool can_charge(Monster *this, Coords d)
+{
 	if (d.x * d.y != 0 && (ABS(d.x) != ABS(d.y) || this->class != ARMADILDO))
 		return false;
 	Coords move = DIRECTION(d);
@@ -297,7 +325,8 @@ static bool can_charge(Monster *this, Coords d) {
 // State 1: ready
 // State 2: about to charge
 // State 3: charging
-static void armadillo(Monster *this, Coords d) {
+static void armadillo(Monster *this, Coords d)
+{
 	i64 old_state = this->state;
 	this->state = this->state >= 2 ? 3 : can_charge(this, d) ? this->state + 2 : this->aggro;
 	if (this->state == 3 && !enemy_move(this, this->pos - this->prev_pos)) {
@@ -310,7 +339,8 @@ static void armadillo(Monster *this, Coords d) {
 
 // State 0: default
 // State 1: charging
-static void minotaur(Monster *this, Coords d) {
+static void minotaur(Monster *this, Coords d)
+{
 	if (this->state == 0) {
 		this->state = can_charge(this, d) || can_charge(this, player.prev_pos - this->pos);
 	}
@@ -324,7 +354,8 @@ static void minotaur(Monster *this, Coords d) {
 	}
 }
 
-static void digger(Monster *this, Coords d) {
+static void digger(Monster *this, Coords d)
+{
 	if (this->state == 0) {
 		this->state = L2(d) <= 9;
 		return;
@@ -348,30 +379,33 @@ static void digger(Monster *this, Coords d) {
 	}
 }
 
-static void mirror(Monster *this, __attribute__((unused)) Coords d) {
+static void mirror(Monster *this, __attribute__((unused)) Coords d)
+{
 	if (player_moved)
 		enemy_move(this, -DIRECTION(player.pos - player.prev_pos));
 }
 
-static void ghost(Monster *this, Coords d) {
+static void ghost(Monster *this, Coords d)
+{
 	this->state = (L1(d) + this->state) > L1(player.prev_pos - this->pos);
 	if (this->state)
 		basic_seek(this, d);
 }
 
-static void assassin(Monster *this, Coords d) {
+static void assassin(Monster *this, Coords d)
+{
 	this->state = L1(d) == 1 || (L1(d) + this->state) > L1(player.prev_pos - this->pos);
 	(this->state ? basic_seek : basic_flee)(this, d);
 }
 
-static void headless(Monster *this, __attribute__((unused)) Coords d) {
+static void headless(Monster *this, __attribute__((unused)) Coords d)
+{
 	Coords prev_pos = this->prev_pos;
 	if (!enemy_move(this, this->pos - this->prev_pos))
 		this->prev_pos = prev_pos;
 }
 
-static void sarcophagus() {
-}
+static void sarcophagus() {}
 
 static void nop() {}
 

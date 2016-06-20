@@ -20,7 +20,8 @@ static const i64 cone_shape[] = {32, 63, 64, 65, 94, 95, 96, 97, 98};
 
 // Moves the given monster to a specific position.
 // Keeps track of the monster’s previous position.
-static void move(Monster *m, Coords dest) {
+static void move(Monster *m, Coords dest)
+{
 	TILE(m->pos).monster = NULL;
 	m->untrapped = false;
 	m->pos = dest;
@@ -30,7 +31,8 @@ static void move(Monster *m, Coords dest) {
 // Tests whether the given monster can move in the given direction.
 // The code assumes that only spiders can be inside walls. This will need to
 // change before adding phasing enemies.
-static bool can_move(Monster *m, Coords offset) {
+static bool can_move(Monster *m, Coords offset)
+{
 	assert(m != &player || offset.x || offset.y);
 	Tile dest = TILE(m->pos + offset);
 	if (dest.monster)
@@ -42,7 +44,8 @@ static bool can_move(Monster *m, Coords offset) {
 
 // Tries to dig away the given wall, replacing it with floor.
 // Returns whether the dig succeeded.
-static bool dig(Tile *wall, i64 digging_power, bool z4) {
+static bool dig(Tile *wall, i64 digging_power, bool z4)
+{
 	if (wall->class != WALL || wall->hp > digging_power)
 		return false;
 	if (z4 && (wall->hp == 0 || wall->hp > 2))
@@ -62,7 +65,8 @@ static bool dig(Tile *wall, i64 digging_power, bool z4) {
 }
 
 // Removes a monster from the priority queue.
-static void monster_remove(Monster *m) {
+static void monster_remove(Monster *m)
+{
 	Monster *prev = &player;
 	while (prev->next != m)
 		prev = prev->next;
@@ -71,7 +75,8 @@ static void monster_remove(Monster *m) {
 
 // Handles an enemy attacking the player.
 // Usually boils down to `damage(&player, ...)`, but some enemies are special-cased.
-static void enemy_attack(Monster *attacker) {
+static void enemy_attack(Monster *attacker)
+{
 	Coords d = player.pos - attacker->pos;
 	switch (attacker->class) {
 	case CONF_MONKEY:
@@ -93,7 +98,8 @@ static void enemy_attack(Monster *attacker) {
 	}
 }
 
-static bool before_move(Monster *m) {
+static bool before_move(Monster *m)
+{
 	if (m->freeze)
 		return false;
 	if (TILE(m->pos).class == WATER && !CLASS(m).flying) {
@@ -110,7 +116,8 @@ static bool before_move(Monster *m) {
 // Attempts to move the given monster by the given offset.
 // Will trigger attacking/digging if the destination contains the player/a wall.
 // On success, resets the enemy’s delay and returns true.
-static bool enemy_move(Monster *m, Coords offset) {
+static bool enemy_move(Monster *m, Coords offset)
+{
 	m->prev_pos = m->pos;
 	m->delay = CLASS(m).beat_delay;
 	if (!before_move(m))
@@ -133,7 +140,8 @@ static bool enemy_move(Monster *m, Coords offset) {
 
 // Moves something by force (as caused by bounce traps, wind mages and knockback).
 // Unlike enemy_move, ignores confusion, delay, and digging.
-static bool forced_move(Monster *m, Coords offset) {
+static bool forced_move(Monster *m, Coords offset)
+{
 	assert(offset.x || offset.y);
 	if (!before_move(m))
 		return false;
@@ -152,7 +160,8 @@ static bool forced_move(Monster *m, Coords offset) {
 // Checks whether the straight line from the player to the given position
 // is free from obstacles.
 // Uses fractional coordinates: the center of tile (y, x) is at (y + 0.5, x + 0.5).
-static bool los(double x, double y) {
+static bool los(double x, double y)
+{
 	double dx = player.pos.x - x;
 	double dy = player.pos.y - y;
 	i64 cx = (i64) (x + .5);
@@ -173,7 +182,8 @@ static bool los(double x, double y) {
 // Tests whether the player can see the tile at the given position.
 // This is true if there’s an unblocked line from the center of the player’s
 // tile to any corner or the center of the destination tile.
-static bool can_see(Coords dest) {
+static bool can_see(Coords dest)
+{
 	Coords pos = player.pos;
 	if (dest.x < pos.x - 10 || dest.x > pos.x + 9 || dest.y < pos.y - 5 || dest.y > pos.y + 5)
 		return false;
@@ -186,7 +196,8 @@ static bool can_see(Coords dest) {
 
 // Compares the priorities of two monsters.
 // Meant to be used as a callback for qsort.
-static i32 compare_priorities(const void *a, const void *b) {
+static i32 compare_priorities(const void *a, const void *b)
+{
 	u32 pa = CLASS((const Monster*) a).priority;
 	u32 pb = CLASS((const Monster*) b).priority;
 	return (pb > pa) - (pb < pa);
@@ -194,19 +205,22 @@ static i32 compare_priorities(const void *a, const void *b) {
 
 // Knocks an enemy away from the player.
 // TODO: set the knockback direction correctly for diagonal attacks.
-static void knockback(Monster *m) {
+static void knockback(Monster *m)
+{
 	forced_move(m, DIRECTION(m->pos - player.pos));
 	m->delay = 1;
 }
 
 // Places a bomb at the given position.
-static void bomb_plant(Coords pos, u8 delay) {
+static void bomb_plant(Coords pos, u8 delay)
+{
 	Monster bomb = {.class = BOMB, .pos = pos, .next = player.next, .aggro = true, .delay = delay};
 	player.next = &monsters[monster_count];
 	monsters[monster_count++] = bomb;
 }
 
-static void bomb_tile(Tile *tile) {
+static void bomb_tile(Tile *tile)
+{
 	if (tile->monster)
 		damage(tile->monster, 4, true);
 	if ((tile->class == WALL && tile->hp < 5) || tile->class == WATER)
@@ -215,7 +229,8 @@ static void bomb_tile(Tile *tile) {
 		tile->class = WATER;
 }
 
-static void bomb_tick(Monster *this, __attribute__((unused)) Coords d) {
+static void bomb_tick(Monster *this, __attribute__((unused)) Coords d)
+{
 	if (TILE(this->pos).monster == this)
 		TILE(this->pos).monster = NULL;
 	for (i64 x = this->pos.x - 1; x <= this->pos.x + 1; ++x)
@@ -225,7 +240,8 @@ static void bomb_tick(Monster *this, __attribute__((unused)) Coords d) {
 	bomb_exploded = true;
 }
 
-static void tile_change(Tile *tile, TileClass new_class) {
+static void tile_change(Tile *tile, TileClass new_class)
+{
 	tile->class =
 		tile->class == STAIRS ? STAIRS :
 		tile->class * new_class == FIRE * ICE ? WATER :
@@ -234,7 +250,8 @@ static void tile_change(Tile *tile, TileClass new_class) {
 }
 
 // Kills the given monster, handling any on-death effects.
-static void monster_kill(Monster *m, bool bomblike) {
+static void monster_kill(Monster *m, bool bomblike)
+{
 	if (m == &player)
 		exit(DEATH);
 	if (m->class == PIXIE || m->class == BOMBSHROOM_) {
@@ -258,7 +275,8 @@ static void monster_kill(Monster *m, bool bomblike) {
 }
 
 // Deals damage to the given monster.
-static void damage(Monster *m, i64 dmg, bool bomblike) {
+static void damage(Monster *m, i64 dmg, bool bomblike)
+{
 	if (m->class == MINE_STATUE) {
 		bomb_tick(m, spawn);
 	} else if (m->class == BOMBSHROOM) {
@@ -312,7 +330,8 @@ static void damage(Monster *m, i64 dmg, bool bomblike) {
 
 // Attempts to move the player by the given offset.
 // Will trigger attacking/digging if the destination contains an enemy/a wall.
-static void player_move(i8 x, i8 y) {
+static void player_move(i8 x, i8 y)
+{
 	if (sliding_on_ice)
 		return;
 	player.prev_pos = player.pos;
@@ -344,7 +363,8 @@ static void player_move(i8 x, i8 y) {
 }
 
 // Deals bomb-like damage to all monsters on a horizontal line).
-static void fireball(Coords pos, i8 dir) {
+static void fireball(Coords pos, i8 dir)
+{
 	assert(dir != 0);
 	for (pos.x += dir; TILE(pos).class != WALL; pos.x += dir)
 		if (TILE(pos).monster)
@@ -352,7 +372,8 @@ static void fireball(Coords pos, i8 dir) {
 }
 
 // Freezes all monsters in a 3x5 cone.
-static void cone_of_cold(Coords pos, i8 dir) {
+static void cone_of_cold(Coords pos, i8 dir)
+{
 	for (i64 i = 0; i < LENGTH(cone_shape); ++i) {
 		Tile *tile = &TILE(pos) + dir * cone_shape[i];
 		if (tile->monster)

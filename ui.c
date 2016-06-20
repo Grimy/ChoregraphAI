@@ -13,7 +13,8 @@ static const u8 floor_colors[] = {
 
 // Picks an appropriate box-drawing glyph for a wall by looking at adjacent tiles.
 // For example, when tiles to the bottom and right are walls too, use '┌'.
-static void display_wall(Tile *wall) {
+static void display_wall(Tile *wall)
+{
 	switch (wall->hp) {
 	case 0:
 		putchar('+');
@@ -38,7 +39,8 @@ static void display_wall(Tile *wall) {
 }
 
 // Pretty-prints the tile at the given position.
-static void display_tile(Coords pos) {
+static void display_tile(Coords pos)
+{
 	Tile *tile = &TILE(pos);
 	if (tile->class > FLOOR)
 		printf("\033[%um", floor_colors[tile->class]);
@@ -54,12 +56,14 @@ static void display_tile(Coords pos) {
 }
 
 // Clears and redraws the entire board.
-static void display_board(void) {
+static void display_board(void)
+{
 	for (i8 y = 1; y < LENGTH(board) - 1; ++y) {
 		for (i8 x = 1; x < LENGTH(*board) - 1; ++x)
 			display_tile((Coords) {x, y});
 		putchar('\n');
 	}
+
 	for (Trap *t = traps; t->pos.x; ++t) {
 		if (TILE(t->pos).monster)
 			continue;
@@ -67,6 +71,7 @@ static void display_board(void) {
 		char *glyph = &"■▫◭◭◆▫⇐⇒◭●●↖↑↗←▫→↙↓↘"[3 * glyph_index];
 		printf("\033[%d;%dH%3.3s", t->pos.y, t->pos.x, glyph);
 	}
+
 	printf(TERM_HOME);
 }
 

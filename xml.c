@@ -4,7 +4,8 @@
 
 // Returns the numeric value of a named attribute of the current node.
 // If the attribute is absent, it defaults to 0.
-static i8 xml_attr(xmlTextReaderPtr xml, char* attr) {
+static i8 xml_attr(xmlTextReaderPtr xml, char* attr)
+{
 	char* value = (char*) xmlTextReaderGetAttribute(xml, (xmlChar*) (attr));
 	i32 result = value ? atoi(value) : 0;
 	free(value);
@@ -12,7 +13,8 @@ static i8 xml_attr(xmlTextReaderPtr xml, char* attr) {
 }
 
 // Converts a single XML node into an appropriate object (Trap, Tile or Monster).
-static void xml_process_node(xmlTextReaderPtr xml) {
+static void xml_process_node(xmlTextReaderPtr xml)
+{
 	static const Coords trap_dirs[] = {
 		{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, 1}, {1, -1}, {-1, -1}
 	};
@@ -57,7 +59,8 @@ static void xml_process_node(xmlTextReaderPtr xml) {
 // Initializes the game’s state based on the given custom dungeon file.
 // Aborts if the file doesn’t exist or isn’t valid XML.
 // Valid, non-dungeon XML yields undefined results (most likely, an empty dungeon).
-static void xml_parse(char *file) {
+static void xml_parse(char *file)
+{
 	LIBXML_TEST_VERSION;
 	xmlTextReaderPtr xml = xmlReaderForFile(file, NULL, 0);
 	while (xmlTextReaderRead(xml) == 1)
