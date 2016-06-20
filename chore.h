@@ -1,4 +1,4 @@
-// cotton.h - types and global vars definitions
+// chore.h - global types and vars definitions
 
 // Exit codes
 #define VICTORY 0

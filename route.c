@@ -1,3 +1,5 @@
+// route.c - finds the optimal route for a level
+
 #include <errno.h>
 #include <sys/time.h>
 
@@ -6,12 +8,11 @@
 
 typedef struct route {
 	struct route *next;           // Next element, if any
-	u8 input[MAX_LENGTH];       // Inputs composing the route
+	u8 input[MAX_LENGTH];         // Inputs composing the route
 	u64 len;                      // Number of inputs
 } Route;
 
-static i64 queued_stems = 1;          // Total number of queued testcases
-static i64 complete_stems;
+static i64 queued_routes = 1;         // Total number of interesting routes
 static i64 start_time;                // Unix start time (us)
 
 static Route* routes[MAX_SCORE + 1];  // Priority queue of routes to explore
@@ -26,6 +27,15 @@ static i64 get_cur_time(void)
 	return tv.tv_sec * 1000000L + tv.tv_usec;
 }
 
+// Prints the time since the program started to STDOUT
+static void timestamp()
+{
+	i64 hundredths = (get_cur_time() - start_time) / 10000;
+	i64 seconds = (hundredths / 100) % 60;
+	i64 minutes = (hundredths / 100 / 60) % 60;
+	printf("[%02ld:%02ld.%02ld] ", minutes, seconds, hundredths % 100);
+}
+
 // Returns a human-readable representation of a route
 static char* prettify_route(Route *route)
 {
@@ -38,16 +48,7 @@ static char* prettify_route(Route *route)
 	return buf;
 }
 
-// Prints the time since the program started to STDOUT
-static void timestamp()
-{
-	i64 hundredths = (get_cur_time() - start_time) / 10000;
-	i64 seconds = (hundredths / 100) % 60;
-	i64 minutes = (hundredths / 100 / 60) % 60;
-	printf("[%02ld:%02ld.%02ld] ", minutes, seconds, hundredths % 100);
-}
-
-// Appends the given route to the queue.
+// Appends the given route to the priority queue
 static void add_to_queue(Route *route, u16 score)
 {
 	Route *new = malloc(sizeof(*new));
@@ -56,7 +57,7 @@ static void add_to_queue(Route *route, u16 score)
 	routes[score] = new;
 
 	cur_score = MIN(cur_score, score);
-	queued_stems++;
+	queued_routes++;
 }
 
 // Removes the best route from the priority queue and returns it
@@ -106,10 +107,11 @@ static void run_simulation(Route *route)
 // Start with the given route, then try all possible inputs
 static void explore(Route *route)
 {
-	complete_stems++;
-	if (complete_stems % 1000 == 0) {
+	static i64 explored_routes;
+	explored_routes++;
+	if (explored_routes % 1000 == 0) {
 		timestamp();
-		printf("%ld/%ld: %u\n", complete_stems, queued_stems, cur_score);
+		printf("%ld/%ld: %u\n", explored_routes, queued_routes, cur_score);
 	}
 
 	// Don’t explore routes that cannot beat the current best
@@ -131,6 +133,5 @@ static void init()
 		explore(route);
 		free(route);
 	}
-	timestamp();
-	printf("%ld/%ld: %u\n", complete_stems, queued_stems, cur_score);
+	printf("%ld/%ld: %u\n", queued_routes, queued_routes, cur_score);
 }

@@ -1,3 +1,5 @@
+// base.h - commonly useful typedefs/macros
+
 #include <stdint.h>
 
 // Convenient name for integer types

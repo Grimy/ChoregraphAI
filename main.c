@@ -8,8 +8,8 @@
 #include <unistd.h>
 
 #include "base.h"
-#include "cotton.h"
-#include "cotton.c"
+#include "chore.h"
+#include "utils.c"
 #include "monsters.c"
 #include "xml.c"
 #include UI

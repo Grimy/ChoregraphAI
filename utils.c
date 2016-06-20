@@ -1,4 +1,4 @@
-// cotton.c - core game logic
+// utils.c - core game logic
 
 #define DIRECTION(pos) ((Coords) {SIGN((pos).x), SIGN((pos).y)})
 #define L1(pos) (ABS((pos).x) + ABS((pos).y))
