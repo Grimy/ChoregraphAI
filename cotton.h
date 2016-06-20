@@ -5,7 +5,7 @@
 #define DEATH 254
 
 // A pair of cartesian coordinates.
-typedef int8_t Coords __attribute__((ext_vector_type(2)));
+typedef i8 Coords __attribute__((ext_vector_type(2)));
 
 // Human-friendly names for monster classes.
 // Numerical values were arbitrarily picked to make parsing dungeon XML easier.
@@ -117,7 +117,7 @@ typedef enum {
 typedef struct monster {
 	struct monster *next;
 	MonsterClass class;
-	s8 hp;
+	i8 hp;
 	Coords pos;
 	Coords prev_pos;
 	unsigned delay: 4;
@@ -131,10 +131,10 @@ typedef struct monster {
 
 typedef struct {
 	TileClass class;
-	s8 hp;
-	s8 torch;
-	s8 zone;
-	s8 revealed;
+	i8 hp;
+	i8 torch;
+	i8 zone;
+	i8 revealed;
 	Monster *monster;
 } Tile;
 
@@ -145,7 +145,7 @@ typedef struct {
 } Trap;
 
 typedef struct {
-	s8 max_hp;
+	i8 max_hp;
 	u8 beat_delay;
 	u8 radius;
 	bool flying: 1;
@@ -175,5 +175,5 @@ static u32 current_beat;
 
 // Some pre-declarations
 static void do_beat(char input);
-static void damage(Monster *m, long dmg, bool bomblike);
+static void damage(Monster *m, i64 dmg, bool bomblike);
 static bool forced_move(Monster *m, Coords offset);

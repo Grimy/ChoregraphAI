@@ -11,9 +11,9 @@ struct queue_entry {
 	u32 score;                    // Return code when run
 };
 
-static s64 queued_stems;              // Total number of queued testcases
-static s64 complete_stems;
-static s64 start_time;                // Unix start time (us)
+static i64 queued_stems;              // Total number of queued testcases
+static i64 complete_stems;
+static i64 start_time;                // Unix start time (us)
 
 static struct queue_entry *queue;     // Fuzzing queue (linked list)
 static u32 best_len;
@@ -22,7 +22,7 @@ static u32 best_len;
 static const char inputs[5] = "efji<";
 
 // Returns the current time in microseconds since the epoch
-static s64 get_cur_time(void)
+static i64 get_cur_time(void)
 {
 	static struct timeval tv;
 	gettimeofday(&tv, NULL);
@@ -33,7 +33,7 @@ static char* prettify_route(char input[MAX_LENGTH], u32 length) {
 	static char buf[3*MAX_LENGTH + 1];
 	sprintf(buf, "%d ", length);
 
-	for (s64 i = 0; i < length; ++i) {
+	for (i64 i = 0; i < length; ++i) {
 		switch (input[i]) {
 		case 'e': strcat(buf, "←"); break;
 		case 'f': strcat(buf, "↓"); break;
@@ -48,9 +48,9 @@ static char* prettify_route(char input[MAX_LENGTH], u32 length) {
 }
 
 static void timestamp() {
-	s64 hundredths = (get_cur_time() - start_time) / 10000;
-	s64 seconds = (hundredths / 100) % 60;
-	s64 minutes = (hundredths / 100 / 60) % 60;
+	i64 hundredths = (get_cur_time() - start_time) / 10000;
+	i64 seconds = (hundredths / 100) % 60;
+	i64 minutes = (hundredths / 100 / 60) % 60;
 	printf("[%02ld:%02ld.%02ld] ", minutes, seconds, hundredths % 100);
 }
 
@@ -73,15 +73,15 @@ static void add_to_queue(char input[MAX_LENGTH], u32 len, u16 score)
 // Forks to the simulator using the current input, saves the results
 static void run_simulation(char input[32], u32 len)
 {
-	s32 status;
-	s64 pid = fork();
+	i32 status;
+	i64 pid = fork();
 
 	if (!pid) {
 		fclose(stderr);
 		srand(0);
-		for (s64 i = 0; i < len; ++i)
+		for (i64 i = 0; i < len; ++i)
 			do_beat(input[i]);
-		status = 2 * (s32) current_beat + L1(player.pos - stairs);
+		status = 2 * (i32) current_beat + L1(player.pos - stairs);
 		if (!miniboss_defeated)
 			status += 8 - harpies_defeated;
 		exit(status);

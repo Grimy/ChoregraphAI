@@ -5,11 +5,11 @@
 
 // Returns the numeric value of a named attribute of the current node.
 // If the attribute is absent, it defaults to 0.
-static int8_t xml_attr(xmlTextReaderPtr xml, char* attr) {
+static i8 xml_attr(xmlTextReaderPtr xml, char* attr) {
 	char* value = (char*) xmlTextReaderGetAttribute(xml, (xmlChar*) (attr));
-	int result = value ? atoi(value) : 0;
+	i32 result = value ? atoi(value) : 0;
 	free(value);
-	return (int8_t) result;
+	return (i8) result;
 }
 
 // Converts a single XML node into an appropriate object (Trap, Tile or Monster).
@@ -17,12 +17,12 @@ static void xml_process_node(xmlTextReaderPtr xml) {
 	static const Coords trap_dirs[] = {
 		{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, 1}, {1, -1}, {-1, -1}
 	};
-	static const int8_t wall_hp[] = {1, 1, 5, 0, 4, 4, 0, 2, 3, 5, 4, 0};
+	static const i8 wall_hp[] = {1, 1, 5, 0, 4, 4, 0, 2, 3, 5, 4, 0};
 
-	static uint64_t trap_count = 0;
+	static u64 trap_count = 0;
 	const char *name = (const char*) xmlTextReaderConstName(xml);
-	uint8_t type = (uint8_t) xml_attr(xml, "type");
-	int subtype = xml_attr(xml, "subtype");
+	u8 type = (u8) xml_attr(xml, "type");
+	i64 subtype = xml_attr(xml, "subtype");
 	Coords pos = {xml_attr(xml, "x"), xml_attr(xml, "y")};
 
 	pos += spawn;

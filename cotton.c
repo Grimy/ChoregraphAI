@@ -15,8 +15,8 @@
 		|| (c) == ASSASSIN_2 || (c) == BANSHEE_1 || (c) == BANSHEE_2)
 #define BLOCKS_MOVEMENT(pos) (TILE(pos).class == WALL)
 
-static const int64_t plus_shape[] = {-32, -1, 1, 32};
-static const int64_t cone_shape[] = {32, 63, 64, 65, 94, 95, 96, 97, 98};
+static const i64 plus_shape[] = {-32, -1, 1, 32};
+static const i64 cone_shape[] = {32, 63, 64, 65, 94, 95, 96, 97, 98};
 
 // Moves the given monster to a specific position.
 // Keeps track of the monster’s previous position.
@@ -42,7 +42,7 @@ static bool can_move(Monster *m, Coords offset) {
 
 // Tries to dig away the given wall, replacing it with floor.
 // Returns whether the dig succeeded.
-static bool dig(Tile *wall, int digging_power, bool z4) {
+static bool dig(Tile *wall, i64 digging_power, bool z4) {
 	if (wall->class != WALL || wall->hp > digging_power)
 		return false;
 	if (z4 && (wall->hp == 0 || wall->hp > 2))
@@ -56,7 +56,7 @@ static bool dig(Tile *wall, int digging_power, bool z4) {
 		wall->monster->delay = 1;
 	}
 	if (!z4 && wall->zone == 4 && (wall->hp == 1 || wall->hp == 2))
-		for (int i = 0; i < LENGTH(plus_shape); ++i)
+		for (i64 i = 0; i < LENGTH(plus_shape); ++i)
 			dig(wall + plus_shape[i], digging_power, true);
 	return true;
 }
@@ -155,8 +155,8 @@ static bool forced_move(Monster *m, Coords offset) {
 static bool los(double x, double y) {
 	double dx = player.pos.x - x;
 	double dy = player.pos.y - y;
-	int cx = (int) (x + .5);
-	int cy = (int) (y + .5);
+	i64 cx = (i64) (x + .5);
+	i64 cy = (i64) (y + .5);
 	if ((player.pos.x > x || x > cx) && dy * (cy - y) > 0 && IS_OPAQUE(cx, cy))
 		return false;
 	while (cx != player.pos.x || cy != player.pos.y) {
@@ -186,9 +186,9 @@ static bool can_see(Coords dest) {
 
 // Compares the priorities of two monsters.
 // Meant to be used as a callback for qsort.
-static int compare_priorities(const void *a, const void *b) {
-	uint32_t pa = CLASS((const Monster*) a).priority;
-	uint32_t pb = CLASS((const Monster*) b).priority;
+static i32 compare_priorities(const void *a, const void *b) {
+	u32 pa = CLASS((const Monster*) a).priority;
+	u32 pb = CLASS((const Monster*) b).priority;
 	return (pb > pa) - (pb < pa);
 }
 
@@ -200,7 +200,7 @@ static void knockback(Monster *m) {
 }
 
 // Places a bomb at the given position.
-static void bomb_plant(Coords pos, uint8_t delay) {
+static void bomb_plant(Coords pos, u8 delay) {
 	Monster bomb = {.class = BOMB, .pos = pos, .next = player.next, .aggro = true, .delay = delay};
 	player.next = &monsters[monster_count];
 	monsters[monster_count++] = bomb;
@@ -218,8 +218,8 @@ static void bomb_tile(Tile *tile) {
 static void bomb_tick(Monster *this, __attribute__((unused)) Coords d) {
 	if (TILE(this->pos).monster == this)
 		TILE(this->pos).monster = NULL;
-	for (int x = this->pos.x - 1; x <= this->pos.x + 1; ++x)
-		for (int y = this->pos.y - 1; y <= this->pos.y + 1; ++y)
+	for (i64 x = this->pos.x - 1; x <= this->pos.x + 1; ++x)
+		for (i64 y = this->pos.y - 1; y <= this->pos.y + 1; ++y)
 			bomb_tile(&board[x][y]);
 	monster_remove(this);
 	bomb_exploded = true;
@@ -258,7 +258,7 @@ static void monster_kill(Monster *m, bool bomblike) {
 }
 
 // Deals damage to the given monster.
-static void damage(Monster *m, long dmg, bool bomblike) {
+static void damage(Monster *m, i64 dmg, bool bomblike) {
 	if (m->class == MINE_STATUE) {
 		bomb_tick(m, spawn);
 	} else if (m->class == BOMBSHROOM) {
@@ -289,7 +289,7 @@ static void damage(Monster *m, long dmg, bool bomblike) {
 		TileClass hazard = m->class == FIRE_BEETLE ? FIRE : ICE;
 		Tile *tile = &TILE(m->pos);
 		tile_change(tile, hazard);
-		for (int i = 0; i < LENGTH(plus_shape); ++i)
+		for (u64 i = 0; i < LENGTH(plus_shape); ++i)
 			tile_change(tile + plus_shape[i], hazard);
 		knockback(m);
 	} else {
@@ -312,7 +312,7 @@ static void damage(Monster *m, long dmg, bool bomblike) {
 
 // Attempts to move the player by the given offset.
 // Will trigger attacking/digging if the destination contains an enemy/a wall.
-static void player_move(int8_t x, int8_t y) {
+static void player_move(i8 x, i8 y) {
 	if (sliding_on_ice)
 		return;
 	player.prev_pos = player.pos;
@@ -329,7 +329,7 @@ static void player_move(int8_t x, int8_t y) {
 	} else {
 		player_moved = true;
 		move(&player, player.pos + offset);
-		int steps = 4;
+		i64 steps = 4;
 		while (--steps && can_move(&player, offset))
 			move(&player, player.pos + offset);
 		Monster *m = TILE(player.pos + offset).monster;
@@ -337,14 +337,14 @@ static void player_move(int8_t x, int8_t y) {
 			knockback(m);
 			damage(m, 4, true);
 		}
-		int digging_power = TILE(player.pos).class == OOZE ? 0 : 2;
-		for (int i = 0; i < LENGTH(plus_shape); ++i)
+		i64 digging_power = TILE(player.pos).class == OOZE ? 0 : 2;
+		for (i64 i = 0; i < LENGTH(plus_shape); ++i)
 			dig(&TILE(player.pos) + plus_shape[i], digging_power, false);
 	}
 }
 
 // Deals bomb-like damage to all monsters on a horizontal line).
-static void fireball(Coords pos, int8_t dir) {
+static void fireball(Coords pos, i8 dir) {
 	assert(dir != 0);
 	for (pos.x += dir; TILE(pos).class != WALL; pos.x += dir)
 		if (TILE(pos).monster)
@@ -352,8 +352,8 @@ static void fireball(Coords pos, int8_t dir) {
 }
 
 // Freezes all monsters in a 3x5 cone.
-static void cone_of_cold(Coords pos, int8_t dir) {
-	for (int i = 0; i < LENGTH(cone_shape); ++i) {
+static void cone_of_cold(Coords pos, i8 dir) {
+	for (i64 i = 0; i < LENGTH(cone_shape); ++i) {
 		Tile *tile = &TILE(pos) + dir * cone_shape[i];
 		if (tile->monster)
 			tile->monster->freeze = 5;

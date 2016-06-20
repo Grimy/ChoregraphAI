@@ -83,8 +83,8 @@ static void bat(Monster *this, Coords d) {
 		basic_seek(this, d);
 		return;
 	}
-	long rng = RNG(4);
-	for (long i = 0; i < 4; ++i)
+	i64 rng = RNG(4);
+	for (i64 i = 0; i < 4; ++i)
 		if (enemy_move(this, moves[(rng + i) & 3]))
 			return;
 }
@@ -164,8 +164,8 @@ static void harpy(Monster *this, Coords d) {
 		return;
 	}
 	Coords best_move = {0, 0};
-	long min = L1(d);
-	for (long i = 0; i < LENGTH(moves); ++i) {
+	i64 min = L1(d);
+	for (i64 i = 0; i < LENGTH(moves); ++i) {
 		Coords move = moves[i];
 		if ((L2(move) == 9 || L2(move) == 4)
 		    && (BLOCKS_MOVEMENT(this->pos + DIRECTION(move))
@@ -176,7 +176,7 @@ static void harpy(Monster *this, Coords d) {
 		    && (BLOCKS_MOVEMENT(this->pos + DIRECTION(move))
 		    || BLOCKS_MOVEMENT(this->pos + DIRECTION(move) - move / 2)))
 			continue;
-		long score = L1(d - move);
+		i64 score = L1(d - move);
 		if (score && score < min && can_move(this, move)) {
 			min = score;
 			best_move = move;
@@ -219,14 +219,14 @@ static void mimic(Monster *this, Coords d) {
 }
 
 static bool can_breath(Monster *this) {
-	int dx = ABS(player.pos.x - this->pos.x);
-	int dy = ABS(player.pos.y - this->pos.y);
+	i64 dx = ABS(player.pos.x - this->pos.x);
+	i64 dy = ABS(player.pos.y - this->pos.y);
 	bool red = this->class == RED_DRAGON;
 	return this->state < 2 && (red ? !dy : dx < 4 && dy < dx && !player.freeze);
 }
 
 static void breath_attack(Monster *this) {
-	int8_t direction = SIGN(player.pos.x - this->pos.x);
+	i8 direction = SIGN(player.pos.x - this->pos.x);
 	(this->class == RED_DRAGON ? fireball : cone_of_cold)(this->pos, direction);
 	this->delay = 1;
 }
@@ -298,7 +298,7 @@ static bool can_charge(Monster *this, Coords d) {
 // State 2: about to charge
 // State 3: charging
 static void armadillo(Monster *this, Coords d) {
-	int old_state = this->state;
+	i64 old_state = this->state;
 	this->state = this->state >= 2 ? 3 : can_charge(this, d) ? this->state + 2 : this->aggro;
 	if (this->state == 3 && !enemy_move(this, this->pos - this->prev_pos)) {
 		this->delay = 1;
@@ -337,7 +337,7 @@ static void digger(Monster *this, Coords d) {
 	Coords moves[4] = {{-SIGN(d.x), 0}, {0, -SIGN(d.y)}, {0, SIGN(d.y)}, {SIGN(d.x), 0}};
 	Coords move = {0, 0};
 	this->vertical = d.y > (d.x + 1) / 3;
-	for (int i = 0; i < 3; ++i) {
+	for (i64 i = 0; i < 3; ++i) {
 		move = moves[i ^ this->vertical];
 		if (!TILE(this->pos + move).monster)
 			break;

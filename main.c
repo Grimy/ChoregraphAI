@@ -120,7 +120,7 @@ static void do_beat(char input) {
 }
 
 // Runs the simulation on the given custom dungeon file.
-int main(int argc, char **argv) {
+i32 main(i32 argc, char **argv) {
 	if (argc != 2)
 		FATAL("Usage: %s <dungeon_file.xml>", argv[0]);
 	xml_parse(argv[1]);

@@ -8,13 +8,13 @@ typedef uint16_t u16;
 typedef uint32_t u32;
 typedef uint64_t u64;
 
-typedef int8_t   s8;
-typedef int16_t  s16;
-typedef int32_t  s32;
-typedef int64_t  s64;
+typedef int8_t   i8;
+typedef int16_t  i16;
+typedef int32_t  i32;
+typedef int64_t  i64;
 
 // Some basic math macros
-#define LENGTH(array) ((long) (sizeof(array) / sizeof(*(array))))
+#define LENGTH(array) ((i64) (sizeof(array) / sizeof(*(array))))
 #define MIN(a, b)     ((a) > (b) ? (b) : (a))
 #define MAX(a, b)     ((a) > (b) ? (a) : (b))
 #define SIGN(x)       (((x) > 0) - ((x) < 0))

@@ -4,7 +4,7 @@
 // For display purposes, doors count as walls, but level edges don’t
 #define IS_WALL(tile) ((tile)->class == WALL && (tile)->hp < 5)
 
-static const int floor_colors[] = {
+static const u8 floor_colors[] = {
 	[STAIRS] = 105, [SHOP] = 43,
 	[WATER] = 44, [TAR] = 40,
 	[FIRE] = 41, [ICE] = 107,
@@ -31,8 +31,8 @@ static void display_wall(Tile *wall) {
 		putchar(' ');
 		return;
 	}
-	long glyph = 0;
-	for (int i = 0; i < LENGTH(plus_shape); ++i)
+	i64 glyph = 0;
+	for (i64 i = 0; i < LENGTH(plus_shape); ++i)
 		glyph |= IS_WALL(wall + plus_shape[i]) << i;
 	printf("%3.3s", &"╳─│┘│┐│┤──└┴┌┬├┼"[3 * glyph]);
 }
@@ -41,7 +41,7 @@ static void display_wall(Tile *wall) {
 static void display_tile(Coords pos) {
 	Tile *tile = &TILE(pos);
 	if (tile->class > FLOOR)
-		printf("\033[%dm", floor_colors[tile->class]);
+		printf("\033[%um", floor_colors[tile->class]);
 	if (tile->monster)
 		printf("%s", CLASS(tile->monster).glyph);
 	else if (!can_see(pos))
@@ -55,19 +55,19 @@ static void display_tile(Coords pos) {
 
 // Clears and redraws the entire board.
 static void display_board(void) {
-	printf(TERM_HOME);
-	for (int8_t y = 1; y < LENGTH(board) - 1; ++y) {
-		for (int8_t x = 1; x < LENGTH(*board) - 1; ++x)
+	for (i8 y = 1; y < LENGTH(board) - 1; ++y) {
+		for (i8 x = 1; x < LENGTH(*board) - 1; ++x)
 			display_tile((Coords) {x, y});
 		putchar('\n');
 	}
 	for (Trap *t = traps; t->pos.x; ++t) {
 		if (TILE(t->pos).monster)
 			continue;
-		int glyph_index = t->class == BOUNCE ? 15 + 3*t->dir.y + t->dir.x : t->class;
+		i64 glyph_index = t->class == BOUNCE ? 15 + 3*t->dir.y + t->dir.x : t->class;
 		char *glyph = &"■▫◭◭◆▫⇐⇒◭●●↖↑↗←▫→↙↓↘"[3 * glyph_index];
 		printf("\033[%d;%dH%3.3s", t->pos.y, t->pos.x, glyph);
 	}
+	printf(TERM_HOME);
 }
 
 // Main loop; alternatively updates the interface and prompts the user for a command.
