@@ -1,6 +1,5 @@
 // xml.c - deals with custom dungeon XML files
 
-#include <string.h>
 #include <libxml/xmlreader.h>
 
 // Returns the numeric value of a named attribute of the current node.

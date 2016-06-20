@@ -1,23 +1,22 @@
 #include <errno.h>
-#include <string.h>
 #include <sys/time.h>
 
 #define MAX_LENGTH 32
-#define MAX_SCORE  50
+#define MAX_SCORE  34
 
 typedef struct route {
 	struct route *next;           // Next element, if any
-	char input[MAX_LENGTH];       // Test input
-	u64 len;                      // Input length
+	char input[MAX_LENGTH];       // Inputs composing the route
+	u64 len;                      // Number of inputs
 } Route;
 
-static i64 queued_stems;              // Total number of queued testcases
+static i64 queued_stems = 1;          // Total number of queued testcases
 static i64 complete_stems;
 static i64 start_time;                // Unix start time (us)
 
 static Route* routes[MAX_SCORE + 1];  // Priority queue of routes to explore
-static u64 best_len;                  // Length of the shortest winning route
-static u32 cur_score = MAX_SCORE;
+static u32 cur_score = MAX_SCORE;     // Index inside the queue
+static u64 best_len = MAX_LENGTH;     // Length of the shortest winning route
 
 // Returns the current time in microseconds since the epoch
 static i64 get_cur_time(void)
@@ -28,12 +27,12 @@ static i64 get_cur_time(void)
 }
 
 // Returns a human-readable representation of a route
-static char* prettify_route(char *input, u64 length) {
+static char* prettify_route(Route *route) {
 	static char buf[3*MAX_LENGTH + 1];
-	sprintf(buf, "%lu ", length);
+	sprintf(buf, "%lu ", route->len);
 
-	for (u64 i = 0; i < length; ++i) {
-		switch (input[i]) {
+	for (u64 i = 0; i < route->len; ++i) {
+		switch (route->input[i]) {
 		case 'e': strcat(buf, "←"); break;
 		case 'f': strcat(buf, "↓"); break;
 		case 'j': strcat(buf, "↑"); break;
@@ -55,13 +54,13 @@ static void timestamp() {
 }
 
 // Appends the given route to the queue.
-static void add_to_queue(char *input, u64 len, u16 score)
+static void add_to_queue(Route *route, u16 score)
 {
-	Route *q = calloc(1, sizeof(*q));
-	memcpy(q->input, input, len);
-	q->len = len;
-	q->next = routes[score];
-	routes[score] = q;
+	Route *new = malloc(sizeof(*new));
+	*new = *route;
+	new->next = routes[score];
+	routes[score] = new;
+
 	cur_score = MIN(cur_score, score);
 	queued_stems++;
 }
@@ -69,24 +68,22 @@ static void add_to_queue(char *input, u64 len, u16 score)
 // Removes the best route from the priority queue and returns it
 static Route* pop_queue() {
 	while (routes[cur_score] == NULL)
-		++cur_score;
-	assert(cur_score <= MAX_SCORE);
+		if (++cur_score > MAX_SCORE)
+			return NULL;
 	Route *result = routes[cur_score];
 	routes[cur_score] = result->next;
 	return result;
 }
 
 // Forks to the simulator, tries the given route, saves the results
-static void run_simulation(char *input, u64 len)
+static void run_simulation(Route *route)
 {
 	i32 status;
 	i64 pid = fork();
 
 	if (!pid) {
-		fclose(stderr);
-		srand(0);
-		for (u64 i = 0; i < len; ++i)
-			do_beat(input[i]);
+		for (u64 i = 0; i < route->len; ++i)
+			do_beat(route->input[i]);
 		status = 2 * (i32) current_beat + L1(player.pos - stairs);
 		if (!miniboss_defeated)
 			status += 8 - harpies_defeated;
@@ -100,31 +97,34 @@ static void run_simulation(char *input, u64 len)
 
 	if (WIFSIGNALED(status)) {
 		timestamp();
-		printf(RED "%s\n" WHITE, prettify_route(input, len));
+		printf(RED "%s\n" WHITE, prettify_route(route));
 	} else if (WEXITSTATUS(status) == 0) {
-		best_len = len;
+		best_len = route->len;
 		timestamp();
-		printf(GREEN "%s\n" WHITE, prettify_route(input, len));
+		printf(GREEN "%s\n" WHITE, prettify_route(route));
 	} else if (WEXITSTATUS(status) <= MAX_SCORE) {
-		add_to_queue(input, len, (u16) WEXITSTATUS(status));
+		add_to_queue(route, WEXITSTATUS(status));
 	}
 }
 
 // Start with the given route, then try all possible inputs
-static void explore(Route *q)
+static void explore(Route *route)
 {
 	complete_stems++;
 	if (complete_stems % 1000 == 0) {
 		timestamp();
 		printf("%ld/%ld: %u\n", complete_stems, queued_stems, cur_score);
 	}
-	if (q->len >= best_len - 1)
+
+	// Don’t explore routes that cannot beat the current best
+	if (route->len >= best_len)
 		return;
 
 	// Try adding each possible input at the end
+	++route->len;
 	for (u64 i = 0; i < 5; i++) {
-		q->input[q->len] = "efji<"[i];
-		run_simulation(q->input, q->len + 1);
+		route->input[route->len - 1] = "efji<"[i];
+		run_simulation(route);
 	}
 }
 
@@ -135,4 +135,6 @@ static void init()
 		explore(route);
 		free(route);
 	}
+	timestamp();
+	printf("%ld/%ld: %u\n", complete_stems, queued_stems, cur_score);
 }

@@ -3,8 +3,9 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
+#include <string.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
 #include "base.h"
 #include "cotton.h"
