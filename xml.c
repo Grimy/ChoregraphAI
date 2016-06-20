@@ -29,32 +29,32 @@ static void xml_process_node(xmlTextReaderPtr xml)
 	pos += spawn;
 	type = type == 255 ? RED_DRAGON : type;
 
-	if (!strcmp(name, "trap"))
-		traps[trap_count++] = (Trap) {
-			.class = subtype == 8 ? OMNIBOUNCE : type,
-			.pos = pos,
-			.dir = trap_dirs[subtype & 7],
-		};
-
-	else if (!strcmp(name, "tile")) {
-		TILE(pos) = (Tile) {
-			.class = type >= 100 ? WALL : type < 2 ? FLOOR : type,
-			.hp = type >= 100 ? wall_hp[type - 100] : 0,
-			.torch = (u8) xml_attr(xml, "torch"),
-			.zone = xml_attr(xml, "zone"),
-		};
-		if (type == STAIRS)
-			stairs = pos;
+	if (!strcmp(name, "trap")) {
+		Trap *trap = &traps[trap_count++];
+		trap->class = subtype == 8 ? OMNIBOUNCE : type;
+		trap->pos = pos;
+		trap->dir = trap_dirs[subtype & 7];
 	}
 
-	else if (!strcmp(name, "enemy"))
-		monsters[monster_count++] = (Monster) {
-			.class = type,
-			.pos = pos,
-			.prev_pos = pos,
-			.hp = class_infos[type].max_hp,
-			.delay = IS_MAGE(type),
-		};
+	else if (!strcmp(name, "tile")) {
+		TILE(pos).class = type >= 100 ? WALL : type < 2 ? FLOOR : type,
+		TILE(pos).hp = type >= 100 ? wall_hp[type - 100] : 0;
+		TILE(pos).torch = (u8) xml_attr(xml, "torch");
+		TILE(pos).zone = xml_attr(xml, "zone");
+		if (type == STAIRS)
+			stairs = pos;
+		if (TILE(pos).torch)
+			adjust_lights(&TILE(pos), +1);
+	}
+
+	else if (!strcmp(name, "enemy")) {
+		Monster *m = &monsters[monster_count++];
+		m->class = type;
+		m->pos = pos;
+		m->prev_pos = pos;
+		m->hp = class_infos[type].max_hp;
+		m->delay = IS_MAGE(type);
+	}
 }
 
 // Initializes the game’s state based on the given custom dungeon file.

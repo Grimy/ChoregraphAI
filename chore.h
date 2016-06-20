@@ -133,10 +133,11 @@ typedef struct {
 	TileClass class;
 	i8 hp;
 	i8 zone;
+	i8 light;
 	bool torch: 1;
 	bool revealed: 1;
 	bool traps_destroyed: 1;
-	bool: 13;
+	bool: 5;
 	Monster *monster;
 } Tile;
 
@@ -161,7 +162,7 @@ static const ClassInfos class_infos[256];
 
 __extension__
 static Tile board[32][32] = {[0 ... 31] = {[0 ... 31] = {.class = WALL, .hp = 5}}};
-static const Coords spawn = {23, 9};
+static const Coords spawn = {25, 9};
 static Coords stairs;
 static Monster player = {.class = PLAYER, .hp = 1};
 static Monster monsters[256];

@@ -258,14 +258,22 @@ static void dragon(Monster *this, Coords d)
 {
 	static u64 exhausted = 4;
 	exhausted -= this->aggro && exhausted;
-	if (this->state == 0) {
+	switch (this->state) {
+	case 0:
 		basic_seek(this, d);
-	} else if (this->state == 2) {
+		this->state = this->delay;
+		this->delay = 0;
+		break;
+	case 1:
+		this->state = 0;
+		break;
+	case 2:
 		breath_attack(this);
 		exhausted = 3;
+		break;
 	}
-	this->state = !exhausted && can_breath(this) && can_see(this->pos) ? 2 :
-		this->state != 1;
+	if (!exhausted && can_breath(this) && can_see(this->pos))
+		this->state = 2;
 }
 
 static void elemental(Monster *this, Coords d)
@@ -510,8 +518,8 @@ static const ClassInfos class_infos[256] = {
 	[DIREBAT_1]   = { 2, 1,   9,  true, -1, 30302210, YELLOW "B", bat },
 	[DIREBAT_2]   = { 3, 1,   9,  true, -1, 30403215, "B",        bat },
 	[DRAGON]      = { 4, 1,  49,  true,  4, 30404210, GREEN "D",  basic_seek },
-	[RED_DRAGON]  = { 6, 0, 225,  true,  4, 99999999, RED "D",    dragon },
-	[BLUE_DRAGON] = { 6, 0,   0,  true,  4, 99999997, BLUE "D",   dragon },
+	[RED_DRAGON]  = { 6, 1, 225,  true,  4, 99999999, RED "D",    dragon },
+	[BLUE_DRAGON] = { 6, 1,   0,  true,  4, 99999997, BLUE "D",   dragon },
 	[BANSHEE_1]   = { 3, 0,  49,  true, -1, 30403110, BLUE "8",   basic_seek },
 	[BANSHEE_2]   = { 4, 0,  49,  true, -1, 30604115, GREEN "8",  basic_seek },
 	[MINOTAUR_1]  = { 3, 0,  49,  true,  2, 30403110, "H",        minotaur },

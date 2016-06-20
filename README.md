@@ -16,6 +16,10 @@ randomly-mutated routes, and selects for further investigation those routes
 that performed the best on various criteria (getting close to the stairs,
 staying alive and killing the miniboss being the main factors).
 
+## History
+
+**2016-06-20** ChoregraphAI found [its first route](https://www.youtube.com/watch?v=dNYfj2hQ3kI&feature=youtu.be)!
+
 ## License
 
 This work is licensed under a [Creative Commons Attribution-NonCommercial 4.0

@@ -17,6 +17,10 @@
 
 static const i64 plus_shape[] = {-32, -1, 1, 32};
 static const i64 cone_shape[] = {32, 63, 64, 65, 94, 95, 96, 97, 98};
+static const i64 square_shape[] = {
+	-66, -65, -64, -63, -62, -34, -33, -32, -31, -30, -2, -1,
+	0, 1, 2, 30, 31, 32, 33, 34, 62, 63, 64, 65, 66
+};
 
 // Moves the given monster to a specific position.
 // Keeps track of the monster’s previous position.
@@ -42,6 +46,11 @@ static bool can_move(Monster *m, Coords offset)
 	return dest.class != WALL;
 }
 
+static void adjust_lights(Tile *tile, i8 diff) {
+	for (i64 i = 0; i < LENGTH(square_shape); ++i)
+		(tile + square_shape[i])->light += diff;
+}
+
 // Tries to dig away the given wall, replacing it with floor.
 // Returns whether the dig succeeded.
 static bool dig(Tile *wall, i64 digging_power, bool z4)
@@ -58,6 +67,8 @@ static bool dig(Tile *wall, i64 digging_power, bool z4)
 		wall->monster->class = FREE_SPIDER;
 		wall->monster->delay = 1;
 	}
+	if (wall->torch)
+		adjust_lights(wall, -1);
 	if (!z4 && wall->zone == 4 && (wall->hp == 1 || wall->hp == 2))
 		for (i64 i = 0; i < LENGTH(plus_shape); ++i)
 			dig(wall + plus_shape[i], digging_power, true);
@@ -187,9 +198,14 @@ static bool can_see(Coords dest)
 	Coords pos = player.pos;
 	if (dest.x < pos.x - 10 || dest.x > pos.x + 9 || dest.y < pos.y - 5 || dest.y > pos.y + 5)
 		return false;
+
 	// Miner’s Cap
 	if (L2(dest - pos) <= 9)
 		return true;
+
+	if (!TILE(dest).light)
+		return false;
+
 	return los(dest.x - .55, dest.y - .55)
 	    || los(dest.x + .55, dest.y - .55)
 	    || los(dest.x - .55, dest.y + .55)
