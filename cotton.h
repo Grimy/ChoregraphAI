@@ -174,6 +174,6 @@ static u64 harpies_defeated;
 static u32 current_beat;
 
 // Some pre-declarations
-static void do_beat(char input);
+static void do_beat(u8 input);
 static void damage(Monster *m, i64 dmg, bool bomblike);
 static bool forced_move(Monster *m, Coords offset);

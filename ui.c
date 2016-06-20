@@ -71,11 +71,21 @@ static void display_board(void) {
 }
 
 // Main loop; alternatively updates the interface and prompts the user for a command.
-static void __attribute__((noreturn)) init() {
+static void init()
+{
+	const char *inputs = "efij<";
+	char *p;
+
 	printf(TERM_CLEAR);
 	system("stty -echo -icanon eol \1");
+
 	for (;;) {
 		display_board();
-		do_beat((char) getchar());
+		p = strchr(inputs, getchar());
+		if (p == NULL)
+			break;
+		do_beat((u8) (p - inputs));
 	}
+
+	fprintf(stderr, "See you soon!");
 }

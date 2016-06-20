@@ -14,7 +14,7 @@
 #include "xml.c"
 #include UI
 
-static void player_turn(char input) {
+static void player_turn(u8 input) {
 	if (TILE(player.pos).class == STAIRS && miniboss_defeated)
 		exit(VICTORY);
 
@@ -23,26 +23,23 @@ static void player_turn(char input) {
 	player_moved = false;
 
 	switch (input) {
-	case 'e':
+	case 0:
 		player_move(-1,  0);
 		break;
-	case 'f':
+	case 1:
 		player_move( 0,  1);
 		break;
-	case 'i':
+	case 2:
 		player_move( 1,  0);
 		break;
-	case 'j':
+	case 3:
 		player_move( 0, -1);
 		break;
-	case '<':
+	case 4:
 		bomb_plant(player.pos, 3);
 		break;
-	case 'z':
+	case 5:
 		break;
-	default:
-		fprintf(stderr, "See you soon!");
-		exit(0);
 	}
 
 	if (sliding_on_ice)
@@ -110,7 +107,7 @@ static void trap_turn(Trap *this) {
 // Runs one full beat of the game.
 // During each beat, the player acts first, enemies second and traps last.
 // Enemies act in decreasing priority order. Traps have an arbitrary order.
-static void do_beat(char input) {
+static void do_beat(u8 input) {
 	player_turn(input);
 	bomb_exploded = false;
 	for (Monster *m = player.next; m; m = m->next)

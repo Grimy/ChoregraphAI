@@ -6,7 +6,7 @@
 
 typedef struct route {
 	struct route *next;           // Next element, if any
-	char input[MAX_LENGTH];       // Inputs composing the route
+	u8 input[MAX_LENGTH];       // Inputs composing the route
 	u64 len;                      // Number of inputs
 } Route;
 
@@ -27,21 +27,14 @@ static i64 get_cur_time(void)
 }
 
 // Returns a human-readable representation of a route
-static char* prettify_route(Route *route) {
-	static char buf[3*MAX_LENGTH + 1];
+static char* prettify_route(Route *route)
+{
+	static const char* symbols[] = {"←", "↓", "→", "↑", "s"};
+	static char buf[3 * MAX_LENGTH + 1];
+
 	sprintf(buf, "%lu ", route->len);
-
-	for (u64 i = 0; i < route->len; ++i) {
-		switch (route->input[i]) {
-		case 'e': strcat(buf, "←"); break;
-		case 'f': strcat(buf, "↓"); break;
-		case 'j': strcat(buf, "↑"); break;
-		case 'i': strcat(buf, "→"); break;
-		case '<': strcat(buf, "s"); break;
-		default: abort();
-		}
-	}
-
+	for (u64 i = 0; i < route->len; ++i)
+		strcat(buf, symbols[route->input[i]]);
 	return buf;
 }
 
@@ -82,6 +75,7 @@ static void run_simulation(Route *route)
 	i64 pid = fork();
 
 	if (!pid) {
+		srand(0);
 		for (u64 i = 0; i < route->len; ++i)
 			do_beat(route->input[i]);
 		status = 2 * (i32) current_beat + L1(player.pos - stairs);
@@ -122,8 +116,8 @@ static void explore(Route *route)
 
 	// Try adding each possible input at the end
 	++route->len;
-	for (u64 i = 0; i < 5; i++) {
-		route->input[route->len - 1] = "efji<"[i];
+	for (u8 i = 0; i < 5; i++) {
+		route->input[route->len - 1] = i;
 		run_simulation(route);
 	}
 }
