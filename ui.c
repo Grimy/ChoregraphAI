@@ -70,15 +70,12 @@ static void display_board(void) {
 	}
 }
 
-// Updates the interface, then prompts the user for a command.
-static char player_input() {
-	display_board();
-	return (char) getchar();
-}
-
+// Main loop; alternatively updates the interface and prompts the user for a command.
 static void __attribute__((noreturn)) init() {
 	printf(TERM_CLEAR);
 	system("stty -echo -icanon eol \1");
-	for (;;)
-		do_beat();
+	for (;;) {
+		display_board();
+		do_beat((char) getchar());
+	}
 }

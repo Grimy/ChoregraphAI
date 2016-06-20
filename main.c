@@ -13,15 +13,15 @@
 #include "xml.c"
 #include UI
 
-static void player_turn() {
+static void player_turn(char input) {
 	if (TILE(player.pos).class == STAIRS && miniboss_defeated)
-		exit(0);
+		exit(VICTORY);
 
 	player.confusion -= SIGN(player.confusion);
 	player.freeze -= SIGN(player.freeze);
 	player_moved = false;
 
-	switch (player_input()) {
+	switch (input) {
 	case 'e':
 		player_move(-1,  0);
 		break;
@@ -40,7 +40,8 @@ static void player_turn() {
 	case 'z':
 		break;
 	default:
-		error("See you soon!");
+		fprintf(stderr, "See you soon!");
+		exit(0);
 	}
 
 	if (sliding_on_ice)
@@ -52,7 +53,7 @@ static void player_turn() {
 		&& can_move(&player, DIRECTION(player.pos - player.prev_pos));
 
 	if (TILE(player.pos).class == STAIRS && miniboss_defeated)
-		exit(0);
+		exit(VICTORY);
 }
 
 static void enemy_turn(Monster *m) {
@@ -108,8 +109,8 @@ static void trap_turn(Trap *this) {
 // Runs one full beat of the game.
 // During each beat, the player acts first, enemies second and traps last.
 // Enemies act in decreasing priority order. Traps have an arbitrary order.
-static void do_beat(void) {
-	player_turn();
+static void do_beat(char input) {
+	player_turn(input);
 	bomb_exploded = false;
 	for (Monster *m = player.next; m; m = m->next)
 		enemy_turn(m);
@@ -121,7 +122,7 @@ static void do_beat(void) {
 // Runs the simulation on the given custom dungeon file.
 int main(int argc, char **argv) {
 	if (argc != 2)
-		error("Usage: cotton <dungeon_file.xml>");
+		FATAL("Usage: %s <dungeon_file.xml>", argv[0]);
 	xml_parse(argv[1]);
 	qsort(monsters, monster_count, sizeof(*monsters), compare_priorities);
 	for (Monster *m = monsters; m->hp; ++m) {

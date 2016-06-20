@@ -1,5 +1,9 @@
 // cotton.h - types and global vars definitions
 
+// Exit codes
+#define VICTORY 0
+#define DEATH 254
+
 // A pair of cartesian coordinates.
 typedef int8_t Coords __attribute__((ext_vector_type(2)));
 
@@ -170,6 +174,6 @@ static u64 harpies_defeated;
 static u32 current_beat;
 
 // Some pre-declarations
-static void do_beat(void);
+static void do_beat(char input);
 static void damage(Monster *m, long dmg, bool bomblike);
 static bool forced_move(Monster *m, Coords offset);

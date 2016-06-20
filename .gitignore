@@ -1,7 +1,5 @@
 *.out
 *.expand
 *.png
-routes
-crashes
 solve
 core.*

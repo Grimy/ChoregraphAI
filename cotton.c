@@ -18,16 +18,6 @@
 static const int64_t plus_shape[] = {-32, -1, 1, 32};
 static const int64_t cone_shape[] = {32, 63, 64, 65, 94, 95, 96, 97, 98};
 
-static void __attribute__((noreturn)) error(char* message) {
-	fprintf(stderr, "%s\n", message);
-	if (player.hp <= 0)
-		exit(255);
-	s32 status = 2 * (s32) current_beat + L1(player.pos - stairs);
-	if (!miniboss_defeated)
-		status += 8 - harpies_defeated;
-	exit(status);
-}
-
 // Moves the given monster to a specific position.
 // Keeps track of the monster’s previous position.
 static void move(Monster *m, Coords dest) {
@@ -246,7 +236,7 @@ static void tile_change(Tile *tile, TileClass new_class) {
 // Kills the given monster, handling any on-death effects.
 static void monster_kill(Monster *m, bool bomblike) {
 	if (m == &player)
-		error("You died.");
+		exit(DEATH);
 	if (m->class == PIXIE || m->class == BOMBSHROOM_) {
 		bomb_tick(m, spawn);
 		return;
