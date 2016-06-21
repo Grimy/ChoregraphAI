@@ -331,7 +331,7 @@ static void damage(Monster *m, i64 dmg, bool bomblike)
 		m->hp -= dmg;
 	}
 
-	if (m->class == OOZE_GOLEM)
+	if (m->class == GOOLEM)
 		tile_change(&TILE(player.pos), OOZE);
 
 	if (m->hp <= 0) {

@@ -250,8 +250,7 @@ static bool can_breath(Monster *this)
 {
 	i64 dx = ABS(player.pos.x - this->pos.x);
 	i64 dy = ABS(player.pos.y - this->pos.y);
-	bool red = this->class == RED_DRAGON;
-	return this->state < 2 && (red ? !dy : dx < 4 && dy < dx && !player.freeze);
+	return this->class == RED_DRAGON ? !dy : dx < 4 && dy < dx && !player.freeze;
 }
 
 static void breath_attack(Monster *this)
@@ -280,6 +279,7 @@ static void dragon(Monster *this, Coords d)
 	case 2:
 		breath_attack(this);
 		exhausted = 3;
+		this->state = 1;
 		break;
 	}
 	if (!exhausted && can_breath(this) && can_see(this->pos))
@@ -502,7 +502,7 @@ static const ClassInfos class_infos[256] = {
 	[BLADENOVICE] = { 1, 1,   9, false, -1, 99999995, "b",        blademaster },
 	[BLADEMASTER] = { 2, 1,   9, false, -1, 99999996, "b",        blademaster },
 	[GHOUL]       = { 1, 0,   9,  true, -1, 10301102, "W",        moore_seek },
-	[OOZE_GOLEM]  = { 5, 3,   9,  true,  2, 20510407, GREEN "'",  basic_seek },
+	[GOOLEM]      = { 5, 3,   9,  true,  2, 20510407, GREEN "'",  basic_seek },
 	[HARPY]       = { 1, 1,   0,  true, -1, 10301203, GREEN "h",  harpy },
 	[LICH_1]      = { 1, 1,   9, false, -1, 10404202, GREEN "L",  lich },
 	[LICH_2]      = { 2, 1,   9, false, -1, 10404302, PURPLE "L", lich },

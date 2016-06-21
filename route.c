@@ -3,8 +3,9 @@
 #include <errno.h>
 #include <sys/time.h>
 
-#define MAX_LENGTH 32
-#define MAX_SCORE  34
+#define MAX_LENGTH    32
+#define MAX_SCORE     64
+#define MAX_BACKTRACK 4
 
 typedef struct route {
 	struct route *next;           // Next element, if any
@@ -15,7 +16,7 @@ typedef struct route {
 static i64 queued_routes = 1;         // Total number of interesting routes
 static i64 start_time;                // Unix start time (us)
 
-static Route* routes[MAX_SCORE + 1];  // Priority queue of routes to explore
+static Route* routes[MAX_SCORE];      // Priority queue of routes to explore
 static u32 cur_score = MAX_SCORE;     // Index inside the queue
 static u64 best_len = MAX_LENGTH;     // Length of the shortest winning route
 
@@ -39,7 +40,7 @@ static void timestamp()
 // Returns a human-readable representation of a route
 static char* prettify_route(Route *route)
 {
-	static const char* symbols[] = {"←", "↓", "→", "↑", "s"};
+	static const char* symbols[] = {"←", "↓", "→", "↑", "s", "z"};
 	static char buf[3 * MAX_LENGTH + 1];
 
 	sprintf(buf, "%lu ", route->len);
@@ -64,13 +65,19 @@ static void add_to_queue(Route *route, u16 score)
 static Route* pop_queue()
 {
 	while (routes[cur_score] == NULL)
-		if (++cur_score > MAX_SCORE)
+		if (++cur_score >= MAX_SCORE)
 			return NULL;
 	Route *result = routes[cur_score];
 	routes[cur_score] = result->next;
 	return result;
 }
 
+// lower is better
+static i32 fitness_function() {
+	return 2 * current_beat + L1(player.pos - stairs)
+		+ 4 * !miniboss_defeated - harpies_defeated;
+}
+	
 // Forks to the simulator, tries the given route, saves the results
 static void run_simulation(Route *route)
 {
@@ -81,10 +88,8 @@ static void run_simulation(Route *route)
 		srand(0);
 		for (u64 i = 0; i < route->len; ++i)
 			do_beat(route->input[i]);
-		status = 2 * (i32) current_beat + L1(player.pos - stairs);
-		if (!miniboss_defeated)
-			status += 8 - harpies_defeated;
-		exit(status);
+		assert(fitness_function() > 0);
+		exit(fitness_function());
 	}
 
 	if (pid < 0)
@@ -99,7 +104,7 @@ static void run_simulation(Route *route)
 		best_len = route->len;
 		timestamp();
 		printf(GREEN "%s\n" WHITE, prettify_route(route));
-	} else if (WEXITSTATUS(status) <= MAX_SCORE) {
+	} else if (WEXITSTATUS(status) < fitness_function() + MAX_BACKTRACK) {
 		add_to_queue(route, WEXITSTATUS(status));
 	}
 }
@@ -120,7 +125,7 @@ static void explore(Route *route)
 
 	// Try adding each possible input at the end
 	++route->len;
-	for (u8 i = 0; i < 5; i++) {
+	for (u8 i = 0; i < 6; i++) {
 		route->input[route->len - 1] = i;
 		run_simulation(route);
 	}

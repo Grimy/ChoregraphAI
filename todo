@@ -1,6 +1,8 @@
 TESTS:
 * Goblin bomer stuck in water, blocked in all directions
 * traps should be destroyed by moles
+* does trampling destroy traps? water?
+* why doesn’t the old 4-1 solution work?
 
 FEATURES:
 * Armored skeletons (attack direction!)

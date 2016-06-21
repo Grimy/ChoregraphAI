@@ -56,7 +56,7 @@ typedef enum __attribute__((__packed__)) {
 	ARMADILDO,
 	BLADENOVICE, BLADEMASTER,
 	GHOUL,
-	OOZE_GOLEM,
+	GOOLEM,
 	HARPY,
 	LICH_1, LICH_2, LICH_3,
 	CONF_MONKEY, TELE_MONKEY,
@@ -174,8 +174,8 @@ static bool bomb_exploded;
 static bool sliding_on_ice;
 static bool miniboss_defeated;
 static bool boots_on = true;
-static u64 harpies_defeated;
-static u32 current_beat;
+static i32 harpies_defeated;
+static i32 current_beat;
 
 // Some pre-declarations
 static void do_beat(u8 input);
