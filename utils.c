@@ -85,7 +85,7 @@ static void monster_remove(Monster *m)
 }
 
 // Handles an enemy attacking the player.
-// Usually boils down to `damage(&player, ...)`, but some enemies are special-cased.
+// Usually boils down to damaging the player, but some enemies are special-cased.
 static void enemy_attack(Monster *attacker)
 {
 	Coords d = player.pos - attacker->pos;
@@ -109,6 +109,9 @@ static void enemy_attack(Monster *attacker)
 	}
 }
 
+// Test whether a monster’s movement is blocked by freezing, water or tar.
+// As a side effect, removes the water or frees the monster from tar, as appropriate.
+// Common to all movement types (player, enemy, forced).
 static bool before_move(Monster *m)
 {
 	if (m->freeze)
@@ -213,17 +216,7 @@ static bool can_see(Coords dest)
 	    || los(dest.x, dest.y);
 }
 
-// Compares the priorities of two monsters.
-// Meant to be used as a callback for qsort.
-static i32 compare_priorities(const void *a, const void *b)
-{
-	u32 pa = CLASS((const Monster*) a).priority;
-	u32 pb = CLASS((const Monster*) b).priority;
-	return (pb > pa) - (pb < pa);
-}
-
 // Knocks an enemy away from the player.
-// TODO: set the knockback direction correctly for diagonal attacks.
 static void knockback(Monster *m)
 {
 	forced_move(m, DIRECTION(m->pos - player.pos));
@@ -238,6 +231,7 @@ static void bomb_plant(Coords pos, u8 delay)
 	monsters[monster_count++] = bomb;
 }
 
+// Bombs a single tile.
 static void bomb_tile(Tile *tile)
 {
 	tile->traps_destroyed = true;
@@ -249,7 +243,7 @@ static void bomb_tile(Tile *tile)
 		tile->class = WATER;
 }
 
-static void bomb_tick(Monster *this, __attribute__((unused)) Coords d)
+static void bomb_detonate(Monster *this, __attribute__((unused)) Coords d)
 {
 	if (TILE(this->pos).monster == this)
 		TILE(this->pos).monster = NULL;
@@ -260,6 +254,8 @@ static void bomb_tick(Monster *this, __attribute__((unused)) Coords d)
 	bomb_exploded = true;
 }
 
+// Overrides a tile with a given floor hazard. Also destroys traps on the tile.
+// Special cases: stairs are immune, fire+ice => water, fire+water => nothing.
 static void tile_change(Tile *tile, TileClass new_class)
 {
 	tile->class =
@@ -270,13 +266,13 @@ static void tile_change(Tile *tile, TileClass new_class)
 	tile->traps_destroyed = true;
 }
 
-// Kills the given monster, handling any on-death effects.
+// Kills the given monster, handling on-death effects.
 static void monster_kill(Monster *m, bool bomblike)
 {
 	if (m == &player)
 		exit(DEATH);
 	if (m->class == PIXIE || m->class == BOMBSHROOM_) {
-		bomb_tick(m, spawn);
+		bomb_detonate(m, spawn);
 		return;
 	}
 	TILE(m->pos).monster = NULL;
@@ -295,11 +291,11 @@ static void monster_kill(Monster *m, bool bomblike)
 		harpies_defeated++;
 }
 
-// Deals damage to the given monster.
+// Deals damage to the given monster. Handles on-damage effects.
 static void damage(Monster *m, i64 dmg, bool bomblike)
 {
 	if (m->class == MINE_STATUE) {
-		bomb_tick(m, spawn);
+		bomb_detonate(m, spawn);
 	} else if (m->class == BOMBSHROOM) {
 		m->class = BOMBSHROOM_;
 		m->delay = 3;
@@ -350,7 +346,6 @@ static void damage(Monster *m, i64 dmg, bool bomblike)
 }
 
 static void lunge(Coords offset) {
-	// lunging
 	i64 steps = 4;
 	while (--steps && can_move(&player, offset))
 		move(&player, player.pos + offset);

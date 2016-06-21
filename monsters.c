@@ -9,7 +9,7 @@
 // Most monster AIs use this as a tiebreaker: when several destination tiles fit
 // all criteria equally well, monsters pick the one that comes first in bomb-order.
 
-// Move cardinally toward the player.
+// Move cardinally toward the player, avoiding obstacles.
 // Try to keep moving along the same axis, unless the monster’s current or
 // previous position is aligned with the player’s current or previous position.
 static void basic_seek(Monster *this, Coords d)
@@ -23,7 +23,8 @@ static void basic_seek(Monster *this, Coords d)
 		d.x == 0 ? 1 :
 
 		// #2: avoid obstacles (when both axes are blocked, tiebreak by L2 distance)
-		!can_move(this, vertical) ? !can_move(this, horizontal) && ABS(d.y) > ABS(d.x) :
+		!can_move(this, vertical) ?
+		!can_move(this, horizontal) && ABS(d.y) > ABS(d.x) :
 		!can_move(this, horizontal) ? 1 :
 
 		// #3: if pos aligns with the player’s prevpos or vice-versa, switch axes
@@ -42,6 +43,8 @@ static void basic_seek(Monster *this, Coords d)
 	enemy_move(this, this->vertical ? vertical : horizontal);
 }
 
+// Move away from the player.
+// Tiebreak by L2 distance, then bomb-order.
 static void basic_flee(Monster *this, Coords d)
 {
 	if (d.y == 0)
@@ -54,7 +57,7 @@ static void basic_flee(Monster *this, Coords d)
 		MOVE(-SIGN(d.x), 0) || MOVE(0, -SIGN(d.y));
 }
 
-// Move diagonally toward the player. The tiebreaker is *reverse* bomb-order.
+// Move diagonally toward the player. Tiebreak by *reverse* bomb-order.
 static void diagonal_seek(Monster *this, Coords d)
 {
 	if (d.y == 0)
@@ -118,6 +121,8 @@ static void blademaster(Monster *this, Coords d)
 	}
 }
 
+// Tests whether all conditions for spellcasting are met.
+// Helper function for liches and windmages.
 static bool can_cast(Monster *this, Coords d)
 {
 	return L2(d) == 4 && can_move(this, DIRECTION(d)) && !this->confusion;
@@ -159,10 +164,15 @@ static void yeti(Monster *this, Coords d)
 		enemy_attack(this);
 }
 
-
-// Move up to 3 tiles toward the player.
-// Only attacks if the player was already adjacent. The destination must be visible.
-// Try to move as little as possible in L2 distance.
+// Move up to 3 tiles toward the player, but only attack if the player is adjacent.
+// Only move to visible tiles. Move as little as possible in L2 distance.
+//    N
+//   IFJ
+//  HDBDK
+// MEA.CGO
+//  IDBDL
+//   JFK
+//    N
 static void harpy(Monster *this, Coords d)
 {
 	static const Coords moves[] = {
@@ -289,6 +299,7 @@ static void mole(Monster *this, Coords d)
 		this->state ^= 1;
 	else
 		basic_seek(this, d);
+	TILE(this->pos).traps_destroyed = true;
 }
 
 static void beetle_shed(Monster *this)
@@ -315,7 +326,7 @@ static void wind_statue(__attribute__((unused)) Monster *this, Coords d)
 static void bomb_statue(Monster *this, Coords d)
 {
 	if (this->state)
-		bomb_tick(this, d);
+		bomb_detonate(this, d);
 	else if (L1(d) == 1)
 		this->state = 1;
 }
@@ -460,7 +471,7 @@ static const ClassInfos class_infos[256] = {
 	[WALL_MIMIC]  = { 1, 0,   0, false, -1, 10201103, GREEN "m",  mimic },
 	[LIGHTSHROOM] = { 1, 9,   9, false, -1,        0, "%",        nop },
 	[BOMBSHROOM]  = { 1, 0,   0, false, -1,      ~1u, YELLOW "%", nop },
-	[BOMBSHROOM_] = { 1, 0,   0, false, -1,      ~1u, RED "%",    bomb_tick },
+	[BOMBSHROOM_] = { 1, 0,   0, false, -1,      ~1u, RED "%",    bomb_detonate },
 
 	[FIRE_SLIME]  = { 1, 0, 225, false,  2, 10301101, RED "P",    diagonal_slime },
 	[ICE_SLIME]   = { 1, 0, 225, false,  2, 10301101, CYAN "P",   diagonal_slime },
@@ -530,5 +541,5 @@ static const ClassInfos class_infos[256] = {
 	[OGRE]        = { 5, 3,  49,  true,  2, 30505115, GREEN "O",  basic_seek },
 
 	[PLAYER]      = { 1, 0,   0, false, -1,      ~0u, "@",        NULL },
-	[BOMB]        = { 0, 0,   0, false, -1,      ~1u, "o",        bomb_tick },
+	[BOMB]        = { 0, 0,   0, false, -1,      ~1u, "o",        bomb_detonate },
 };

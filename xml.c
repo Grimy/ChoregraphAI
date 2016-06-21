@@ -2,6 +2,9 @@
 
 #include <libxml/xmlreader.h>
 
+#define STARTING_DELAY(c) (((c) >= WINDMAGE_1 && (c) <= WINDMAGE_3) || \
+		((c) >= LICH_1 && (c) <= LICH_3) || (c) == HARPY)
+
 // Returns the numeric value of a named attribute of the current node.
 // If the attribute is absent, it defaults to 0.
 static i8 xml_attr(xmlTextReaderPtr xml, char* attr)
@@ -53,8 +56,16 @@ static void xml_process_node(xmlTextReaderPtr xml)
 		m->pos = pos;
 		m->prev_pos = pos;
 		m->hp = class_infos[type].max_hp;
-		m->delay = IS_MAGE(type);
+		m->delay = STARTING_DELAY(type);
 	}
+}
+
+// Compares the priorities of two monsters. Callback for qsort.
+static i32 compare_priorities(const void *a, const void *b)
+{
+	u32 pa = CLASS((const Monster*) a).priority;
+	u32 pb = CLASS((const Monster*) b).priority;
+	return (pb > pa) - (pb < pa);
 }
 
 // Initializes the game’s state based on the given custom dungeon file.
@@ -64,11 +75,19 @@ static void xml_parse(char *file)
 {
 	LIBXML_TEST_VERSION;
 	xmlTextReaderPtr xml = xmlReaderForFile(file, NULL, 0);
+
 	while (xmlTextReaderRead(xml) == 1)
 		if (xmlTextReaderNodeType(xml) == 1)
 			xml_process_node(xml);
+
 	if (xmlTextReaderRead(xml) < 0)
 		FATAL("Invalid XML file: %s", file);
 	xmlFreeTextReader(xml);
+
 	move(&player, spawn);
+	qsort(monsters, monster_count, sizeof(*monsters), compare_priorities);
+	for (Monster *m = monsters; m->hp; ++m) {
+		TILE(m->pos).monster = m;
+		(m == monsters ? &player : m - 1)->next = m;
+	}
 }

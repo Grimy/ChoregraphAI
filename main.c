@@ -1,8 +1,5 @@
 // main.c - initialization, main game loop
 
-#define IS_MAGE(c) (((c) >= WINDMAGE_1 && (c) <= WINDMAGE_3) || \
-		((c) >= LICH_1 && (c) <= LICH_3) || (c) == HARPY)
-
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -134,10 +131,5 @@ i32 main(i32 argc, char **argv) {
 	if (argc != 2)
 		FATAL("Usage: %s <dungeon_file.xml>", argv[0]);
 	xml_parse(argv[1]);
-	qsort(monsters, monster_count, sizeof(*monsters), compare_priorities);
-	for (Monster *m = monsters; m->hp; ++m) {
-		TILE(m->pos).monster = m;
-		(m == monsters ? &player : m - 1)->next = m;
-	}
-	init();
+	run();
 }

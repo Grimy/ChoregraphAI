@@ -104,7 +104,7 @@ static void run_simulation(Route *route)
 	}
 }
 
-// Start with the given route, then try all possible inputs
+// Starts with the given route, then tries all possible inputs
 static void explore(Route *route)
 {
 	static i64 explored_routes;
@@ -126,7 +126,8 @@ static void explore(Route *route)
 	}
 }
 
-static void init()
+// `solve` entry point: solves the dungeon
+static void run()
 {
 	start_time = get_cur_time();
 	for (Route *route = calloc(1, sizeof(*route)); route; route = pop_queue()) {

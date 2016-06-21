@@ -75,8 +75,8 @@ static void display_board(void)
 	printf(TERM_HOME);
 }
 
-// Main loop; alternatively updates the interface and prompts the user for a command.
-static void init()
+// `play` entry point: alternatively updates the interface and prompts the user for a command.
+static void run()
 {
 	const char *inputs = "efij< z";
 	char *p;
