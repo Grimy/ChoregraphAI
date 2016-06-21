@@ -15,11 +15,11 @@
 		|| (c) == ASSASSIN_2 || (c) == BANSHEE_1 || (c) == BANSHEE_2)
 #define BLOCKS_MOVEMENT(pos) (TILE(pos).class == WALL)
 
-static const i64 plus_shape[] = {-32, -1, 1, 32};
-static const i64 cone_shape[] = {32, 63, 64, 65, 94, 95, 96, 97, 98};
-static const i64 square_shape[] = {
-	-66, -65, -64, -63, -62, -34, -33, -32, -31, -30, -2, -1,
-	0, 1, 2, 30, 31, 32, 33, 34, 62, 63, 64, 65, 66
+static const Coords plus_shape[] = {{-1, 0}, {0, -1}, {0, 1}, {1, 0}};
+static const Coords cone_shape[] = {
+	{1, 0},
+	{2, -1}, {2, 1}, {2, 2},
+	{3, -2}, {3, -1}, {3, 0}, {3, 1}, {3, 2},
 };
 
 // Moves the given monster to a specific position.
@@ -46,15 +46,22 @@ static bool can_move(Monster *m, Coords offset)
 	return dest.class != WALL;
 }
 
-static void adjust_lights(Tile *tile, i8 diff) {
-	for (i64 i = 0; i < LENGTH(square_shape); ++i)
-		(tile + square_shape[i])->light += diff;
+static void adjust_lights(Coords pos, i8 diff) {
+	static const i16 lights[33] = {
+		102, 102, 102, -1, 102, 102, -1, -1, 102,
+		94, 83, -1, -1, 53, -1, -1, 19, 10, 2,
+	};
+	Coords d = {0, 0};
+	for (d.x = MAX(-4, -pos.x); d.x <= MIN(4, LENGTH(*board) - 1 - pos.x); ++d.x)
+		for (d.y = MAX(-4, -pos.y); d.y <= MIN(4, LENGTH(*board) - 1 - pos.y); ++d.y)
+			TILE(pos + d).light += diff * lights[L2(d)];
 }
 
 // Tries to dig away the given wall, replacing it with floor.
 // Returns whether the dig succeeded.
-static bool dig(Tile *wall, i64 digging_power, bool z4)
+static bool dig(Coords pos, i64 digging_power, bool z4)
 {
+	Tile *wall = &TILE(pos);
 	if (wall->class != WALL || wall->hp > digging_power)
 		return false;
 	if (z4 && (wall->hp == 0 || wall->hp > 2))
@@ -68,10 +75,10 @@ static bool dig(Tile *wall, i64 digging_power, bool z4)
 		wall->monster->delay = 1;
 	}
 	if (wall->torch)
-		adjust_lights(wall, -1);
+		adjust_lights(pos, -1);
 	if (!z4 && wall->zone == 4 && (wall->hp == 1 || wall->hp == 2))
 		for (i64 i = 0; i < LENGTH(plus_shape); ++i)
-			dig(wall + plus_shape[i], digging_power, true);
+			dig(pos + plus_shape[i], digging_power, true);
 	return true;
 }
 
@@ -145,7 +152,7 @@ static bool enemy_move(Monster *m, Coords offset)
 	} else if (can_move(m, offset)) {
 		move(m, m->pos + offset);
 		return true;
-	} else if (!dig(dest, m->confusion ? -1 : CLASS(m).dig, false)) {
+	} else if (!dig(m->pos + offset, m->confusion ? -1 : CLASS(m).dig, false)) {
 		m->delay = 0;
 	}
 
@@ -206,7 +213,7 @@ static bool can_see(Coords dest)
 	if (L2(dest - pos) <= 9)
 		return true;
 
-	if (!TILE(dest).light)
+	if (TILE(dest).light < 102)
 		return false;
 
 	return los(dest.x - .55, dest.y - .55)
@@ -322,10 +329,9 @@ static void damage(Monster *m, i64 dmg, bool bomblike)
 		m->prev_pos = player.pos;
 	} else if (m->class == ICE_BEETLE || m->class == FIRE_BEETLE) {
 		TileClass hazard = m->class == FIRE_BEETLE ? FIRE : ICE;
-		Tile *tile = &TILE(m->pos);
-		tile_change(tile, hazard);
+		tile_change(&TILE(m->pos), hazard);
 		for (u64 i = 0; i < LENGTH(plus_shape); ++i)
-			tile_change(tile + plus_shape[i], hazard);
+			tile_change(&TILE(m->pos + plus_shape[i]), hazard);
 		knockback(m);
 	} else {
 		m->hp -= dmg;
@@ -370,7 +376,7 @@ static void player_move(i8 x, i8 y)
 		offset = -offset;
 	Tile *dest = &TILE(player.pos + offset);
 	if (dest->class == WALL) {
-		dig(dest, TILE(player.pos).class == OOZE ? 0 : 2, false);
+		dig(player.pos + offset, TILE(player.pos).class == OOZE ? 0 : 2, false);
 	} else if (IS_ENEMY(dest->monster)) {
 		damage(dest->monster, TILE(player.pos).class == OOZE ? 0 : 5, false);
 	} else {
@@ -380,7 +386,7 @@ static void player_move(i8 x, i8 y)
 			lunge(offset);
 		i64 digging_power = TILE(player.pos).class == OOZE ? 0 : 2;
 		for (i64 i = 0; i < LENGTH(plus_shape); ++i)
-			dig(&TILE(player.pos) + plus_shape[i], digging_power, false);
+			dig(player.pos + plus_shape[i], digging_power, false);
 	}
 }
 
@@ -397,7 +403,7 @@ static void fireball(Coords pos, i8 dir)
 static void cone_of_cold(Coords pos, i8 dir)
 {
 	for (i64 i = 0; i < LENGTH(cone_shape); ++i) {
-		Tile *tile = &TILE(pos) + dir * cone_shape[i];
+		Tile *tile = &TILE(pos + dir * cone_shape[i]);
 		if (tile->monster)
 			tile->monster->freeze = 5;
 	}

@@ -2,7 +2,7 @@
 // All output code assumes an ANSI-compatible UTF-8 terminal.
 
 // For display purposes, doors count as walls, but level edges don’t
-#define IS_WALL(tile) ((tile)->class == WALL && (tile)->hp < 5)
+#define IS_WALL(pos) (TILE(pos).class == WALL && TILE(pos).hp < 5)
 
 static const u8 floor_colors[] = {
 	[STAIRS] = 105, [SHOP] = 43,
@@ -13,14 +13,14 @@ static const u8 floor_colors[] = {
 
 // Picks an appropriate box-drawing glyph for a wall by looking at adjacent tiles.
 // For example, when tiles to the bottom and right are walls too, use '┌'.
-static void display_wall(Tile *wall)
+static void display_wall(Coords pos)
 {
-	switch (wall->hp) {
+	switch (TILE(pos).hp) {
 	case 0:
 		putchar('+');
 		return;
 	case 2:
-		printf(wall->zone == 2 ? RED : wall->zone == 3 ? CYAN : "");
+		printf(TILE(pos).zone == 2 ? RED : TILE(pos).zone == 3 ? CYAN : "");
 		break;
 	case 3:
 		printf(BLACK);
@@ -34,7 +34,7 @@ static void display_wall(Tile *wall)
 	}
 	i64 glyph = 0;
 	for (i64 i = 0; i < LENGTH(plus_shape); ++i)
-		glyph |= IS_WALL(wall + plus_shape[i]) << i;
+		glyph |= IS_WALL(pos + plus_shape[i]) << i;
 	printf("%3.3s", &"╳─│┘│┐│┤──└┴┌┬├┼"[3 * glyph]);
 }
 
@@ -49,7 +49,7 @@ static void display_tile(Coords pos)
 	else if (!can_see(pos))
 		putchar(' ');
 	else if (tile->class == WALL)
-		display_wall(tile);
+		display_wall(pos);
 	else
 		putchar('.');
 	printf(WHITE);

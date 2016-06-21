@@ -1,9 +1,3 @@
-TESTS:
-* Goblin bomer stuck in water, blocked in all directions
-* traps should be destroyed by moles
-* does trampling destroy traps? water?
-* why doesn’t the old 4-1 solution work?
-
 FEATURES:
 * Armored skeletons (attack direction!)
 * Trampling
@@ -20,6 +14,7 @@ BUGFIXES:
 * armadillos/headless should move horizontally after a diagonal bounce trap
 * bats/zombies/diggers should treat hitting the player as a successful move
 * yetis shouldn’t hit twice when adjacent to the player
+* bombers blocked in all directions should still remove water/tar
 * mages shouldn’t be able to cast while stuck in water/tar
 * moles shouldn’t be able to move through water/tar
 * knockback shouldn’t free enemies from water/tar

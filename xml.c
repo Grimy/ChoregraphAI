@@ -47,7 +47,7 @@ static void xml_process_node(xmlTextReaderPtr xml)
 		if (type == STAIRS)
 			stairs = pos;
 		if (TILE(pos).torch)
-			adjust_lights(&TILE(pos), +1);
+			adjust_lights(pos, +1);
 	}
 
 	else if (!strcmp(name, "enemy")) {

@@ -85,7 +85,7 @@ typedef enum __attribute__((__packed__)) {
 
 // Human-readable names for tile types.
 // Note that WALL can be any wall type, including level edges and doors.
-typedef enum {
+typedef enum __attribute__((__packed__)) {
 	WALL = 0,
 	FLOOR = 1,
 	SHOP = 3,
@@ -130,15 +130,14 @@ typedef struct monster {
 } Monster;
 
 typedef struct {
+	Monster *monster;
 	TileClass class;
 	i8 hp;
+	i16 light;
 	i8 zone;
-	i8 light;
 	bool torch: 1;
-	bool revealed: 1;
 	bool traps_destroyed: 1;
-	bool: 5;
-	Monster *monster;
+	bool: 22;
 } Tile;
 
 typedef struct {
