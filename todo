@@ -3,12 +3,11 @@ FEATURES:
 * Metal doors (type=111)
 * Fire traps
 * Mummy summoning
-* Ogre clonking
 * basic_seek spawn-asymmetry
-* Fire traps
 
 BUGFIXES:
 * if the player moved more than 1 tile, the player's previous position should be ignored
+* minotaurs should have digging power 3 while charging
 * armadillos/headless should move horizontally after a diagonal bounce trap
 * yetis shouldn’t hit twice when adjacent to the player
 * mages shouldn’t be able to cast while stuck in water/tar

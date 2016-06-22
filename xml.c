@@ -33,7 +33,7 @@ static void xml_process_node(xmlTextReaderPtr xml, i64 level)
 	Coords pos = {xml_attr(xml, "x"), xml_attr(xml, "y")};
 
 	pos += spawn;
-	type = type == 255 ? RED_DRAGON : type;
+	type = type == 255 ? OGRE : type;
 
 	if (!strcmp(name, "level"))
 		++level_count;

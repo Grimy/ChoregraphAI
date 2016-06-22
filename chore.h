@@ -167,7 +167,7 @@ typedef struct {
 static const ClassInfos class_infos[256];
 
 __extension__
-static Tile board[55][55] = {[0 ... 31] = {[0 ... 31] = {.class = WALL, .hp = 5}}};
+static Tile board[55][55] = {[0 ... 54] = {[0 ... 54] = {.class = WALL, .hp = 5}}};
 static const Coords spawn = {27, 27};
 static Coords stairs;
 static Monster player = {.class = PLAYER, .hp = 1};

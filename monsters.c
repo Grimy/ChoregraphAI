@@ -453,6 +453,25 @@ ok:
 	this->next = new;
 }
 
+static void ogre(Monster *this, Coords d) {
+	if (this->state == 2) {
+		Coords clonk_dir = DIRECTION(player.prev_pos - this->pos);
+		for (i8 i = 1; i <= 3; ++i)
+			damage_tile(this->pos + i * clonk_dir, 5);
+		this->state = 1;
+		this->delay = 2;
+	} else if (d.x * d.y == 0 && ABS(d.x + d.y) <= 3) {
+		// Clonk!
+		this->state = 2;
+	} else if (this->state == 1) {
+		this->state = 0;
+	} else {
+		basic_seek(this, d);
+		this->state = 1;
+	}
+
+}
+
 static void nop() {}
 
 static const ClassInfos class_infos[256] = {
@@ -561,7 +580,7 @@ static const ClassInfos class_infos[256] = {
 	[NIGHTMARE_1] = { 3, 1,  81,  true,  4, 30403210, BLACK "u",  basic_seek },
 	[NIGHTMARE_2] = { 5, 1,  81,  true,  4, 30505215, RED "u",    basic_seek },
 	[MOMMY]       = { 6, 3,  49,  true, -1, 30405215, BLACK "@",  basic_seek },
-	[OGRE]        = { 5, 3,  49,  true,  2, 30505115, GREEN "O",  basic_seek },
+	[OGRE]        = { 5, 2,   9,  true,  2, 30505115, GREEN "O",  ogre },
 
 	[PLAYER]      = { 1, 0,   0, false, -1,      ~0u, "@",        NULL },
 	[BOMB]        = { 0, 0,   0, false, -1,      ~1u, "o",        bomb_detonate },

@@ -62,8 +62,7 @@ static void adjust_lights(Coords pos, i8 diff) {
 
 static void destroy_wall(Coords pos) {
 	Tile *wall = &TILE(pos);
-	if (wall->class != WALL || wall->hp == 5)
-		return;
+	assert(wall->class == WALL && wall->hp < 5);
 
 	wall->class =
 		wall->hp == 2 && wall->zone == 2 ? FIRE :
@@ -95,6 +94,13 @@ static bool dig(Coords pos, i64 digging_power, bool z4)
 		for (i64 i = 0; i < 4; ++i)
 			dig(pos + plus_shape[i], MIN(2, digging_power), true);
 	return true;
+}
+
+static void damage_tile(Coords pos, i64 dmg) {
+	if (TILE(pos).class == WALL && TILE(pos).hp < 5)
+		destroy_wall(pos);
+	if (TILE(pos).monster)
+		damage(TILE(pos).monster, dmg, true);
 }
 
 // Removes a monster from the priority queue.
@@ -170,12 +176,8 @@ static MoveResult enemy_move(Monster *m, Coords offset)
 		return MOVE_SUCCESS;
 	}
 	if (!m->aggro && CLASS(m).dig == 4) {
-		for (i64 i = 0; i < 4; ++i) {
-			Tile *trampled = &TILE(m->pos + plus_shape[i]);
-			destroy_wall(m->pos + plus_shape[i]);
-			if (trampled->monster)
-				damage(trampled->monster, 4, true);
-		}
+		for (i64 i = 0; i < 4; ++i)
+			damage_tile(m->pos + plus_shape[i], 4);
 		return MOVE_SPECIAL;
 	}
 	if (dig(m->pos + offset, m->confusion ? -1 : CLASS(m).dig, false)) {
@@ -269,9 +271,7 @@ static void bomb_tile(Coords pos)
 {
 	Tile *tile = &TILE(pos);
 	tile->traps_destroyed = true;
-	destroy_wall(pos);
-	if (tile->monster)
-		damage(tile->monster, 4, true);
+	damage_tile(pos, 4);
 	if (tile->class == WATER)
 		tile->class = FLOOR;
 	else if (tile->class == ICE)
@@ -374,7 +374,7 @@ static bool damage(Monster *m, i64 dmg, bool bomblike)
 		return false;
 	case BLADENOVICE:
 	case BLADEMASTER:
-		if (m->state == 2)
+		if (bomblike || m->state == 2)
 			break;
 		knockback(m, 1);
 		m->state = 1;
@@ -446,9 +446,8 @@ static void lunge(Coords offset) {
 	while (--steps && can_move(&player, offset))
 		move(&player, player.pos + offset);
 	Tile *next = &TILE(player.pos + offset);
-	if (next->monster)
-		if (damage(next->monster, 4, true))
-			knockback(next->monster, 1);
+	if (steps && next->monster && damage(next->monster, 4, true))
+		knockback(next->monster, 1);
 }
 
 // Attempts to move the player by the given offset.
@@ -460,10 +459,13 @@ static void player_move(i8 x, i8 y)
 	player.prev_pos = player.pos;
 	if (!before_move(&player))
 		return;
+
 	Coords offset = {x, y};
 	if (player.confusion)
 		offset = -offset;
+
 	Tile *dest = &TILE(player.pos + offset);
+
 	if (dest->class == WALL) {
 		dig(player.pos + offset, TILE(player.pos).class == OOZE ? 0 : 2, false);
 	} else if (dest->monster) {
@@ -473,6 +475,8 @@ static void player_move(i8 x, i8 y)
 		move(&player, player.pos + offset);
 		if (boots_on)
 			lunge(offset);
+
+		// Miner’s cap
 		i64 digging_power = TILE(player.pos).class == OOZE ? 0 : 2;
 		for (i64 i = 0; i < 4; ++i)
 			dig(player.pos + plus_shape[i], digging_power, false);

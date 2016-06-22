@@ -5,7 +5,7 @@
 
 #define MAX_LENGTH    32
 #define MAX_SCORE     64
-#define MAX_BACKTRACK 4
+#define MAX_BACKTRACK 16
 
 typedef struct route {
 	struct route *next;           // Next element, if any
@@ -74,7 +74,7 @@ static Route* pop_queue()
 
 // lower is better
 static i32 fitness_function() {
-	return 2 * current_beat + L1(player.pos - stairs)
+	return 5 * current_beat / 2 + L1(player.pos - stairs)
 		- 4 * miniboss_defeated - 4 * sarcophagus_defeated - harpies_defeated;
 }
 	
