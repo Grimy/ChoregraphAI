@@ -8,10 +8,6 @@
 #define CLASS(m) (class_infos[(m)->class])
 
 #define IS_OPAQUE(x, y) (board[x][y].class == WALL)
-#define IS_MIMIC(c) ((c) == TARMONSTER || (c) == WALL_MIMIC || (c) == SEEK_STATUE \
-		|| (c) == FIRE_MIMIC || (c) == ICE_MIMIC)
-#define IS_KNOCKED_BACK(c) ((c) == MONKEY_2 || (c) == TELE_MONKEY \
-		|| (c) == ASSASSIN_2 || (c) == BANSHEE_1 || (c) == BANSHEE_2)
 #define BLOCKS_MOVEMENT(pos) (TILE(pos).class == WALL)
 
 static const Coords plus_shape[] = {{-1, 0}, {0, -1}, {0, 1}, {1, 0}};
@@ -92,7 +88,7 @@ static bool dig(Coords pos, i64 digging_power, bool z4)
 		return false;
 
 	if (wall->class != WALL || wall->hp > digging_power)
-		return false; // Tink!
+		return false; // Dink!
 
 	destroy_wall(pos);
 	if (!z4 && wall->zone == 4 && (wall->hp == 1 || wall->hp == 2))
@@ -335,56 +331,114 @@ static void monster_kill(Monster *m, bool bomblike)
 // Deals damage to the given monster. Handles on-damage effects.
 static bool damage(Monster *m, i64 dmg, bool bomblike)
 {
-	if (m->class == MINE_STATUE) {
+	// Before-damage triggers that work even with 0 damage
+	switch (m->class) {
+	case MINE_STATUE:
 		bomb_detonate(m, spawn);
-	} else if (m->class == BOMBSHROOM) {
+		return false;
+	case WIND_STATUE:
+		knockback(m, 0);
+		return false;
+	case BOMB_STATUE:
+		knockback(m, 2);
+		return false;
+	case CRATE_1:
+	case CRATE_2:
+		if (dmg >= 3)
+			break;
+		knockback(m, 1);
+		return false;
+	default:
+		if (dmg == 0)
+			return false;
+	}
+
+	// Before-damage triggers
+	switch (m->class) {
+	case BOMBSHROOM:
 		m->class = BOMBSHROOM_;
 		m->delay = 3;
-	} else if (m->class == WIND_STATUE) {
-		knockback(m, 0);
-	} else if (m->class == BOMB_STATUE) {
-		knockback(m, 2);
-	} else if (dmg < 3 && (m->class == CRATE_1 || m->class == CRATE_2)) {
-		knockback(m, 1);
-	} else if (IS_MIMIC(m->class) && m->state < 2) {
-	} else if ((m->class == MOLE || m->class == GHOST) && m->state == 0) {
-	} else if (dmg == 0) {
-	} else if (!bomblike && (m->class == BLADENOVICE || m->class == BLADEMASTER) && m->state < 2) {
+		return false;
+	case TARMONSTER:
+	case WALL_MIMIC:
+	case SEEK_STATUE:
+	case FIRE_MIMIC:
+	case ICE_MIMIC:
+		if (m->state == 2)
+			break;
+		return false;
+	case MOLE:
+	case GHOST:
+		if (m->state == 1)
+			break;
+		return false;
+	case BLADENOVICE:
+	case BLADEMASTER:
+		if (m->state == 2)
+			break;
 		knockback(m, 1);
 		m->state = 1;
-	} else if (m->class >= RIDER_1 && m->class <= RIDER_3) {
+		return false;
+	case RIDER_1:
+	case RIDER_2:
+	case RIDER_3:
 		knockback(m, 1);
 		m->class += SKELETANK_1 - RIDER_1;
-	} else if ((m->class == ARMADILLO_1 || m->class == ARMADILLO_2 || m->class == ARMADILDO) && m->state == 3) {
+		return false;
+	case ARMADILLO_1:
+	case ARMADILLO_2:
+	case ARMADILDO:
+		if (m->state != 3)
+			break;
 		m->prev_pos = player.pos;
-	} else if (m->class == ICE_BEETLE || m->class == FIRE_BEETLE) {
-		TileClass hazard = m->class == FIRE_BEETLE ? FIRE : ICE;
-		tile_change(&TILE(m->pos), hazard);
-		for (i64 i = 0; i < LENGTH(plus_shape); ++i)
-			tile_change(&TILE(m->pos + plus_shape[i]), hazard);
+		return false;
+	case ICE_BEETLE:
+	case FIRE_BEETLE:
+		for (i64 i = 0; i < 5; ++i) {
+			Tile *tile = &TILE(m->pos + plus_shape[i]);
+			tile_change(tile, m->class == FIRE_BEETLE ? FIRE : ICE);
+		}
 		knockback(m, 1);
-	} else {
-		goto normal_case;
-	}
-	return false;
-
-normal_case:
-	m->hp -= dmg;
-	if (m->class == GOOLEM)
+		return false;
+	case GOOLEM:
 		tile_change(&TILE(player.pos), OOZE);
+		break;
+	default:
+		break;
+	}
 
+	// Finally, deal the damage!
+	m->hp -= dmg;
 	if (m->hp <= 0) {
 		monster_kill(m, bomblike);
-	} else if (m->hp == 1 && m->class >= SKELETON_1 && m->class <= SKELETON_3) {
-		m->class = HEADLESS;
-		m->delay = 0;
-		m->prev_pos = player.pos;
-	} else if (IS_KNOCKED_BACK(m->class)) {
+		return false;
+	}
+
+	// After-damage triggers
+	switch (m->class) {
+	case SKELETON_1:
+	case SKELETON_2:
+	case SKELETON_3:
+	case SKELETANK_1:
+	case SKELETANK_2:
+	case SKELETANK_3:
+		if (m->hp == 1) {
+			m->class = HEADLESS;
+			m->delay = 0;
+			m->prev_pos = player.pos;
+			return false;
+		}
+		return true;
+	case MONKEY_2:
+	case TELE_MONKEY:
+	case ASSASSIN_2:
+	case BANSHEE_1:
+	case BANSHEE_2:
 		knockback(m, 1);
-	} else {
+		return false;
+	default:
 		return true;
 	}
-	return false;
 }
 
 static void lunge(Coords offset) {
