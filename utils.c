@@ -10,7 +10,7 @@
 #define IS_OPAQUE(x, y) (board[x][y].class == WALL)
 #define BLOCKS_MOVEMENT(pos) (TILE(pos).class == WALL)
 
-static const Coords plus_shape[] = {{-1, 0}, {0, -1}, {0, 1}, {1, 0}};
+static const Coords plus_shape[] = {{-1, 0}, {0, -1}, {0, 1}, {1, 0}, {0, 0}};
 static const Coords cone_shape[] = {
 	{1, 0},
 	{2, -1}, {2, 1}, {2, 2},
@@ -92,7 +92,7 @@ static bool dig(Coords pos, i64 digging_power, bool z4)
 
 	destroy_wall(pos);
 	if (!z4 && wall->zone == 4 && (wall->hp == 1 || wall->hp == 2))
-		for (i64 i = 0; i < LENGTH(plus_shape); ++i)
+		for (i64 i = 0; i < 4; ++i)
 			dig(pos + plus_shape[i], MIN(2, digging_power), true);
 	return true;
 }
@@ -170,7 +170,7 @@ static MoveResult enemy_move(Monster *m, Coords offset)
 		return MOVE_SUCCESS;
 	}
 	if (!m->aggro && CLASS(m).dig == 4) {
-		for (i64 i = 0; i < LENGTH(plus_shape); ++i) {
+		for (i64 i = 0; i < 4; ++i) {
 			Tile *trampled = &TILE(m->pos + plus_shape[i]);
 			destroy_wall(m->pos + plus_shape[i]);
 			if (trampled->monster)
@@ -474,7 +474,7 @@ static void player_move(i8 x, i8 y)
 		if (boots_on)
 			lunge(offset);
 		i64 digging_power = TILE(player.pos).class == OOZE ? 0 : 2;
-		for (i64 i = 0; i < LENGTH(plus_shape); ++i)
+		for (i64 i = 0; i < 4; ++i)
 			dig(player.pos + plus_shape[i], digging_power, false);
 	}
 }

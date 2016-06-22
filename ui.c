@@ -33,7 +33,7 @@ static void display_wall(Coords pos)
 		return;
 	}
 	i64 glyph = 0;
-	for (i64 i = 0; i < LENGTH(plus_shape); ++i)
+	for (i64 i = 0; i < 4; ++i)
 		glyph |= IS_WALL(pos + plus_shape[i]) << i;
 	printf("%3.3s", &"╳─│┘│┐│┤──└┴┌┬├┼"[3 * glyph]);
 }

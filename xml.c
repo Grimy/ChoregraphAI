@@ -3,7 +3,8 @@
 #include <libxml/xmlreader.h>
 
 #define STARTING_DELAY(c) (((c) >= WINDMAGE_1 && (c) <= WINDMAGE_3) || \
-		((c) >= LICH_1 && (c) <= LICH_3) || (c) == HARPY)
+		((c) >= LICH_1 && (c) <= LICH_3) || (c) == HARPY || \
+		((c) >= SARCO_1 && (c) <= SARCO_3))
 
 // Returns the numeric value of a named attribute of the current node.
 // If the attribute is absent, it defaults to 0.

@@ -429,13 +429,13 @@ static void headless(Monster *this, __attribute__((unused)) Coords d)
 }
 
 static void sarcophagus(Monster *this, __attribute__((unused)) Coords d) {
-	this->delay = 7;
+	this->delay = CLASS(this).beat_delay;
 	if (!this->aggro)
 		return;
 
 	// Make sure that at least one direction isn’t blocked
 	Coords dir;
-	for (i64 i = 0; i < LENGTH(plus_shape); ++i)
+	for (i64 i = 0; i < 4; ++i)
 		if (can_move(this, plus_shape[i]))
 			goto ok;
 	return;
@@ -447,6 +447,7 @@ ok:
 	MonsterClass type = this->class - SARCO_1;
 	type += (MonsterClass[]) {SKELETON_1, SKELETANK_1, WINDMAGE_1, RIDER_1} [RNG(4)];
 	Monster *new = monster_new(type, this->pos + dir);
+	TILE(this->pos + dir).monster = new;
 	new->delay = 1;
 	new->next = this->next;
 	this->next = new;
@@ -533,8 +534,8 @@ static const ClassInfos class_infos[256] = {
 	[TELE_MONKEY] = { 2, 0,   9, false, -1, 10002103, PINK "Y",   basic_seek },
 	[PIXIE]       = { 1, 0,   9,  true, -1, 10401102, "n",        basic_seek },
 	[SARCO_1]     = { 1, 7,   9, false, -1, 10101805, "|",        sarcophagus },
-	[SARCO_2]     = { 2, 7,   9, false, -1, 10102910, YELLOW "|", sarcophagus },
-	[SARCO_3]     = { 3, 7,   9, false, -1, 10103915, BLACK "|",  sarcophagus },
+	[SARCO_2]     = { 2, 9,   9, false, -1, 10102910, YELLOW "|", sarcophagus },
+	[SARCO_3]     = { 3, 11,  9, false, -1, 10103915, BLACK "|",  sarcophagus },
 	[SPIDER]      = { 1, 1,   9, false, -1, 10401202, YELLOW "s", basic_seek },
 	[FREE_SPIDER] = { 1, 0,   9, false, -1, 10401202, YELLOW "s", diagonal_seek },
 	[WARLOCK_1]   = { 1, 1,   9, false, -1, 10401202, "w",        basic_seek },
