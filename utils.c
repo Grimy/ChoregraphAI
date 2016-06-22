@@ -21,6 +21,14 @@ static const Coords cone_shape[] = {
 	{3, -2}, {3, -1}, {3, 0}, {3, 1}, {3, 2},
 };
 
+static Monster* monster_new(MonsterClass type, Coords pos) {
+	Monster *new = &monsters[monster_count++];
+	new->class = type;
+	new->pos = new->prev_pos = pos;
+	new->hp = CLASS(new).max_hp;
+	return new;
+}
+
 // Moves the given monster to a specific position.
 // Keeps track of the monster’s previous position.
 static void move(Monster *m, Coords dest)
@@ -83,8 +91,8 @@ static bool dig(Coords pos, i64 digging_power, bool z4)
 	if (z4 && !wall->hp)
 		return false;
 
-	if (wall->hp > digging_power)
-		return false; // Ding!
+	if (wall->class != WALL || wall->hp > digging_power)
+		return false; // Tink!
 
 	destroy_wall(pos);
 	if (!z4 && wall->zone == 4 && (wall->hp == 1 || wall->hp == 2))
@@ -246,10 +254,10 @@ static bool can_see(Coords dest)
 }
 
 // Knocks an enemy away from the player.
-static void knockback(Monster *m)
+static void knockback(Monster *m, u8 delay)
 {
 	forced_move(m, DIRECTION(m->pos - player.pos));
-	m->delay = 1;
+	m->delay = delay;
 }
 
 // Places a bomb at the given position.
@@ -318,12 +326,14 @@ static void monster_kill(Monster *m, bool bomblike)
 		bomb_plant(m->pos, 3);
 	else if (m->class >= DIREBAT_1 && m->class <= OGRE)
 		miniboss_defeated = true;
+	else if (m->class >= SARCO_1 && m->class <= SARCO_3)
+		sarcophagus_defeated = true;
 	else if (m->class == HARPY)
 		harpies_defeated++;
 }
 
 // Deals damage to the given monster. Handles on-damage effects.
-static void damage(Monster *m, i64 dmg, bool bomblike)
+static bool damage(Monster *m, i64 dmg, bool bomblike)
 {
 	if (m->class == MINE_STATUE) {
 		bomb_detonate(m, spawn);
@@ -331,23 +341,19 @@ static void damage(Monster *m, i64 dmg, bool bomblike)
 		m->class = BOMBSHROOM_;
 		m->delay = 3;
 	} else if (m->class == WIND_STATUE) {
-		knockback(m);
+		knockback(m, 0);
 	} else if (m->class == BOMB_STATUE) {
-		knockback(m);
-		m->delay = 2;
+		knockback(m, 2);
 	} else if (dmg < 3 && (m->class == CRATE_1 || m->class == CRATE_2)) {
-		knockback(m);
+		knockback(m, 1);
 	} else if (IS_MIMIC(m->class) && m->state < 2) {
-		return;
 	} else if ((m->class == MOLE || m->class == GHOST) && m->state == 0) {
-		return;
 	} else if (dmg == 0) {
-		return;
 	} else if (!bomblike && (m->class == BLADENOVICE || m->class == BLADEMASTER) && m->state < 2) {
-		knockback(m);
+		knockback(m, 1);
 		m->state = 1;
 	} else if (m->class >= RIDER_1 && m->class <= RIDER_3) {
-		knockback(m);
+		knockback(m, 1);
 		m->class += SKELETANK_1 - RIDER_1;
 	} else if ((m->class == ARMADILLO_1 || m->class == ARMADILLO_2 || m->class == ARMADILDO) && m->state == 3) {
 		m->prev_pos = player.pos;
@@ -356,11 +362,14 @@ static void damage(Monster *m, i64 dmg, bool bomblike)
 		tile_change(&TILE(m->pos), hazard);
 		for (i64 i = 0; i < LENGTH(plus_shape); ++i)
 			tile_change(&TILE(m->pos + plus_shape[i]), hazard);
-		knockback(m);
+		knockback(m, 1);
 	} else {
-		m->hp -= dmg;
+		goto normal_case;
 	}
+	return false;
 
+normal_case:
+	m->hp -= dmg;
 	if (m->class == GOOLEM)
 		tile_change(&TILE(player.pos), OOZE);
 
@@ -371,19 +380,21 @@ static void damage(Monster *m, i64 dmg, bool bomblike)
 		m->delay = 0;
 		m->prev_pos = player.pos;
 	} else if (IS_KNOCKED_BACK(m->class)) {
-		knockback(m);
+		knockback(m, 1);
+	} else {
+		return true;
 	}
+	return false;
 }
 
 static void lunge(Coords offset) {
 	i64 steps = 4;
 	while (--steps && can_move(&player, offset))
 		move(&player, player.pos + offset);
-	Monster *m = TILE(player.pos + offset).monster;
-	if (steps && m) {
-		knockback(m);
-		damage(m, 4, true);
-	}
+	Tile *next = &TILE(player.pos + offset);
+	if (next->monster)
+		if (damage(next->monster, 4, true))
+			knockback(next->monster, 1);
 }
 
 // Attempts to move the player by the given offset.

@@ -168,7 +168,7 @@ static const ClassInfos class_infos[256];
 
 __extension__
 static Tile board[32][32] = {[0 ... 31] = {[0 ... 31] = {.class = WALL, .hp = 5}}};
-static const Coords spawn = {25, 9};
+static const Coords spawn = {25, 13};
 static Coords stairs;
 static Monster player = {.class = PLAYER, .hp = 1};
 static Monster monsters[256];
@@ -178,12 +178,13 @@ static u64 monster_count;
 static bool player_moved;
 static bool bomb_exploded;
 static bool sliding_on_ice;
-static bool miniboss_defeated;
 static bool boots_on = true;
+static i32 miniboss_defeated;
+static i32 sarcophagus_defeated;
 static i32 harpies_defeated;
 static i32 current_beat;
 
 // Some pre-declarations
 static void do_beat(u8 input);
-static void damage(Monster *m, i64 dmg, bool bomblike);
+static bool damage(Monster *m, i64 dmg, bool bomblike);
 static bool forced_move(Monster *m, Coords offset);

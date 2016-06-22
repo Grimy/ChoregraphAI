@@ -16,7 +16,7 @@ static i8 xml_attr(xmlTextReaderPtr xml, char* attr)
 }
 
 // Converts a single XML node into an appropriate object (Trap, Tile or Monster).
-static void xml_process_node(xmlTextReaderPtr xml)
+static void xml_process_node(xmlTextReaderPtr xml, i64 level)
 {
 	static const Coords trap_dirs[] = {
 		{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, 1}, {1, -1}, {-1, -1}
@@ -24,6 +24,8 @@ static void xml_process_node(xmlTextReaderPtr xml)
 	static const i8 wall_hp[] = {1, 1, 5, 0, 4, 4, 0, 2, 3, 5, 4, 0};
 
 	static u64 trap_count = 0;
+	static i64 level_count = 0;
+
 	const char *name = (const char*) xmlTextReaderConstName(xml);
 	u8 type = (u8) xml_attr(xml, "type");
 	i64 subtype = xml_attr(xml, "subtype");
@@ -31,6 +33,11 @@ static void xml_process_node(xmlTextReaderPtr xml)
 
 	pos += spawn;
 	type = type == 255 ? RED_DRAGON : type;
+
+	if (!strcmp(name, "level"))
+		++level_count;
+	else if (level_count != level)
+		return;
 
 	if (!strcmp(name, "trap")) {
 		Trap *trap = &traps[trap_count++];
@@ -51,12 +58,14 @@ static void xml_process_node(xmlTextReaderPtr xml)
 	}
 
 	else if (!strcmp(name, "enemy")) {
-		Monster *m = &monsters[monster_count++];
-		m->class = type;
-		m->pos = pos;
-		m->prev_pos = pos;
-		m->hp = class_infos[type].max_hp;
-		m->delay = STARTING_DELAY(type);
+		monster_new(type, pos)->delay = STARTING_DELAY(type);
+	}
+
+	else if (!strcmp(name, "crate")) {
+		Monster *crate = &monsters[monster_count++];
+		crate->class = CRATE_1;
+		crate->pos = pos;
+		crate->hp = 1;
 	}
 }
 
@@ -71,14 +80,14 @@ static i32 compare_priorities(const void *a, const void *b)
 // Initializes the game’s state based on the given custom dungeon file.
 // Aborts if the file doesn’t exist or isn’t valid XML.
 // Valid, non-dungeon XML yields undefined results (most likely, an empty dungeon).
-static void xml_parse(char *file)
+static void xml_parse(char *file, i64 level)
 {
 	LIBXML_TEST_VERSION;
 	xmlTextReaderPtr xml = xmlReaderForFile(file, NULL, 0);
 
 	while (xmlTextReaderRead(xml) == 1)
 		if (xmlTextReaderNodeType(xml) == 1)
-			xml_process_node(xml);
+			xml_process_node(xml, level);
 
 	if (xmlTextReaderRead(xml) < 0)
 		FATAL("Invalid XML file: %s", file);

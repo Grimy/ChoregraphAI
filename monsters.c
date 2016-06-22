@@ -428,7 +428,29 @@ static void headless(Monster *this, __attribute__((unused)) Coords d)
 		this->prev_pos = prev_pos;
 }
 
-static void sarcophagus() {}
+static void sarcophagus(Monster *this, __attribute__((unused)) Coords d) {
+	this->delay = 7;
+	if (!this->aggro)
+		return;
+
+	// Make sure that at least one direction isn’t blocked
+	Coords dir;
+	for (i64 i = 0; i < LENGTH(plus_shape); ++i)
+		if (can_move(this, plus_shape[i]))
+			goto ok;
+	return;
+ok:
+
+	do dir = plus_shape[RNG(4)];
+		while (!can_move(this, dir));
+
+	MonsterClass type = this->class - SARCO_1;
+	type += (MonsterClass[]) {SKELETON_1, SKELETANK_1, WINDMAGE_1, RIDER_1} [RNG(4)];
+	Monster *new = monster_new(type, this->pos + dir);
+	new->delay = 1;
+	new->next = this->next;
+	this->next = new;
+}
 
 static void nop() {}
 
@@ -510,9 +532,9 @@ static const ClassInfos class_infos[256] = {
 	[CONF_MONKEY] = { 1, 0,   9, false, -1, 10004103, GREEN "Y",  basic_seek },
 	[TELE_MONKEY] = { 2, 0,   9, false, -1, 10002103, PINK "Y",   basic_seek },
 	[PIXIE]       = { 1, 0,   9,  true, -1, 10401102, "n",        basic_seek },
-	[SARCO_1]     = { 1, 9,   9, false, -1, 10101805, "|",        sarcophagus },
-	[SARCO_2]     = { 2, 9,   9, false, -1, 10102910, YELLOW "|", sarcophagus },
-	[SARCO_3]     = { 3, 9,   9, false, -1, 10103915, BLACK "|",  sarcophagus },
+	[SARCO_1]     = { 1, 7,   9, false, -1, 10101805, "|",        sarcophagus },
+	[SARCO_2]     = { 2, 7,   9, false, -1, 10102910, YELLOW "|", sarcophagus },
+	[SARCO_3]     = { 3, 7,   9, false, -1, 10103915, BLACK "|",  sarcophagus },
 	[SPIDER]      = { 1, 1,   9, false, -1, 10401202, YELLOW "s", basic_seek },
 	[FREE_SPIDER] = { 1, 0,   9, false, -1, 10401202, YELLOW "s", diagonal_seek },
 	[WARLOCK_1]   = { 1, 1,   9, false, -1, 10401202, "w",        basic_seek },
@@ -522,7 +544,7 @@ static const ClassInfos class_infos[256] = {
 	[SEEK_STATUE] = { 1, 0,   0, false, -1, 10401102, BLACK "g",  mimic },
 	[BOMB_STATUE] = { 1, 0,   0, false, -1, 10401102, YELLOW "g", bomb_statue },
 	[MINE_STATUE] = { 1, 0,   0, false, -1, 10401102, RED "g",    nop },
-	[CRATE_1]     = { 1, 1,   0, false, -1, 10401102, "g",        nop },
+	[CRATE_1]     = { 1, 1,   0, false, -1, 10401102, "(",        nop },
 	[CRATE_2]     = { 1, 1,   0, false, -1, 10401102, "g",        nop },
 
 	[SHOPKEEPER]  = { 9, 9,   9, false, -1, 99999997, "@",        nop },
@@ -535,8 +557,8 @@ static const ClassInfos class_infos[256] = {
 	[BANSHEE_2]   = { 4, 0,  49,  true, -1, 30604115, GREEN "8",  basic_seek },
 	[MINOTAUR_1]  = { 3, 0,  49,  true,  2, 30403110, "H",        minotaur },
 	[MINOTAUR_2]  = { 5, 0,  49,  true,  2, 30505115, BLACK "H",  minotaur },
-	[NIGHTMARE_1] = { 3, 1,  49,  true,  4, 30403210, BLACK "u",  basic_seek },
-	[NIGHTMARE_2] = { 5, 1,  49,  true,  4, 30505215, RED "u",    basic_seek },
+	[NIGHTMARE_1] = { 3, 1,  81,  true,  4, 30403210, BLACK "u",  basic_seek },
+	[NIGHTMARE_2] = { 5, 1,  81,  true,  4, 30505215, RED "u",    basic_seek },
 	[MOMMY]       = { 6, 3,  49,  true, -1, 30405215, BLACK "@",  basic_seek },
 	[OGRE]        = { 5, 3,  49,  true,  2, 30505115, GREEN "O",  basic_seek },
 

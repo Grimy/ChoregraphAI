@@ -16,9 +16,6 @@
 
 static void player_turn(u8 input)
 {
-	if (TILE(player.pos).class == STAIRS && miniboss_defeated)
-		exit(VICTORY);
-
 	player.confusion -= SIGN(player.confusion);
 	player.freeze -= SIGN(player.freeze);
 	player_moved = false;
@@ -51,9 +48,6 @@ static void player_turn(u8 input)
 
 	sliding_on_ice = player_moved && TILE(player.pos).class == ICE
 		&& can_move(&player, DIRECTION(player.pos - player.prev_pos));
-
-	if (TILE(player.pos).class == STAIRS && miniboss_defeated)
-		exit(VICTORY);
 }
 
 static void enemy_turn(Monster *m)
@@ -117,19 +111,21 @@ static void trap_turn(Trap *this)
 // Enemies act in decreasing priority order. Traps have an arbitrary order.
 static void do_beat(u8 input)
 {
+	++current_beat;
 	player_turn(input);
 	bomb_exploded = false;
 	for (Monster *m = player.next; m; m = m->next)
 		enemy_turn(m);
 	for (Trap *t = traps; t->pos.x; ++t)
 		trap_turn(t);
-	++current_beat;
+	if (TILE(player.pos).class == STAIRS && miniboss_defeated && sarcophagus_defeated)
+		exit(VICTORY);
 }
 
 // Runs the simulation on the given custom dungeon file.
 i32 main(i32 argc, char **argv) {
-	if (argc != 2)
-		FATAL("Usage: %s <dungeon_file.xml>", argv[0]);
-	xml_parse(argv[1]);
+	if (argc < 2)
+		FATAL("Usage: %s dungeon_file.xml [level]", argv[0]);
+	xml_parse(argv[1], argc == 3 ? *argv[2] - '0' : 1);
 	run();
 }

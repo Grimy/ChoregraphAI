@@ -75,7 +75,7 @@ static Route* pop_queue()
 // lower is better
 static i32 fitness_function() {
 	return 2 * current_beat + L1(player.pos - stairs)
-		+ 4 * !miniboss_defeated - harpies_defeated;
+		- 4 * miniboss_defeated - 4 * sarcophagus_defeated - harpies_defeated;
 }
 	
 // Forks to the simulator, tries the given route, saves the results
