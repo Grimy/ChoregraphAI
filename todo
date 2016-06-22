@@ -1,6 +1,5 @@
 FEATURES:
 * Armored skeletons (attack direction!)
-* Trampling
 * Metal doors (type=111)
 * Fire traps
 * Mummy summoning
@@ -10,13 +9,14 @@ FEATURES:
 
 BUGFIXES:
 * if the player moved more than 1 tile, the player's previous position should be ignored
-* bombing torches should adjust lighting
 * armadillos/headless should move horizontally after a diagonal bounce trap
 * yetis shouldn’t hit twice when adjacent to the player
 * mages shouldn’t be able to cast while stuck in water/tar
 * moles shouldn’t be able to move through water/tar
 * knockback shouldn’t free enemies from water/tar
 * knockback should set direction correctly for diagonal attacks (attack direction!)
+* bombs shouldn’t damage unaggroed enemies
+
 
 REFACTORS:
 * Refactor harpy AI

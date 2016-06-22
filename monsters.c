@@ -471,7 +471,7 @@ static const ClassInfos class_infos[256] = {
 	[WALL_MIMIC]  = { 1, 0,   0, false, -1, 10201103, GREEN "m",  mimic },
 	[LIGHTSHROOM] = { 1, 9,   9, false, -1,        0, "%",        nop },
 	[BOMBSHROOM]  = { 1, 0,   0, false, -1,      ~1u, YELLOW "%", nop },
-	[BOMBSHROOM_] = { 1, 0,   0, false, -1,      ~1u, RED "%",    bomb_detonate },
+	[BOMBSHROOM_] = { 1, 0,   9, false, -1,      ~1u, RED "%",    bomb_detonate },
 
 	[FIRE_SLIME]  = { 1, 0, 225, false,  2, 10301101, RED "P",    diagonal_slime },
 	[ICE_SLIME]   = { 1, 0, 225, false,  2, 10301101, CYAN "P",   diagonal_slime },

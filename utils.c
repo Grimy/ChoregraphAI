@@ -7,7 +7,6 @@
 #define TILE(pos) (board[(pos).x][(pos).y])
 #define CLASS(m) (class_infos[(m)->class])
 
-#define IS_ENEMY(m) ((m) && (m) != &player)
 #define IS_OPAQUE(x, y) (board[x][y].class == WALL)
 #define IS_MIMIC(c) ((c) == TARMONSTER || (c) == WALL_MIMIC || (c) == SEEK_STATUE \
 		|| (c) == FIRE_MIMIC || (c) == ICE_MIMIC)
@@ -57,15 +56,11 @@ static void adjust_lights(Coords pos, i8 diff) {
 			TILE(pos + d).light += diff * lights[L2(d)];
 }
 
-// Tries to dig away the given wall, replacing it with floor.
-// Returns whether the dig succeeded.
-static bool dig(Coords pos, i64 digging_power, bool z4)
-{
+static void destroy_wall(Coords pos) {
 	Tile *wall = &TILE(pos);
-	if (wall->class != WALL || wall->hp > digging_power)
-		return false;
-	if (z4 && (wall->hp == 0 || wall->hp > 2))
-		return false;
+	if (wall->class != WALL || wall->hp == 5)
+		return;
+
 	wall->class =
 		wall->hp == 2 && wall->zone == 2 ? FIRE :
 		wall->hp == 2 && wall->zone == 3 ? ICE :
@@ -76,9 +71,25 @@ static bool dig(Coords pos, i64 digging_power, bool z4)
 	}
 	if (wall->torch)
 		adjust_lights(pos, -1);
+}
+
+// Tries to dig away the given wall, replacing it with floor.
+// Returns whether the dig succeeded.
+static bool dig(Coords pos, i64 digging_power, bool z4)
+{
+	Tile *wall = &TILE(pos);
+
+	// Doors are immune to Z4 AoE digging
+	if (z4 && !wall->hp)
+		return false;
+
+	if (wall->hp > digging_power)
+		return false; // Ding!
+
+	destroy_wall(pos);
 	if (!z4 && wall->zone == 4 && (wall->hp == 1 || wall->hp == 2))
 		for (i64 i = 0; i < LENGTH(plus_shape); ++i)
-			dig(pos + plus_shape[i], digging_power, true);
+			dig(pos + plus_shape[i], MIN(2, digging_power), true);
 	return true;
 }
 
@@ -153,6 +164,15 @@ static MoveResult enemy_move(Monster *m, Coords offset)
 	if (can_move(m, offset)) {
 		move(m, m->pos + offset);
 		return MOVE_SUCCESS;
+	}
+	if (!m->aggro && CLASS(m).dig == 4) {
+		for (i64 i = 0; i < LENGTH(plus_shape); ++i) {
+			Tile *trampled = &TILE(m->pos + plus_shape[i]);
+			destroy_wall(m->pos + plus_shape[i]);
+			if (trampled->monster)
+				damage(trampled->monster, 4, true);
+		}
+		return MOVE_SPECIAL;
 	}
 	if (dig(m->pos + offset, m->confusion ? -1 : CLASS(m).dig, false)) {
 		return MOVE_SPECIAL;
@@ -241,12 +261,14 @@ static void bomb_plant(Coords pos, u8 delay)
 }
 
 // Bombs a single tile.
-static void bomb_tile(Tile *tile)
+static void bomb_tile(Coords pos)
 {
+	Tile *tile = &TILE(pos);
 	tile->traps_destroyed = true;
+	destroy_wall(pos);
 	if (tile->monster)
 		damage(tile->monster, 4, true);
-	if ((tile->class == WALL && tile->hp < 5) || tile->class == WATER)
+	if (tile->class == WATER)
 		tile->class = FLOOR;
 	else if (tile->class == ICE)
 		tile->class = WATER;
@@ -256,9 +278,9 @@ static void bomb_detonate(Monster *this, __attribute__((unused)) Coords d)
 {
 	if (TILE(this->pos).monster == this)
 		TILE(this->pos).monster = NULL;
-	for (i64 x = this->pos.x - 1; x <= this->pos.x + 1; ++x)
-		for (i64 y = this->pos.y - 1; y <= this->pos.y + 1; ++y)
-			bomb_tile(&board[x][y]);
+	for (i8 x = this->pos.x - 1; x <= this->pos.x + 1; ++x)
+		for (i8 y = this->pos.y - 1; y <= this->pos.y + 1; ++y)
+			bomb_tile((Coords) {x, y});
 	monster_remove(this);
 	bomb_exploded = true;
 }
@@ -332,7 +354,7 @@ static void damage(Monster *m, i64 dmg, bool bomblike)
 	} else if (m->class == ICE_BEETLE || m->class == FIRE_BEETLE) {
 		TileClass hazard = m->class == FIRE_BEETLE ? FIRE : ICE;
 		tile_change(&TILE(m->pos), hazard);
-		for (u64 i = 0; i < LENGTH(plus_shape); ++i)
+		for (i64 i = 0; i < LENGTH(plus_shape); ++i)
 			tile_change(&TILE(m->pos + plus_shape[i]), hazard);
 		knockback(m);
 	} else {
@@ -379,7 +401,7 @@ static void player_move(i8 x, i8 y)
 	Tile *dest = &TILE(player.pos + offset);
 	if (dest->class == WALL) {
 		dig(player.pos + offset, TILE(player.pos).class == OOZE ? 0 : 2, false);
-	} else if (IS_ENEMY(dest->monster)) {
+	} else if (dest->monster) {
 		damage(dest->monster, TILE(player.pos).class == OOZE ? 0 : 5, false);
 	} else {
 		player_moved = true;
