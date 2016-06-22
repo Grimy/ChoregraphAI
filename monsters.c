@@ -1,6 +1,6 @@
 // monsters.c - defines all monsters in the game and their AIs
 
-#define MOVE(x, y) (can_move(this, (Coords) {(x), (y)}) && ~enemy_move(this, (Coords) {(x), (y)}))
+#define MOVE(x, y) (enemy_move(this, (Coords) {(x), (y)}))
 
 // Many things in the game follow the so-called “bomb order”:
 // 147
@@ -211,26 +211,26 @@ static void harpy(Monster *this, Coords d)
 static void zombie(Monster *this, __attribute__((unused)) Coords d)
 {
 	static const Coords moves[] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
-	this->state ^= !enemy_move(this, moves[this->state]);
+	this->state ^= enemy_move(this, moves[this->state]) < MOVE_ATTACK;
 	this->delay = 1;
 }
 
 static void blue_slime(Monster *this, __attribute__((unused)) Coords d)
 {
 	static const Coords moves[] = {{0, -1}, {0, 1}, {0, -1}, {0, 1}};
-	this->state += enemy_move(this, moves[this->state]);
+	this->state += enemy_move(this, moves[this->state]) == MOVE_SUCCESS;
 }
 
 static void yellow_slime(Monster *this, __attribute__((unused)) Coords d)
 {
 	static const Coords moves[] = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}};
-	this->state += enemy_move(this, moves[this->state]);
+	this->state += enemy_move(this, moves[this->state]) == MOVE_SUCCESS;
 }
 
 static void diagonal_slime(Monster *this, __attribute__((unused)) Coords d)
 {
 	static const Coords moves[] = {{1, 1}, {-1, 1}, {-1, -1}, {1, -1}};
-	this->state += enemy_move(this, moves[this->state]);
+	this->state += enemy_move(this, moves[this->state]) == MOVE_SUCCESS;
 }
 
 // State 0: camouflaged
@@ -352,7 +352,7 @@ static void armadillo(Monster *this, Coords d)
 {
 	i64 old_state = this->state;
 	this->state = this->state >= 2 ? 3 : can_charge(this, d) ? this->state + 2 : this->aggro;
-	if (this->state == 3 && !enemy_move(this, this->pos - this->prev_pos)) {
+	if (this->state == 3 && enemy_move(this, this->pos - this->prev_pos) != MOVE_SUCCESS) {
 		this->delay = 1;
 		this->state = 0;
 	}
@@ -396,13 +396,13 @@ static void digger(Monster *this, Coords d)
 		if (!TILE(this->pos + move).monster)
 			break;
 	}
-	if (!enemy_move(this, move)) {
+	if (enemy_move(this, move) < MOVE_ATTACK) {
 		this->state = 1;
 		this->delay = 3;
 	}
 }
 
-static void mirror(Monster *this, __attribute__((unused)) Coords d)
+static void clone(Monster *this, __attribute__((unused)) Coords d)
 {
 	if (player_moved)
 		enemy_move(this, -DIRECTION(player.pos - player.prev_pos));
@@ -464,7 +464,7 @@ static const ClassInfos class_infos[256] = {
 	[GOLEM_2]     = { 7, 3,   9,  true,  2, 20607407, BLACK "'",  basic_seek },
 	[ARMADILLO_1] = { 1, 0, 225, false,  2, 10201102, "q",        armadillo },
 	[ARMADILLO_2] = { 2, 0, 225, false,  2, 10302105, YELLOW "q", armadillo },
-	[CLONE]       = { 1, 0,   9, false, -1, 10301102, "@",        mirror },
+	[CLONE]       = { 1, 0,   9, false, -1, 10301102, "@",        clone },
 	[TARMONSTER]  = { 1, 0,   9, false, -1, 10304103, "t",        mimic },
 	[MOLE]        = { 1, 0,   9,  true, -1,  1020113, "r",        mole },
 	[WIGHT]       = { 1, 0,   9,  true, -1, 10201103, GREEN "W",  basic_seek },

@@ -112,6 +112,13 @@ typedef enum {
 	FIREPIG,
 } TrapClass;
 
+typedef enum {
+	MOVE_FAIL,
+	MOVE_SPECIAL,
+	MOVE_ATTACK,
+	MOVE_SUCCESS,
+} MoveResult;
+
 // A “Monster” is either an enemy or the player. Yes, we are all monsters.
 // Honestly, “Entity” is way too generic, and “Character” sounds too much like “char*”.
 typedef struct monster {

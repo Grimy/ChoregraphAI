@@ -137,26 +137,28 @@ static bool before_move(Monster *m)
 // Attempts to move the given monster by the given offset.
 // Will trigger attacking/digging if the destination contains the player/a wall.
 // On success, resets the enemy’s delay and returns true.
-static bool enemy_move(Monster *m, Coords offset)
+static MoveResult enemy_move(Monster *m, Coords offset)
 {
 	m->prev_pos = m->pos;
 	m->delay = CLASS(m).beat_delay;
 	if (!before_move(m))
-		return false;
+		return MOVE_SPECIAL;
 	if (m->confusion)
 		offset = -offset;
 
-	Tile *dest = &TILE(m->pos + offset);
-	if (dest->monster == &player) {
+	if (TILE(m->pos + offset).monster == &player) {
 		enemy_attack(m);
-	} else if (can_move(m, offset)) {
-		move(m, m->pos + offset);
-		return true;
-	} else if (!dig(m->pos + offset, m->confusion ? -1 : CLASS(m).dig, false)) {
-		m->delay = 0;
+		return MOVE_ATTACK;
 	}
-
-	return false;
+	if (can_move(m, offset)) {
+		move(m, m->pos + offset);
+		return MOVE_SUCCESS;
+	}
+	if (dig(m->pos + offset, m->confusion ? -1 : CLASS(m).dig, false)) {
+		return MOVE_SPECIAL;
+	}
+	m->delay = 0;
+	return MOVE_FAIL;
 }
 
 // Moves something by force (as caused by bounce traps, wind mages and knockback).
