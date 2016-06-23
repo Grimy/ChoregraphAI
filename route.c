@@ -5,12 +5,12 @@
 
 #define MAX_LENGTH    32
 #define MAX_SCORE     64
-#define MAX_BACKTRACK 16
+#define MAX_BACKTRACK 8
 
 typedef struct route {
 	struct route *next;           // Next element, if any
-	u8 input[MAX_LENGTH];         // Inputs composing the route
 	u64 len;                      // Number of inputs
+	u8 input[MAX_LENGTH];         // Inputs composing the route
 } Route;
 
 static i64 queued_routes = 1;         // Total number of interesting routes
@@ -29,16 +29,18 @@ static i64 get_cur_time(void)
 }
 
 // Prints the time since the program started to STDOUT
-static void timestamp()
+static char* timestamp()
 {
+	static char buf[16];
 	i64 hundredths = (get_cur_time() - start_time) / 10000;
 	i64 seconds = (hundredths / 100) % 60;
 	i64 minutes = (hundredths / 100 / 60) % 60;
-	printf("[%02ld:%02ld.%02ld] ", minutes, seconds, hundredths % 100);
+	sprintf(buf, "[%02ld:%02ld.%02ld]", minutes, seconds, hundredths % 100);
+	return buf;
 }
 
 // Returns a human-readable representation of a route
-static char* prettify_route(Route *route)
+static char* prettify_route(const Route *route)
 {
 	static const char* symbols[] = {"←", "↓", "→", "↑", "s", "z"};
 	static char buf[3 * MAX_LENGTH + 1];
@@ -77,17 +79,19 @@ static i32 fitness_function() {
 	return 5 * current_beat / 2 + L1(player.pos - stairs)
 		- 4 * miniboss_defeated - 4 * sarcophagus_defeated - harpies_defeated;
 }
-	
-// Forks to the simulator, tries the given route, saves the results
-static void run_simulation(Route *route)
+
+// Forks to the simulator, tries the given route, returns the results
+static u16 run_simulation(Route *route, u32 seed)
 {
 	i32 status;
 	i64 pid = fork();
 
 	if (!pid) {
-		srand(0);
-		for (u64 i = 0; i < route->len; ++i)
+		rng_on = seed != 0;
+		srand(seed);
+		for (u64 i = 0; i < route->len; ++i) {
 			do_beat(route->input[i]);
+		}
 		assert(fitness_function() > 0);
 		exit(fitness_function());
 	}
@@ -96,17 +100,18 @@ static void run_simulation(Route *route)
 		FATAL("fork() failed: %s", strerror(errno));
 	if (wait(&status) != pid)
 		FATAL("wait() failed: %s", strerror(errno));
+	if (WIFSIGNALED(status))
+		FATAL("route crashes: %s", prettify_route(route));
 
-	if (WIFSIGNALED(status)) {
-		timestamp();
-		printf(RED "%s\n" WHITE, prettify_route(route));
-	} else if (WEXITSTATUS(status) == 0) {
-		best_len = route->len;
-		timestamp();
-		printf(GREEN "%s\n" WHITE, prettify_route(route));
-	} else if (WEXITSTATUS(status) < fitness_function() + MAX_BACKTRACK) {
-		add_to_queue(route, WEXITSTATUS(status));
-	}
+	return WEXITSTATUS(status);
+}
+
+static i32 success_rate(Route *route)
+{
+	i32 ok = 0;
+	for (u32 seed = 1; seed <= 1000; ++seed)
+		ok += run_simulation(route, seed) == 0;
+	return ok;
 }
 
 // Starts with the given route, then tries all possible inputs
@@ -115,8 +120,7 @@ static void explore(Route *route)
 	static i64 explored_routes;
 	explored_routes++;
 	if (explored_routes % 1000 == 0) {
-		timestamp();
-		printf("%ld/%ld: %u\n", explored_routes, queued_routes, cur_score);
+		printf("%s %ld/%ld: %u\n", timestamp(), explored_routes, queued_routes, cur_score);
 	}
 
 	// Don’t explore routes that cannot beat the current best
@@ -127,7 +131,17 @@ static void explore(Route *route)
 	++route->len;
 	for (u8 i = 0; i < 6; i++) {
 		route->input[route->len - 1] = i;
-		run_simulation(route);
+		u16 status = run_simulation(route, 0);
+		if (status == 0) {
+			i32 rate = success_rate(route);
+			if (rate > 200) {
+				best_len = route->len;
+				printf("%s " GREEN "%s (%2.1f%%)\n" WHITE,
+					timestamp(), prettify_route(route), (double) rate / 10);
+			}
+		} else if (status < fitness_function() + MAX_BACKTRACK) {
+			add_to_queue(route, status);
+		}
 	}
 }
 
@@ -139,6 +153,5 @@ static void run()
 		explore(route);
 		free(route);
 	}
-	timestamp();
-	printf("%ld/%ld: %u\n", queued_routes, queued_routes, cur_score);
+	printf("%s %ld/%ld: %u\n", timestamp(), queued_routes, queued_routes, cur_score);
 }

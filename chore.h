@@ -2,7 +2,7 @@
 
 // Exit codes
 #define VICTORY 0
-#define DEATH 254
+#define DEATH (200 + current_beat)
 
 // A pair of cartesian coordinates.
 typedef i8 Coords __attribute__((ext_vector_type(2)));
@@ -119,6 +119,12 @@ typedef enum {
 	MOVE_SUCCESS,
 } MoveResult;
 
+typedef enum {
+	DMG_NORMAL,
+	DMG_WEAPON,
+	DMG_BOMB,
+} DamageType;
+
 // A “Monster” is either an enemy or the player. Yes, we are all monsters.
 // Honestly, “Entity” is way too generic, and “Character” sounds too much like “char*”.
 typedef struct monster {
@@ -179,6 +185,8 @@ static bool player_moved;
 static bool bomb_exploded;
 static bool sliding_on_ice;
 static bool boots_on = true;
+static bool sarco_on;
+static bool rng_on = true;
 static i32 miniboss_defeated;
 static i32 sarcophagus_defeated;
 static i32 harpies_defeated;
@@ -186,5 +194,5 @@ static i32 current_beat;
 
 // Some pre-declarations
 static void do_beat(u8 input);
-static bool damage(Monster *m, i64 dmg, bool bomblike);
+static bool damage(Monster *m, i64 dmg, DamageType type);
 static bool forced_move(Monster *m, Coords offset);

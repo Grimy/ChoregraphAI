@@ -1,8 +1,8 @@
-# ChoreographAI — an AI for Crypt of the NecroDancer
+# ChoregraphAI — an AI for Crypt of the NecroDancer
 
 ## About
 
-ChoreographAI’s goal is to automically determine the optimal sequence of moves
+ChoregraphAI’s goal is to automically determine the optimal sequence of moves
 to complete a NecroDancer level. It takes as input a custom dungeon file, and
 outputs the optimal route (as well as various stats).
 

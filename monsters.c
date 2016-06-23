@@ -91,6 +91,10 @@ static void bat(Monster *this, Coords d)
 		basic_seek(this, d);
 		return;
 	}
+	if (!rng_on) {
+		monster_kill(this, DMG_NORMAL);
+		return;
+	}
 	i64 rng = RNG(4);
 	for (i64 i = 0; i < 4; ++i)
 		if (enemy_move(this, moves[(rng + i) & 3]))
@@ -405,7 +409,7 @@ static void digger(Monster *this, Coords d)
 static void clone(Monster *this, __attribute__((unused)) Coords d)
 {
 	if (player_moved)
-		enemy_move(this, -DIRECTION(player.pos - player.prev_pos));
+		enemy_move(this, DIRECTION(player.prev_pos - player.pos));
 }
 
 static void ghost(Monster *this, Coords d)
@@ -430,7 +434,7 @@ static void headless(Monster *this, __attribute__((unused)) Coords d)
 
 static void sarcophagus(Monster *this, __attribute__((unused)) Coords d) {
 	this->delay = CLASS(this).beat_delay;
-	if (!this->aggro)
+	if (!sarco_on || !rng_on)
 		return;
 
 	// Make sure that at least one direction isn’t blocked
@@ -457,7 +461,7 @@ static void ogre(Monster *this, Coords d) {
 	if (this->state == 2) {
 		Coords clonk_dir = DIRECTION(player.prev_pos - this->pos);
 		for (i8 i = 1; i <= 3; ++i)
-			damage_tile(this->pos + i * clonk_dir, 5);
+			damage_tile(this->pos + i * clonk_dir, 5, DMG_NORMAL);
 		this->state = 1;
 		this->delay = 2;
 	} else if (d.x * d.y == 0 && ABS(d.x + d.y) <= 3) {

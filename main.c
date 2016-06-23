@@ -44,7 +44,7 @@ static void player_turn(u8 input)
 	if (sliding_on_ice)
 		player_moved = forced_move(&player, DIRECTION(player.pos - player.prev_pos));
 	else if (!player_moved && TILE(player.pos).class == FIRE)
-		damage(&player, 2, false);
+		damage(&player, 2, DMG_NORMAL);
 
 	sliding_on_ice = player_moved && TILE(player.pos).class == ICE
 		&& can_move(&player, DIRECTION(player.pos - player.prev_pos));
@@ -55,12 +55,19 @@ static void enemy_turn(Monster *m)
 	Coords d = player.pos - m->pos;
 	m->confusion -= SIGN(m->confusion);
 	m->freeze -= SIGN(m->freeze);
+
+	// The bomb-aggro bug
+	if (bomb_exploded && !m->aggro)
+		m->aggro = can_see(m->pos);
+
 	if (!m->aggro) {
 		m->aggro = can_see(m->pos);
-		if (!(m->aggro && (m->delay || m->class == BLUE_DRAGON || bomb_exploded))
-		    && L2(d) > CLASS(m).radius)
+		if (!(m->aggro && (m->delay || m->class == BLUE_DRAGON)) && L2(d) > CLASS(m).radius)
 			return;
+	} else if (m->class >= SARCO_1 && m->class <= SARCO_3) {
+		sarco_on = true;
 	}
+
 	if (m->delay)
 		m->delay--;
 	else if (!m->freeze)
@@ -85,7 +92,7 @@ static void trap_turn(Trap *this)
 		forced_move(m, this->dir);
 		break;
 	case SPIKE:
-		damage(m, 4, true);
+		damage(m, 4, DMG_NORMAL);
 		break;
 	case TRAPDOOR:
 	case TELEPORT:
@@ -113,6 +120,8 @@ static void do_beat(u8 input)
 {
 	++current_beat;
 	player_turn(input);
+	if (TILE(player.pos).class == STAIRS && miniboss_defeated && sarcophagus_defeated)
+		exit(VICTORY);
 	bomb_exploded = false;
 	for (Monster *m = player.next; m; m = m->next)
 		enemy_turn(m);

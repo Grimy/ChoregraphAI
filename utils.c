@@ -96,11 +96,11 @@ static bool dig(Coords pos, i64 digging_power, bool z4)
 	return true;
 }
 
-static void damage_tile(Coords pos, i64 dmg) {
+static void damage_tile(Coords pos, i64 dmg, DamageType type) {
 	if (TILE(pos).class == WALL && TILE(pos).hp < 5)
 		destroy_wall(pos);
 	if (TILE(pos).monster)
-		damage(TILE(pos).monster, dmg, true);
+		damage(TILE(pos).monster, dmg, type);
 }
 
 // Removes a monster from the priority queue.
@@ -130,10 +130,10 @@ static void enemy_attack(Monster *attacker)
 		if (forced_move(&player, d))
 			move(attacker, attacker->pos + d);
 		else
-			damage(&player, 1, false);
+			damage(&player, 1, DMG_NORMAL);
 		break;
 	default:
-		damage(&player, 1, false);
+		damage(&player, 1, DMG_NORMAL);
 	}
 }
 
@@ -175,11 +175,14 @@ static MoveResult enemy_move(Monster *m, Coords offset)
 		move(m, m->pos + offset);
 		return MOVE_SUCCESS;
 	}
+
+	// Trampling
 	if (!m->aggro && CLASS(m).dig == 4) {
 		for (i64 i = 0; i < 4; ++i)
-			damage_tile(m->pos + plus_shape[i], 4);
+			damage_tile(m->pos + plus_shape[i], 4, DMG_NORMAL);
 		return MOVE_SPECIAL;
 	}
+
 	if (dig(m->pos + offset, m->confusion ? -1 : CLASS(m).dig, false)) {
 		return MOVE_SPECIAL;
 	}
@@ -271,7 +274,7 @@ static void bomb_tile(Coords pos)
 {
 	Tile *tile = &TILE(pos);
 	tile->traps_destroyed = true;
-	damage_tile(pos, 4);
+	damage_tile(pos, 4, DMG_BOMB);
 	if (tile->class == WATER)
 		tile->class = FLOOR;
 	else if (tile->class == ICE)
@@ -302,7 +305,7 @@ static void tile_change(Tile *tile, TileClass new_class)
 }
 
 // Kills the given monster, handling on-death effects.
-static void monster_kill(Monster *m, bool bomblike)
+static void monster_kill(Monster *m, DamageType type)
 {
 	if (m == &player)
 		exit(DEATH);
@@ -312,7 +315,7 @@ static void monster_kill(Monster *m, bool bomblike)
 	}
 	TILE(m->pos).monster = NULL;
 	monster_remove(m);
-	if (!bomblike && (m->class == WARLOCK_1 || m->class == WARLOCK_2))
+	if (type == DMG_WEAPON && (m->class == WARLOCK_1 || m->class == WARLOCK_2))
 		move(&player, m->pos);
 	else if (m->class == ICE_SLIME || m->class == YETI)
 		tile_change(&TILE(m->pos), ICE);
@@ -329,7 +332,7 @@ static void monster_kill(Monster *m, bool bomblike)
 }
 
 // Deals damage to the given monster. Handles on-damage effects.
-static bool damage(Monster *m, i64 dmg, bool bomblike)
+static bool damage(Monster *m, i64 dmg, DamageType type)
 {
 	// Before-damage triggers that work even with 0 damage
 	switch (m->class) {
@@ -337,10 +340,14 @@ static bool damage(Monster *m, i64 dmg, bool bomblike)
 		bomb_detonate(m, spawn);
 		return false;
 	case WIND_STATUE:
+		if (type == DMG_BOMB)
+			break;
 		knockback(m, 0);
 		return false;
 	case BOMB_STATUE:
-		knockback(m, 2);
+		if (type == DMG_BOMB)
+			break;
+		knockback(m, m->state ? 2 : 0);
 		return false;
 	case CRATE_1:
 	case CRATE_2:
@@ -364,7 +371,7 @@ static bool damage(Monster *m, i64 dmg, bool bomblike)
 	case SEEK_STATUE:
 	case FIRE_MIMIC:
 	case ICE_MIMIC:
-		if (m->state == 2)
+		if (type == DMG_BOMB || m->state == 2)
 			break;
 		return false;
 	case MOLE:
@@ -374,7 +381,7 @@ static bool damage(Monster *m, i64 dmg, bool bomblike)
 		return false;
 	case BLADENOVICE:
 	case BLADEMASTER:
-		if (bomblike || m->state == 2)
+		if (type != DMG_WEAPON || m->state == 2)
 			break;
 		knockback(m, 1);
 		m->state = 1;
@@ -410,7 +417,7 @@ static bool damage(Monster *m, i64 dmg, bool bomblike)
 	// Finally, deal the damage!
 	m->hp -= dmg;
 	if (m->hp <= 0) {
-		monster_kill(m, bomblike);
+		monster_kill(m, type);
 		return false;
 	}
 
@@ -446,7 +453,7 @@ static void lunge(Coords offset) {
 	while (--steps && can_move(&player, offset))
 		move(&player, player.pos + offset);
 	Tile *next = &TILE(player.pos + offset);
-	if (steps && next->monster && damage(next->monster, 4, true))
+	if (steps && next->monster && damage(next->monster, 4, DMG_NORMAL))
 		knockback(next->monster, 1);
 }
 
@@ -469,7 +476,7 @@ static void player_move(i8 x, i8 y)
 	if (dest->class == WALL) {
 		dig(player.pos + offset, TILE(player.pos).class == OOZE ? 0 : 2, false);
 	} else if (dest->monster) {
-		damage(dest->monster, TILE(player.pos).class == OOZE ? 0 : 5, false);
+		damage(dest->monster, TILE(player.pos).class == OOZE ? 0 : 5, DMG_WEAPON);
 	} else {
 		player_moved = true;
 		move(&player, player.pos + offset);
@@ -489,7 +496,7 @@ static void fireball(Coords pos, i8 dir)
 	assert(dir != 0);
 	for (pos.x += dir; TILE(pos).class != WALL; pos.x += dir)
 		if (TILE(pos).monster)
-			damage(TILE(pos).monster, 5, true);
+			damage(TILE(pos).monster, 5, DMG_NORMAL);
 }
 
 // Freezes all monsters in a 3x5 cone.
