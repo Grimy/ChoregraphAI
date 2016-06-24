@@ -1,6 +1,7 @@
 // utils.c - core game logic
 
 #define DIRECTION(pos) ((Coords) {SIGN((pos).x), SIGN((pos).y)})
+#define CARDINALIZE(d) ((Coords) {SIGN((d).x), (d).x ? 0 : SIGN((d).y)})
 #define L1(pos) (ABS((pos).x) + ABS((pos).y))
 #define L2(pos) ((pos).x * (pos).x + (pos).y * (pos).y)
 
@@ -105,12 +106,8 @@ static bool dig(Coords pos, i64 digging_power, bool z4)
 static void damage_tile(Coords pos, Coords origin, i64 dmg, DamageType type) {
 	if (TILE(pos).class == WALL && TILE(pos).hp < 5)
 		destroy_wall(pos);
-	if (TILE(pos).monster) {
-		Coords dir = DIRECTION(pos - origin);
-		if (dir.x && dir.y)
-			dir.y = 0;
-		damage(TILE(pos).monster, dmg, dir, type);
-	}
+	if (TILE(pos).monster)
+		damage(TILE(pos).monster, dmg, CARDINALIZE(pos - origin), type);
 }
 
 // Removes a monster from the priority queue.
@@ -284,12 +281,12 @@ static void bomb_detonate(Monster *this, __attribute__((unused)) Coords d)
 	if (TILE(this->pos).monster == this)
 		TILE(this->pos).monster = NULL;
 	for (i64 i = 0; i < 9; ++i) {
-		Coords bombed = this->pos + square_shape[i];
-		Tile *tile = &TILE(bombed);
-		damage_tile(bombed, this->pos, 4, DMG_BOMB);
+		Tile *tile = &TILE(this->pos + square_shape[i]);
 		tile->traps_destroyed = true;
 		tile->class = tile->class == WATER ? FLOOR : tile->class == ICE ? WATER : tile->class;
 	}
+	for (i64 i = 0; i < 9; ++i)
+		damage_tile(this->pos + square_shape[i], this->pos, 4, DMG_BOMB);
 	monster_remove(this);
 	bomb_exploded = true;
 }
@@ -412,11 +409,11 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 		return false;
 	case ICE_BEETLE:
 	case FIRE_BEETLE:
+		knockback(m, dir, 1);
 		for (i64 i = 0; i < 5; ++i) {
 			Tile *tile = &TILE(m->pos + plus_shape[i]);
 			tile_change(tile, m->class == FIRE_BEETLE ? FIRE : ICE);
 		}
-		knockback(m, dir, 1);
 		return false;
 	case GOOLEM:
 		tile_change(&TILE(player.pos), OOZE);

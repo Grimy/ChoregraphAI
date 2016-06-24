@@ -359,9 +359,14 @@ static void armadillo(Monster *this, Coords d)
 {
 	i64 old_state = this->state;
 	this->state = this->state >= 2 ? 3 : can_charge(this, d) ? this->state + 2 : this->aggro;
-	if (this->state == 3 && enemy_move(this, this->pos - this->prev_pos) != MOVE_SUCCESS) {
-		this->delay = 1;
-		this->state = 0;
+	if (this->state == 3) {
+		Coords charging_dir = this->pos - this->prev_pos;
+		if (this->class != ARMADILDO)
+			charging_dir = CARDINALIZE(charging_dir);
+		if (enemy_move(this, this->pos - this->prev_pos) != MOVE_SUCCESS) {
+			this->delay = 1;
+			this->state = 0;
+		}
 	}
 	if (old_state && this->confusion)
 		this->prev_pos = this->pos + this->pos - this->prev_pos;
@@ -431,7 +436,7 @@ static void assassin(Monster *this, Coords d)
 static void headless(Monster *this, __attribute__((unused)) Coords d)
 {
 	Coords prev_pos = this->prev_pos;
-	if (!enemy_move(this, this->pos - this->prev_pos))
+	if (!enemy_move(this, CARDINALIZE(this->pos - prev_pos)))
 		this->prev_pos = prev_pos;
 }
 
@@ -479,7 +484,7 @@ static void ogre(Monster *this, Coords d) {
 }
 
 static void firepig(Monster *this, Coords d) {
-	if (d.y == 0 && d.x <= 5 && (d.x > 0) == this->state) {
+	if (d.y == 0 && ABS(d.x) <= 5 && (d.x > 0) == this->state) {
 		this->state += 2;
 	} else if (this->state > 1) {
 		fireball(this->pos, SIGN(player.pos.x - this->pos.x));
