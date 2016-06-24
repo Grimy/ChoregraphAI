@@ -177,6 +177,7 @@ static Tile board[55][55] = {[0 ... 54] = {[0 ... 54] = {.class = WALL, .hp = 5}
 static const Coords spawn = {27, 27};
 static Coords stairs;
 static Monster player = {.class = PLAYER, .hp = 1};
+static Monster *nightmare;
 static Monster monsters[64];
 static Trap traps[64];
 static u64 monster_count;

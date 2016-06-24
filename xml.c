@@ -58,7 +58,8 @@ static void xml_process_node(xmlTextReaderPtr xml, i64 level)
 	}
 
 	else if (!strcmp(name, "enemy")) {
-		monster_new(type, pos)->delay = STARTING_DELAY(type);
+		Monster *m = monster_new(type, pos);
+		m->delay = STARTING_DELAY(type);
 	}
 
 	else if (!strcmp(name, "crate")) {
@@ -98,5 +99,7 @@ static void xml_parse(char *file, i64 level)
 	for (Monster *m = monsters; m->hp; ++m) {
 		TILE(m->pos).monster = m;
 		(m == monsters ? &player : m - 1)->next = m;
+		if (m->class == NIGHTMARE_1 || m->class == NIGHTMARE_2)
+			nightmare = m;
 	}
 }

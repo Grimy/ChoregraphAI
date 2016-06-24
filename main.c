@@ -57,7 +57,7 @@ static void enemy_turn(Monster *m)
 	m->freeze -= SIGN(m->freeze);
 
 	// The bomb-aggro bug
-	if (bomb_exploded && !m->aggro)
+	if (!m->aggro && (bomb_exploded || (nightmare && L2(m->pos - nightmare->pos) < 9)))
 		m->aggro = can_see(m->pos);
 
 	if (!m->aggro) {

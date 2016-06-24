@@ -5,7 +5,7 @@
 
 #define MAX_LENGTH    32
 #define MAX_SCORE     64
-#define MAX_BACKTRACK 8
+#define MAX_BACKTRACK 16
 
 typedef struct route {
 	struct route *next;           // Next element, if any
@@ -76,7 +76,7 @@ static Route* pop_queue()
 
 // lower is better
 static i32 fitness_function() {
-	return 5 * current_beat / 2 + L1(player.pos - stairs)
+	return 6 * current_beat / 2 + L1(player.pos - stairs)
 		- 4 * miniboss_defeated - 4 * sarcophagus_defeated - harpies_defeated;
 }
 
@@ -134,11 +134,10 @@ static void explore(Route *route)
 		u16 status = run_simulation(route, 0);
 		if (status == 0) {
 			i32 rate = success_rate(route);
-			if (rate > 200) {
+			if (rate > 200)
 				best_len = route->len;
-				printf("%s " GREEN "%s (%2.1f%%)\n" WHITE,
-					timestamp(), prettify_route(route), (double) rate / 10);
-			}
+			printf("%s " GREEN "%s (%2.1f%%)\n" WHITE,
+				timestamp(), prettify_route(route), (double) rate / 10);
 		} else if (status < fitness_function() + MAX_BACKTRACK) {
 			add_to_queue(route, status);
 		}
