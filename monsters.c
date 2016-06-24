@@ -132,7 +132,11 @@ static void blademaster(Monster *this, Coords d)
 // Helper function for liches and windmages.
 static bool can_cast(Monster *this, Coords d)
 {
-	return L2(d) == 4 && can_move(this, DIRECTION(d)) && !this->confusion;
+	return L2(d) == 4 &&
+		can_move(this, DIRECTION(d)) &&
+		!this->confusion &&
+		TILE(this->pos).class != WATER &&
+		!(TILE(this->pos).class == TAR && !this->untrapped);
 }
 
 static void lich(Monster *this, Coords d)
@@ -518,9 +522,9 @@ static const ClassInfos class_infos[256] = {
 	[SKELETANK_1] = { 1, 1,   9, false, -1, 10101202, "Z",        basic_seek },
 	[SKELETANK_2] = { 2, 1,   9, false, -1, 10302204, YELLOW "Z", basic_seek },
 	[SKELETANK_3] = { 3, 1,   9, false, -1, 10503206, BLACK "Z",  basic_seek },
-	[WINDMAGE_1]  = { 1, 1,   9, false, -1, 10201202, BLUE "@",   windmage },
-	[WINDMAGE_2]  = { 2, 1,   9, false, -1, 10402204, YELLOW "@", windmage },
-	[WINDMAGE_3]  = { 3, 1,   9, false, -1, 10503206, BLACK "@",  windmage },
+	[WINDMAGE_1]  = { 1, 1,   0, false, -1, 10201202, BLUE "@",   windmage },
+	[WINDMAGE_2]  = { 2, 1,   0, false, -1, 10402204, YELLOW "@", windmage },
+	[WINDMAGE_3]  = { 3, 1,   0, false, -1, 10503206, BLACK "@",  windmage },
 	[MUSHROOM_1]  = { 1, 3,   9, false, -1, 10201402, BLUE "%",   mushroom },
 	[MUSHROOM_2]  = { 3, 2,   9, false, -1, 10403303, PURPLE "%", mushroom },
 	[GOLEM_1]     = { 5, 3,   9,  true,  2, 20405404, "'",        basic_seek },
@@ -567,9 +571,9 @@ static const ClassInfos class_infos[256] = {
 	[GHOUL]       = { 1, 0,   9,  true, -1, 10301102, "W",        moore_seek },
 	[GOOLEM]      = { 5, 3,   9,  true,  2, 20510407, GREEN "'",  basic_seek },
 	[HARPY]       = { 1, 1,   0,  true, -1, 10301203, GREEN "h",  harpy },
-	[LICH_1]      = { 1, 1,   9, false, -1, 10404202, GREEN "L",  lich },
-	[LICH_2]      = { 2, 1,   9, false, -1, 10404302, PURPLE "L", lich },
-	[LICH_3]      = { 3, 1,   9, false, -1, 10404402, BLACK "L",  lich },
+	[LICH_1]      = { 1, 1,   0, false, -1, 10404202, GREEN "L",  lich },
+	[LICH_2]      = { 2, 1,   0, false, -1, 10404302, PURPLE "L", lich },
+	[LICH_3]      = { 3, 1,   0, false, -1, 10404402, BLACK "L",  lich },
 	[CONF_MONKEY] = { 1, 0,   9, false, -1, 10004103, GREEN "Y",  basic_seek },
 	[TELE_MONKEY] = { 2, 0,   9, false, -1, 10002103, PINK "Y",   basic_seek },
 	[PIXIE]       = { 1, 0,   9,  true, -1, 10401102, "n",        basic_seek },
