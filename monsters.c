@@ -464,7 +464,7 @@ static void ogre(Monster *this, Coords d) {
 	if (this->state == 2) {
 		Coords clonk_dir = DIRECTION(player.prev_pos - this->pos);
 		for (i8 i = 1; i <= 3; ++i)
-			damage_tile(this->pos + i * clonk_dir, 5, DMG_NORMAL);
+			damage_tile(this->pos + i * clonk_dir, this->pos, 5, DMG_NORMAL);
 		this->state = 1;
 		this->delay = 2;
 	} else if (d.x * d.y == 0 && ABS(d.x + d.y) <= 3) {

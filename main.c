@@ -44,7 +44,7 @@ static void player_turn(u8 input)
 	if (sliding_on_ice)
 		player_moved = forced_move(&player, DIRECTION(player.pos - player.prev_pos));
 	else if (!player_moved && TILE(player.pos).class == FIRE)
-		damage(&player, 2, DMG_NORMAL);
+		damage(&player, 2, NO_DIR, DMG_NORMAL);
 
 	sliding_on_ice = player_moved && TILE(player.pos).class == ICE
 		&& can_move(&player, DIRECTION(player.pos - player.prev_pos));
@@ -92,7 +92,7 @@ static void trap_turn(Trap *this)
 		forced_move(m, this->dir);
 		break;
 	case SPIKE:
-		damage(m, 4, DMG_NORMAL);
+		damage(m, 4, NO_DIR, DMG_NORMAL);
 		break;
 	case TRAPDOOR:
 	case TELEPORT:

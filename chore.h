@@ -195,5 +195,5 @@ static i32 current_beat;
 
 // Some pre-declarations
 static void do_beat(u8 input);
-static bool damage(Monster *m, i64 dmg, DamageType type);
+static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type);
 static bool forced_move(Monster *m, Coords offset);
