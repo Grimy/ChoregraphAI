@@ -251,7 +251,7 @@ static bool can_see(Coords dest)
 		return false;
 
 	// Miner’s Cap
-	if (L2(dest - pos) <= 9)
+	if (L2(dest - pos) < 9)
 		return true;
 
 	if (TILE(dest).light < 102)

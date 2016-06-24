@@ -19,7 +19,7 @@ static i8 xml_attr(xmlTextReaderPtr xml, char* attr)
 static void xml_process_node(xmlTextReaderPtr xml, i64 level)
 {
 	static const Coords trap_dirs[] = {
-		{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, 1}, {1, -1}, {-1, -1}
+		{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, 1}, {-1, -1}, {1, -1}
 	};
 	static const i8 wall_hp[] = {1, 1, 5, 0, 4, 4, 0, 2, 3, 5, 4, 0};
 
@@ -40,6 +40,10 @@ static void xml_process_node(xmlTextReaderPtr xml, i64 level)
 		return;
 
 	if (!strcmp(name, "trap")) {
+		if (type == 10) {
+			monster_new(FIREPIG, pos)->state = !subtype;
+			return;
+		}
 		Trap *trap = &traps[trap_count++];
 		trap->class = subtype == 8 ? OMNIBOUNCE : type;
 		trap->pos = pos;
@@ -63,10 +67,7 @@ static void xml_process_node(xmlTextReaderPtr xml, i64 level)
 	}
 
 	else if (!strcmp(name, "crate")) {
-		Monster *crate = &monsters[monster_count++];
-		crate->class = CRATE_1;
-		crate->pos = pos;
-		crate->hp = 1;
+		monster_new(CRATE_1, pos);
 	}
 }
 

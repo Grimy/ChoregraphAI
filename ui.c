@@ -67,8 +67,8 @@ static void display_board(void)
 	for (Trap *t = traps; t->pos.x; ++t) {
 		if (TILE(t->pos).monster || TILE(t->pos).traps_destroyed)
 			continue;
-		i64 glyph_index = t->class == BOUNCE ? 15 + 3*t->dir.y + t->dir.x : t->class;
-		char *glyph = &"■▫◭◭◆▫⇐⇒◭●●↖↑↗←▫→↙↓↘"[3 * glyph_index];
+		i64 glyph_index = t->class == BOUNCE ? 14 + 3*t->dir.y + t->dir.x : t->class;
+		char *glyph = &"■▫◭◭◆▫⇐⇒◭●↖↑↗←▫→↙↓↘"[3 * glyph_index];
 		printf("\033[%d;%dH%3.3s", t->pos.y, t->pos.x, glyph);
 	}
 

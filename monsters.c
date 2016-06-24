@@ -476,7 +476,16 @@ static void ogre(Monster *this, Coords d) {
 		basic_seek(this, d);
 		this->state = 1;
 	}
+}
 
+static void firepig(Monster *this, Coords d) {
+	if (d.y == 0 && d.x <= 5 && (d.x > 0) == this->state) {
+		this->state += 2;
+	} else if (this->state > 1) {
+		fireball(this->pos, SIGN(player.pos.x - this->pos.x));
+		this->state -= 2;
+		this->delay = 5;
+	}
 }
 
 static void nop() {}
@@ -573,6 +582,7 @@ static const ClassInfos class_infos[256] = {
 	[MINE_STATUE] = { 1, 0,   0, false, -1, 10401102, RED "g",    nop },
 	[CRATE_1]     = { 1, 1,   0, false, -1, 10401102, "(",        nop },
 	[CRATE_2]     = { 1, 1,   0, false, -1, 10401102, "g",        nop },
+	[FIREPIG]     = { 1, 0,   0, false, -1,        1, RED "q",    firepig },
 
 	[SHOPKEEPER]  = { 9, 9,   9, false, -1, 99999997, "@",        nop },
 	[DIREBAT_1]   = { 2, 1,   9,  true, -1, 30302210, YELLOW "B", bat },

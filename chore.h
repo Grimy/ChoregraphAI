@@ -68,6 +68,7 @@ typedef enum __attribute__((__packed__)) {
 	WIND_STATUE, SEEK_STATUE, BOMB_STATUE, MINE_STATUE,
 	CRATE_1, CRATE_2,
 	FREE_SPIDER,
+	FIREPIG,
 
 	// Minibosses
 	DIREBAT_1 = 144, DIREBAT_2,
@@ -109,7 +110,6 @@ typedef enum {
 	TEMPO_DOWN,
 	TEMPO_UP,
 	BOMBTRAP = 9,
-	FIREPIG,
 } TrapClass;
 
 typedef enum {

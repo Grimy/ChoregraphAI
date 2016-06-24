@@ -108,7 +108,6 @@ static void trap_turn(Trap *this)
 		break;
 	case TEMPO_DOWN:
 	case TEMPO_UP:
-	case FIREPIG:
 		break;
 	}
 }
