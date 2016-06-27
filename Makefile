@@ -10,7 +10,7 @@ SOURCES = $(wildcard *.c) $(wildcard *.h)
 all: play solve
 
 play: $(SOURCES) Makefile
-	clang $(CFLAGS) -DUI='"ui.c"' -O1 -g -fsanitize=address,leak,undefined -o $@ main.c
+	clang $(CFLAGS) -DUI='"ui.c"' -O0 -g -fsanitize=address,leak,undefined -o $@ main.c
 
 solve: $(SOURCES) Makefile
 	clang $(CFLAGS) -DUI='"route.c"' -O3 -funroll-loops -o $@ main.c
@@ -19,5 +19,5 @@ debug: $(SOURCES) Makefile
 	clang $(CFLAGS) -DUI='"route.c"' -O1 -g -fsanitize=address,leak,undefined -o $@ main.c
 
 report: solve
-	perf record -g ./solve LUNGEBARD.xml
+	perf record -g ./$< LUNGEBARD.xml
 	perf report

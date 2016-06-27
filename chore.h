@@ -167,14 +167,14 @@ typedef struct {
 } ClassInfos;
 
 static const ClassInfos class_infos[256];
-static const Coords spawn = {27, 27};
+static Coords spawn;
 static Coords stairs;
 static Monster *nightmare;
 static bool rng_on = true;
 
 __extension__
 static struct game_state {
-	Tile board[55][55];
+	Tile board[35][35];
 	Monster _player;
 	Monster monsters[64];
 	Trap traps[64];
@@ -191,7 +191,7 @@ static struct game_state {
 	i32 harpies_killed;
 	i32 current_beat;
 } g = {
-	.board = {[0 ... 54] = {[0 ... 54] = {.class = WALL, .hp = 5}}},
+	.board = {[0 ... 34] = {[0 ... 34] = {.class = WALL, .hp = 5}}},
 	._player = {.class = PLAYER, .hp = 1},
 	.boots_on = true,
 	.dragon_exhausted = 4,

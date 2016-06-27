@@ -7,7 +7,7 @@
 
 // Returns the numeric value of a named attribute of the current node.
 // If the attribute is absent, it defaults to 0.
-static i8 xml_attr(xmlTextReaderPtr xml, char* attr)
+static i8 xml_attr(xmlTextReader *xml, char* attr)
 {
 	char* value = (char*) xmlTextReaderGetAttribute(xml, (xmlChar*) (attr));
 	i32 result = value ? atoi(value) : 0;
@@ -15,16 +15,20 @@ static i8 xml_attr(xmlTextReaderPtr xml, char* attr)
 	return (i8) result;
 }
 
+static void xml_first_pass(xmlTextReader *xml)
+{
+	spawn.x = MAX(spawn.x, 4 - xml_attr(xml, "x"));
+	spawn.y = MAX(spawn.y, 4 - xml_attr(xml, "y"));
+}
+
 // Converts a single XML node into an appropriate object (Trap, Tile or Monster).
-static void xml_process_node(xmlTextReaderPtr xml, i64 level)
+static void xml_process_node(xmlTextReader *xml)
 {
 	static const Coords trap_dirs[] = {
 		{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, 1}, {-1, -1}, {1, -1}
 	};
 	static const i8 wall_hp[] = {1, 1, 5, 0, 4, 4, 0, 2, 3, 5, 4, 0};
-
 	static u64 trap_count = 0;
-	static i64 level_count = 0;
 
 	const char *name = (const char*) xmlTextReaderConstName(xml);
 	u8 type = (u8) xml_attr(xml, "type");
@@ -32,12 +36,8 @@ static void xml_process_node(xmlTextReaderPtr xml, i64 level)
 	Coords pos = {xml_attr(xml, "x"), xml_attr(xml, "y")};
 
 	pos += spawn;
+	assert(MAX(pos.x, pos.y) <= LENGTH(g.board) - 4);
 	type = type == 255 ? SKELETANK_3 : type;
-
-	if (!strcmp(name, "level"))
-		++level_count;
-	else if (level_count != level)
-		return;
 
 	if (!strcmp(name, "trap")) {
 		if (type == 10) {
@@ -79,21 +79,30 @@ static i32 compare_priorities(const void *a, const void *b)
 	return (pb > pa) - (pb < pa);
 }
 
+static void xml_process_file(char *file, i64 level, void callback(xmlTextReader *xml)) {
+	xmlTextReader *xml = xmlReaderForFile(file, NULL, 0);
+
+	while (xmlTextReaderRead(xml) == 1) {
+		if (xmlTextReaderNodeType(xml) != 1)
+			continue;
+		level -= !strcmp((const char*) xmlTextReaderConstName(xml), "level");
+		if (!level)
+			callback(xml);
+	}
+
+	if (xmlTextReaderRead(xml) < 0)
+		FATAL("Invalid XML file: %s", file);
+	xmlFreeTextReader(xml);
+}
+
 // Initializes the game’s state based on the given custom dungeon file.
 // Aborts if the file doesn’t exist or isn’t valid XML.
 // Valid, non-dungeon XML yields undefined results (most likely, an empty dungeon).
 static void xml_parse(char *file, i64 level)
 {
 	LIBXML_TEST_VERSION;
-	xmlTextReaderPtr xml = xmlReaderForFile(file, NULL, 0);
-
-	while (xmlTextReaderRead(xml) == 1)
-		if (xmlTextReaderNodeType(xml) == 1)
-			xml_process_node(xml, level);
-
-	if (xmlTextReaderRead(xml) < 0)
-		FATAL("Invalid XML file: %s", file);
-	xmlFreeTextReader(xml);
+	xml_process_file(file, level, xml_first_pass);
+	xml_process_file(file, level, xml_process_node);
 
 	move(&player, spawn);
 	qsort(g.monsters, g.monster_count, sizeof(*g.monsters), compare_priorities);

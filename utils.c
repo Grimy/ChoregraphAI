@@ -63,8 +63,8 @@ static void adjust_lights(Coords pos, i8 diff) {
 		94, 83, -1, -1, 53, -1, -1, 19, 10, 2,
 	};
 	Coords d = {0, 0};
-	for (d.x = MAX(-4, -pos.x); d.x <= MIN(4, LENGTH(*g.board) - 1 - pos.x); ++d.x)
-		for (d.y = MAX(-4, -pos.y); d.y <= MIN(4, LENGTH(*g.board) - 1 - pos.y); ++d.y)
+	for (d.x = -4; d.x <= 4; ++d.x)
+		for (d.y = -4; d.y <= 4; ++d.y)
 			TILE(pos + d).light += diff * lights[L2(d)];
 }
 
