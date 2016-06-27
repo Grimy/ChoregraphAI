@@ -1,6 +1,8 @@
 // ui.c - manages terminal input/output
 // All output code assumes an ANSI-compatible UTF-8 terminal.
 
+#include <time.h>
+
 // For display purposes, doors count as walls, but level edges don’t
 #define IS_WALL(pos) (TILE(pos).class == WALL && TILE(pos).hp < 5)
 
@@ -83,7 +85,7 @@ static void run()
 
 	printf(TERM_CLEAR);
 	system("stty -echo -icanon eol \1");
-	rng_on = false;
+	srand((u32) time(NULL));
 
 	while (player.hp > 0 && !player_won()) {
 		display_board();
