@@ -58,13 +58,13 @@ static void display_tile(Coords pos)
 // Clears and redraws the entire board.
 static void display_board(void)
 {
-	for (i8 y = 1; y < LENGTH(board) - 1; ++y) {
-		for (i8 x = 1; x < LENGTH(*board) - 1; ++x)
+	for (i8 y = 1; y < LENGTH(g.board) - 1; ++y) {
+		for (i8 x = 1; x < LENGTH(*g.board) - 1; ++x)
 			display_tile((Coords) {x, y});
 		putchar('\n');
 	}
 
-	for (Trap *t = traps; t->pos.x; ++t) {
+	for (Trap *t = g.traps; t->pos.x; ++t) {
 		if (TILE(t->pos).monster || TILE(t->pos).traps_destroyed)
 			continue;
 		i64 glyph_index = t->class == BOUNCE ? 14 + 3*t->dir.y + t->dir.x : t->class;
@@ -83,8 +83,9 @@ static void run()
 
 	printf(TERM_CLEAR);
 	system("stty -echo -icanon eol \1");
+	rng_on = false;
 
-	for (;;) {
+	while (player.hp > 0 && !player_won()) {
 		display_board();
 		p = strchr(inputs, getchar());
 		if (p == NULL)

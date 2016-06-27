@@ -1,9 +1,5 @@
 // chore.h - global types and vars definitions
 
-// Exit codes
-#define VICTORY 0
-#define DEATH (200 + current_beat)
-
 // A pair of cartesian coordinates.
 typedef i8 Coords __attribute__((ext_vector_type(2)));
 
@@ -171,27 +167,35 @@ typedef struct {
 } ClassInfos;
 
 static const ClassInfos class_infos[256];
-
-__extension__
-static Tile board[55][55] = {[0 ... 54] = {[0 ... 54] = {.class = WALL, .hp = 5}}};
 static const Coords spawn = {27, 27};
 static Coords stairs;
-static Monster player = {.class = PLAYER, .hp = 1};
 static Monster *nightmare;
-static Monster monsters[64];
-static Trap traps[64];
-static u64 monster_count;
-
-static bool player_moved;
-static bool bomb_exploded;
-static bool sliding_on_ice;
-static bool boots_on = true;
-static bool sarco_on;
 static bool rng_on = true;
-static i32 miniboss_defeated;
-static i32 sarcophagus_defeated;
-static i32 harpies_defeated;
-static i32 current_beat;
+
+__extension__
+static struct game_state {
+	Tile board[55][55];
+	Monster _player;
+	Monster monsters[64];
+	Trap traps[64];
+	u64 monster_count;
+
+	bool player_moved;
+	bool bomb_exploded;
+	bool sliding_on_ice;
+	bool boots_on;
+	bool sarco_on;
+	i32 dragon_exhausted;
+	i32 miniboss_killed;
+	i32 sarcophagus_killed;
+	i32 harpies_killed;
+	i32 current_beat;
+} g = {
+	.board = {[0 ... 54] = {[0 ... 54] = {.class = WALL, .hp = 5}}},
+	._player = {.class = PLAYER, .hp = 1},
+	.boots_on = true,
+	.dragon_exhausted = 4,
+};
 
 // Some pre-declarations
 static void do_beat(u8 input);

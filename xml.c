@@ -44,7 +44,7 @@ static void xml_process_node(xmlTextReaderPtr xml, i64 level)
 			monster_new(FIREPIG, pos)->state = !subtype;
 			return;
 		}
-		Trap *trap = &traps[trap_count++];
+		Trap *trap = &g.traps[trap_count++];
 		trap->class = subtype == 8 ? OMNIBOUNCE : type;
 		trap->pos = pos;
 		trap->dir = trap_dirs[subtype & 7];
@@ -96,10 +96,10 @@ static void xml_parse(char *file, i64 level)
 	xmlFreeTextReader(xml);
 
 	move(&player, spawn);
-	qsort(monsters, monster_count, sizeof(*monsters), compare_priorities);
-	for (Monster *m = monsters; m->hp; ++m) {
+	qsort(g.monsters, g.monster_count, sizeof(*g.monsters), compare_priorities);
+	for (Monster *m = g.monsters; m->hp; ++m) {
 		TILE(m->pos).monster = m;
-		(m == monsters ? &player : m - 1)->next = m;
+		(m == g.monsters ? &player : m - 1)->next = m;
 		if (m->class == NIGHTMARE_1 || m->class == NIGHTMARE_2)
 			nightmare = m;
 	}

@@ -1,12 +1,5 @@
 // main.c - initialization, main game loop
 
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/wait.h>
-#include <unistd.h>
-
 #include "base.h"
 #include "chore.h"
 #include "utils.c"
@@ -18,7 +11,7 @@ static void player_turn(u8 input)
 {
 	player.confusion -= SIGN(player.confusion);
 	player.freeze -= SIGN(player.freeze);
-	player_moved = false;
+	g.player_moved = false;
 
 	switch (input) {
 	case 0:
@@ -37,16 +30,16 @@ static void player_turn(u8 input)
 		bomb_plant(player.pos, 3);
 		break;
 	case 5:
-		boots_on ^= 1;
+		g.boots_on ^= 1;
 		break;
 	}
 
-	if (sliding_on_ice)
-		player_moved = forced_move(&player, DIRECTION(player.pos - player.prev_pos));
-	else if (!player_moved && TILE(player.pos).class == FIRE)
+	if (g.sliding_on_ice)
+		g.player_moved = forced_move(&player, DIRECTION(player.pos - player.prev_pos));
+	else if (!g.player_moved && TILE(player.pos).class == FIRE)
 		damage(&player, 2, NO_DIR, DMG_NORMAL);
 
-	sliding_on_ice = player_moved && TILE(player.pos).class == ICE
+	g.sliding_on_ice = g.player_moved && TILE(player.pos).class == ICE
 		&& can_move(&player, DIRECTION(player.pos - player.prev_pos));
 }
 
@@ -57,7 +50,7 @@ static void enemy_turn(Monster *m)
 	m->freeze -= SIGN(m->freeze);
 
 	// The bomb-aggro bug
-	if (!m->aggro && (bomb_exploded || (nightmare && L2(m->pos - nightmare->pos) < 9)))
+	if (!m->aggro && (g.bomb_exploded || (nightmare && L2(m->pos - nightmare->pos) < 9)))
 		m->aggro = can_see(m->pos);
 
 	if (!m->aggro) {
@@ -65,7 +58,7 @@ static void enemy_turn(Monster *m)
 		if (!(m->aggro && (m->delay || m->class == BLUE_DRAGON)) && L2(d) > CLASS(m).radius)
 			return;
 	} else if (m->class >= SARCO_1 && m->class <= SARCO_3) {
-		sarco_on = true;
+		g.sarco_on = true;
 	}
 
 	if (m->delay)
@@ -117,17 +110,15 @@ static void trap_turn(Trap *this)
 // Enemies act in decreasing priority order. Traps have an arbitrary order.
 static void do_beat(u8 input)
 {
-	++current_beat;
+	++g.current_beat;
 	player_turn(input);
-	if (TILE(player.pos).class == STAIRS && miniboss_defeated && sarcophagus_defeated)
-		exit(VICTORY);
-	bomb_exploded = false;
+	if (player_won())
+		return;
+	g.bomb_exploded = false;
 	for (Monster *m = player.next; m; m = m->next)
 		enemy_turn(m);
-	for (Trap *t = traps; t->pos.x; ++t)
+	for (Trap *t = g.traps; t->pos.x; ++t)
 		trap_turn(t);
-	if (TILE(player.pos).class == STAIRS && miniboss_defeated && sarcophagus_defeated)
-		exit(VICTORY);
 }
 
 // Runs the simulation on the given custom dungeon file.

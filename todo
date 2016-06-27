@@ -1,5 +1,6 @@
 TESTS:
 * aggro when stepping on revealed square?
+* beat delay on non-directional knockback?
 
 FEATURES:
 * Metal doors (type=111)

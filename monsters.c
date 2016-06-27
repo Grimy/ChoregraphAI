@@ -276,8 +276,7 @@ static void breath_attack(Monster *this)
 // They then resume chasing, but can’t charge another breath in the next two beats.
 static void dragon(Monster *this, Coords d)
 {
-	static u64 exhausted = 4;
-	exhausted -= this->aggro && exhausted;
+	g.dragon_exhausted -= this->aggro && g.dragon_exhausted;
 	switch (this->state) {
 	case 0:
 		basic_seek(this, d);
@@ -289,11 +288,11 @@ static void dragon(Monster *this, Coords d)
 		break;
 	case 2:
 		breath_attack(this);
-		exhausted = 3;
+		g.dragon_exhausted = 3;
 		this->state = 1;
 		break;
 	}
-	if (!exhausted && can_breath(this) && can_see(this->pos))
+	if (!g.dragon_exhausted && can_breath(this) && can_see(this->pos))
 		this->state = 2;
 }
 
@@ -420,7 +419,7 @@ static void digger(Monster *this, Coords d)
 
 static void clone(Monster *this, __attribute__((unused)) Coords d)
 {
-	if (player_moved)
+	if (g.player_moved)
 		enemy_move(this, DIRECTION(player.prev_pos - player.pos));
 }
 
@@ -446,7 +445,7 @@ static void headless(Monster *this, __attribute__((unused)) Coords d)
 
 static void sarcophagus(Monster *this, __attribute__((unused)) Coords d) {
 	this->delay = CLASS(this).beat_delay;
-	if (!sarco_on || !rng_on)
+	if (!g.sarco_on || !rng_on)
 		return;
 
 	// Make sure that at least one direction isn’t blocked

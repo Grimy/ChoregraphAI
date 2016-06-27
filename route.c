@@ -76,42 +76,39 @@ static Route* pop_queue()
 
 // lower is better
 static i32 fitness_function() {
-	return 6 * current_beat / 2 + L1(player.pos - stairs)
-		- 4 * miniboss_defeated - 4 * sarcophagus_defeated - harpies_defeated;
+	if (player.hp <= 0)
+		return 255;
+	if (player_won())
+		return 0;
+	return 6 * g.current_beat / 2 + L1(player.pos - stairs)
+		- 4 * g.miniboss_killed
+		- 4 * g.sarcophagus_killed
+		- g.harpies_killed;
 }
 
 // Forks to the simulator, tries the given route, returns the results
 static u16 run_simulation(Route *route, u32 seed)
 {
-	i32 status;
-	i64 pid = fork();
+	struct game_state saved_state = g;
 
-	if (!pid) {
-		rng_on = seed != 0;
-		srand(seed);
-		for (u64 i = 0; i < route->len; ++i) {
-			do_beat(route->input[i]);
-		}
-		assert(fitness_function() > 0);
-		exit(fitness_function());
-	}
+	rng_on = seed != 0;
+	srand(seed);
+	for (u64 i = 0; i < route->len; ++i)
+		do_beat(route->input[i]);
 
-	if (pid < 0)
-		FATAL("fork() failed: %s", strerror(errno));
-	if (wait(&status) != pid)
-		FATAL("wait() failed: %s", strerror(errno));
-	if (WIFSIGNALED(status))
-		FATAL("route crashes: %s", prettify_route(route));
+	u16 status = (u16) fitness_function();
+	assert(status >= 0);
+	g = saved_state;
 
-	return WEXITSTATUS(status);
+	return status;
 }
 
-static i32 success_rate(Route *route)
+static double success_rate(Route *route)
 {
-	i32 ok = 0;
-	for (u32 seed = 1; seed <= 1000; ++seed)
+	u32 seed = 0, ok = 0;
+	while (++seed <= 1000 && (ok + 2) * 16 >= seed)
 		ok += run_simulation(route, seed) == 0;
-	return ok;
+	return (double) ok / seed;
 }
 
 // Starts with the given route, then tries all possible inputs
@@ -119,7 +116,7 @@ static void explore(Route *route)
 {
 	static i64 explored_routes;
 	explored_routes++;
-	if (explored_routes % 1000 == 0) {
+	if (explored_routes % 10000 == 0) {
 		printf("%s %ld/%ld: %u\n", timestamp(), explored_routes, queued_routes, cur_score);
 	}
 
@@ -133,11 +130,12 @@ static void explore(Route *route)
 		route->input[route->len - 1] = i;
 		u16 status = run_simulation(route, 0);
 		if (status == 0) {
-			i32 rate = success_rate(route);
-			if (rate > 200)
+			double rate = success_rate(route);
+			if (rate > .2) {
 				best_len = route->len;
-			printf("%s " GREEN "%s (%2.1f%%)\n" WHITE,
-				timestamp(), prettify_route(route), (double) rate / 10);
+				printf("%s " GREEN "%s (%2.1f%%)\n" WHITE,
+					timestamp(), prettify_route(route), rate * 100);
+			}
 		} else if (status < fitness_function() + MAX_BACKTRACK) {
 			add_to_queue(route, status);
 		}

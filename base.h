@@ -1,6 +1,10 @@
 // base.h - commonly useful typedefs/macros
 
+#include <assert.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 // Convenient name for integer types
 typedef enum {false, true} bool;

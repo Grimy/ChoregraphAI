@@ -5,11 +5,12 @@
 #define L1(pos) (ABS((pos).x) + ABS((pos).y))
 #define L2(pos) ((pos).x * (pos).x + (pos).y * (pos).y)
 
-#define TILE(pos) (board[(pos).x][(pos).y])
+#define player (g._player)
+#define TILE(pos) (g.board[(pos).x][(pos).y])
 #define CLASS(m) (class_infos[(m)->class])
 #define NO_DIR ((Coords) {0, 0})
 
-#define IS_OPAQUE(x, y) (board[x][y].class == WALL)
+#define IS_OPAQUE(x, y) (g.board[x][y].class == WALL)
 #define BLOCKS_MOVEMENT(pos) (TILE(pos).class == WALL)
 
 static const Coords plus_shape[] = {{-1, 0}, {0, -1}, {0, 1}, {1, 0}, {0, 0}};
@@ -25,7 +26,7 @@ static const Coords square_shape[] = {
 };
 
 static Monster* monster_new(MonsterClass type, Coords pos) {
-	Monster *new = &monsters[monster_count++];
+	Monster *new = &g.monsters[g.monster_count++];
 	new->class = type;
 	new->pos = new->prev_pos = pos;
 	new->hp = CLASS(new).max_hp;
@@ -62,8 +63,8 @@ static void adjust_lights(Coords pos, i8 diff) {
 		94, 83, -1, -1, 53, -1, -1, 19, 10, 2,
 	};
 	Coords d = {0, 0};
-	for (d.x = MAX(-4, -pos.x); d.x <= MIN(4, LENGTH(*board) - 1 - pos.x); ++d.x)
-		for (d.y = MAX(-4, -pos.y); d.y <= MIN(4, LENGTH(*board) - 1 - pos.y); ++d.y)
+	for (d.x = MAX(-4, -pos.x); d.x <= MIN(4, LENGTH(*g.board) - 1 - pos.x); ++d.x)
+		for (d.y = MAX(-4, -pos.y); d.y <= MIN(4, LENGTH(*g.board) - 1 - pos.y); ++d.y)
 			TILE(pos + d).light += diff * lights[L2(d)];
 }
 
@@ -264,7 +265,8 @@ static bool can_see(Coords dest)
 // Knocks an enemy away from the player.
 static void knockback(Monster *m, Coords dir, u8 delay)
 {
-	forced_move(m, dir);
+	if (dir.x || dir.y)
+		forced_move(m, dir);
 	m->delay = delay;
 }
 
@@ -272,8 +274,8 @@ static void knockback(Monster *m, Coords dir, u8 delay)
 static void bomb_plant(Coords pos, u8 delay)
 {
 	Monster bomb = {.class = BOMB, .pos = pos, .next = player.next, .aggro = true, .delay = delay};
-	player.next = &monsters[monster_count];
-	monsters[monster_count++] = bomb;
+	player.next = &g.monsters[g.monster_count];
+	g.monsters[g.monster_count++] = bomb;
 }
 
 static void bomb_detonate(Monster *this, __attribute__((unused)) Coords d)
@@ -288,7 +290,7 @@ static void bomb_detonate(Monster *this, __attribute__((unused)) Coords d)
 	for (i64 i = 0; i < 9; ++i)
 		damage_tile(this->pos + square_shape[i], this->pos, 4, DMG_BOMB);
 	monster_remove(this);
-	bomb_exploded = true;
+	g.bomb_exploded = true;
 }
 
 // Overrides a tile with a given floor hazard. Also destroys traps on the tile.
@@ -306,14 +308,15 @@ static void tile_change(Tile *tile, TileClass new_class)
 // Kills the given monster, handling on-death effects.
 static void monster_kill(Monster *m, DamageType type)
 {
-	if (m == &player)
-		exit(DEATH);
 	if (m->class == PIXIE || m->class == BOMBSHROOM_) {
 		bomb_detonate(m, spawn);
 		return;
 	}
+
 	TILE(m->pos).monster = NULL;
-	monster_remove(m);
+	if (m != &player)
+		monster_remove(m);
+
 	if (type == DMG_WEAPON && (m->class == WARLOCK_1 || m->class == WARLOCK_2))
 		move(&player, m->pos);
 	else if (m->class == ICE_SLIME || m->class == YETI)
@@ -323,11 +326,11 @@ static void monster_kill(Monster *m, DamageType type)
 	else if (m->class == BOMBER)
 		bomb_plant(m->pos, 3);
 	else if (m->class >= DIREBAT_1 && m->class <= OGRE)
-		miniboss_defeated = true;
+		g.miniboss_killed = true;
 	else if (m->class >= SARCO_1 && m->class <= SARCO_3)
-		sarcophagus_defeated = true;
+		g.sarcophagus_killed = true;
 	else if (m->class == HARPY)
-		harpies_defeated++;
+		g.harpies_killed++;
 }
 
 // Deals damage to the given monster. Handles on-damage effects.
@@ -469,7 +472,7 @@ static void lunge(Coords dir) {
 // Will trigger attacking/digging if the destination contains an enemy/a wall.
 static void player_move(i8 x, i8 y)
 {
-	if (sliding_on_ice)
+	if (g.sliding_on_ice)
 		return;
 	player.prev_pos = player.pos;
 	if (!before_move(&player))
@@ -486,9 +489,9 @@ static void player_move(i8 x, i8 y)
 	} else if (dest->monster) {
 		damage(dest->monster, TILE(player.pos).class == OOZE ? 0 : 5, offset, DMG_WEAPON);
 	} else {
-		player_moved = true;
+		g.player_moved = true;
 		move(&player, player.pos + offset);
-		if (boots_on)
+		if (g.boots_on)
 			lunge(offset);
 
 		// Miner’s cap
@@ -515,4 +518,10 @@ static void cone_of_cold(Coords pos, i8 dir)
 		if (tile->monster)
 			tile->monster->freeze = 5;
 	}
+}
+
+static bool player_won() {
+	return TILE(player.pos).class == STAIRS
+		&& g.miniboss_killed
+		&& g.sarcophagus_killed;
 }
