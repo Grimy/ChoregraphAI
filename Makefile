@@ -6,7 +6,7 @@ CFLAGS += -Wno-documentation -Wno-documentation-unknown-command -Wno-reserved-id
 
 SOURCES = $(wildcard *.c) $(wildcard *.h)
 
-.PHONY: all
+.PHONY: all report
 all: play solve
 
 play: $(SOURCES) Makefile
@@ -18,5 +18,6 @@ solve: $(SOURCES) Makefile
 debug: $(SOURCES) Makefile
 	clang $(CFLAGS) -DUI='"route.c"' -O1 -g -fsanitize=address,leak,undefined -o $@ main.c
 
-# echo performance | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
-# taskset 0x1 ./solve ...
+report: solve
+	perf record -g ./solve LUNGEBARD.xml
+	perf report

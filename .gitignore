@@ -1,7 +1,9 @@
 *.out
 *.expand
 *.png
+*.svg
 core.*
+perf.data
 play
 solve
 debug
