@@ -85,18 +85,17 @@ static i32 fitness_function() {
 
 static double success_rate(Route *route)
 {
-	u32 seed = 0, ok = 0;
-	rng_on = true;
+	u32 ok = 0;
 
-	while (++seed <= 1000 && (ok + 2) * 16 >= seed) {
-		srand(seed);
+	for (u32 i = 0; i < 256; ++i) {
 		g = initial_state;
-		for (u64 i = 0; i < route->len; ++i)
-			do_beat(route->input[i]);
+		seed = i;
+		for (u64 beat = 0; beat < route->len; ++beat)
+			do_beat(route->input[beat]);
 		ok += fitness_function() == 0;
 	}
 
-	return (double) ok / seed;
+	return (double) ok / 256;
 }
 
 // Starts with the given route, then tries all possible inputs
@@ -106,8 +105,8 @@ static void explore(Route *route)
 	if (route->len >= best_len)
 		return;
 
-	rng_on = false;
 	g = initial_state;
+	seed = 0;
 	for (u64 i = 0; i < route->len; ++i)
 		do_beat(route->input[i]);
 	struct game_state saved_state = g;

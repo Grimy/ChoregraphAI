@@ -170,7 +170,7 @@ static const ClassInfos class_infos[256];
 static Coords spawn;
 static Coords stairs;
 static Monster *nightmare;
-static bool rng_on = true;
+static u64 seed;
 
 __extension__
 static struct game_state {

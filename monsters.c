@@ -94,11 +94,11 @@ static void bat(Monster *this, Coords d)
 		basic_seek(this, d);
 		return;
 	}
-	if (!rng_on) {
+	if (!seed) {
 		monster_kill(this, DMG_NORMAL);
 		return;
 	}
-	i64 rng = RNG(4);
+	i64 rng = RNG();
 	for (i64 i = 0; i < 4; ++i)
 		if (enemy_move(this, moves[(rng + i) & 3]))
 			return;
@@ -445,7 +445,7 @@ static void headless(Monster *this, __attribute__((unused)) Coords d)
 
 static void sarcophagus(Monster *this, __attribute__((unused)) Coords d) {
 	this->delay = CLASS(this).beat_delay;
-	if (!g.sarco_on || !rng_on)
+	if (!g.sarco_on || !seed)
 		return;
 
 	// Make sure that at least one direction isn’t blocked
@@ -456,11 +456,11 @@ static void sarcophagus(Monster *this, __attribute__((unused)) Coords d) {
 	return;
 ok:
 
-	do dir = plus_shape[RNG(4)];
+	do dir = plus_shape[RNG()];
 		while (!can_move(this, dir));
 
 	MonsterClass type = this->class - SARCO_1;
-	type += (MonsterClass[]) {SKELETON_1, SKELETANK_1, WINDMAGE_1, RIDER_1} [RNG(4)];
+	type += (MonsterClass[]) {SKELETON_1, SKELETANK_1, WINDMAGE_1, RIDER_1} [RNG()];
 	Monster *new = monster_new(type, this->pos + dir);
 	TILE(this->pos + dir).monster = new;
 	new->delay = 1;

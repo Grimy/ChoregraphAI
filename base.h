@@ -3,7 +3,6 @@
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 // Convenient name for integer types
@@ -25,7 +24,8 @@ typedef int64_t  i64;
 #define MAX(a, b)     ((a) > (b) ? (a) : (b))
 #define SIGN(x)       (((x) > 0) - ((x) < 0))
 #define ABS(x)        ((x) < 0 ? -(x) : (x))
-#define RNG(limit)    ((u64) rand() % (limit))
+// Reasonable constant choices: (2, 3, 14), (2, 9, 16), (2, 9, 27), (2, 20, 9)
+#define RNG()         ((seed = seed >> 2 | seed << 3 | seed >> 14) & 3)
 
 // Terminal ANSI codes
 #define WHITE  "\033[m"
