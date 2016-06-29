@@ -20,27 +20,30 @@ static void basic_seek(Monster *this, Coords d)
 	// Ignore the player’s previous position if they moved more than one tile
 	Coords prev_pos = L1(player.pos - player.prev_pos) > 1 ? player.pos : player.prev_pos;
 
+	// Spawn-asymmetry bug
+
 	this->vertical =
 		// #1: move toward the player
 		d.y == 0 ? 0 :
 		d.x == 0 ? 1 :
 
-		// #2: avoid obstacles (when both axes are blocked, tiebreak by L2 distance)
-		!can_move(this, vertical) ?
-		!can_move(this, horizontal) && ABS(d.y) > ABS(d.x) :
+		// #2: avoid obstacles
+		!can_move(this, vertical) ? 0 :
 		!can_move(this, horizontal) ? 1 :
 
-		// #3: if pos aligns with the player’s prevpos or vice-versa, switch axes
+		// #3: move toward the player’s previous position
 		this->pos.y == prev_pos.y ? 0 :
 		this->pos.x == prev_pos.x ? 1 :
+
+		// #4: weird edge cases
 		this->prev_pos.y == player.pos.y ? 0 :
 		this->prev_pos.x == player.pos.x ? 1 :
 
-		// #4: if prevpos aligns with the player’s prevpos, tiebreak by L2 distance
-		this->prev_pos.y == prev_pos.y ? ABS(d.y) > ABS(d.x) :
-		this->prev_pos.x == prev_pos.x ? ABS(d.y) > ABS(d.x) :
+		// #5: if prevpos aligns with the player’s prevpos, do something weird
+		this->prev_pos.y == player.prev_pos.y ? d.x > 0 && player.pos.x > spawn.x :
+		this->prev_pos.x == player.prev_pos.x ? ABS(d.y) != 2 :
 
-		// #5: keep moving along the same axis
+		// #6: keep moving along the same axis
 		this->vertical;
 
 	enemy_move(this, this->vertical ? vertical : horizontal);
@@ -128,35 +131,27 @@ static void blademaster(Monster *this, Coords d)
 	}
 }
 
-// Tests whether all conditions for spellcasting are met.
-// Helper function for liches and windmages.
-static bool can_cast(Monster *this, Coords d)
+// Common AI for liches and windmages.
+static void mage(Monster *this, Coords d)
 {
-	return L2(d) == 4 &&
-		can_move(this, DIRECTION(d)) &&
-		!this->confusion &&
-		TILE(this->pos).class != WATER &&
-		!(TILE(this->pos).class == TAR && !this->untrapped);
-}
+	bool is_lich = this->class >= LICH_1 && this->class <= LICH_3;
+	bool can_cast = L2(d) == 4
+		&& can_move(this, DIRECTION(d))
+		&& !this->confusion
+		&& TILE(this->pos).class != WATER
+		&& (TILE(this->pos).class != TAR || this->untrapped)
+		&& !(player.confusion && is_lich);
 
-static void lich(Monster *this, Coords d)
-{
-	if (can_cast(this, d) && !player.confusion) {
+	if (!can_cast) {
+		basic_seek(this, d);
+		return;
+	}
+
+	this->delay = 1;
+	if (is_lich)
 		player.confusion = 5;
-		this->delay = 1;
-	} else {
-		basic_seek(this, d);
-	}
-}
-
-static void windmage(Monster *this, Coords d)
-{
-	if (can_cast(this, d)) {
+	else
 		forced_move(&player, -DIRECTION(d));
-		this->delay = 1;
-	} else {
-		basic_seek(this, d);
-	}
 }
 
 // Attack in a 3x3 zone without moving.
@@ -171,7 +166,8 @@ static void mushroom(Monster *this, Coords d)
 static void yeti(Monster *this, Coords d)
 {
 	basic_seek(this, d);
-	if (L2(player.pos - this->pos) < 4)
+	if ((this->pos.x != this->prev_pos.x || this->pos.y != this->prev_pos.y)
+	    && L2(player.pos - this->pos) < 4)
 		enemy_attack(this);
 }
 
@@ -521,9 +517,9 @@ static const ClassInfos class_infos[256] = {
 	[SKELETANK_1] = { 1, 1,   9, false, -1, 10101202, "Z",        basic_seek },
 	[SKELETANK_2] = { 2, 1,   9, false, -1, 10302204, YELLOW "Z", basic_seek },
 	[SKELETANK_3] = { 3, 1,   9, false, -1, 10503206, BLACK "Z",  basic_seek },
-	[WINDMAGE_1]  = { 1, 1,   0, false, -1, 10201202, BLUE "@",   windmage },
-	[WINDMAGE_2]  = { 2, 1,   0, false, -1, 10402204, YELLOW "@", windmage },
-	[WINDMAGE_3]  = { 3, 1,   0, false, -1, 10503206, BLACK "@",  windmage },
+	[WINDMAGE_1]  = { 1, 1,   0, false, -1, 10201202, BLUE "@",   mage },
+	[WINDMAGE_2]  = { 2, 1,   0, false, -1, 10402204, YELLOW "@", mage },
+	[WINDMAGE_3]  = { 3, 1,   0, false, -1, 10503206, BLACK "@",  mage },
 	[MUSHROOM_1]  = { 1, 3,   9, false, -1, 10201402, BLUE "%",   mushroom },
 	[MUSHROOM_2]  = { 3, 2,   9, false, -1, 10403303, PURPLE "%", mushroom },
 	[GOLEM_1]     = { 5, 3,   9,  true,  2, 20405404, "'",        basic_seek },
@@ -570,9 +566,9 @@ static const ClassInfos class_infos[256] = {
 	[GHOUL]       = { 1, 0,   9,  true, -1, 10301102, "W",        moore_seek },
 	[GOOLEM]      = { 5, 3,   9,  true,  2, 20510407, GREEN "'",  basic_seek },
 	[HARPY]       = { 1, 1,   0,  true, -1, 10301203, GREEN "h",  harpy },
-	[LICH_1]      = { 1, 1,   0, false, -1, 10404202, GREEN "L",  lich },
-	[LICH_2]      = { 2, 1,   0, false, -1, 10404302, PURPLE "L", lich },
-	[LICH_3]      = { 3, 1,   0, false, -1, 10404402, BLACK "L",  lich },
+	[LICH_1]      = { 1, 1,   0, false, -1, 10404202, GREEN "L",  mage },
+	[LICH_2]      = { 2, 1,   0, false, -1, 10404302, PURPLE "L", mage },
+	[LICH_3]      = { 3, 1,   0, false, -1, 10404402, BLACK "L",  mage },
 	[CONF_MONKEY] = { 1, 0,   9, false, -1, 10004103, GREEN "Y",  basic_seek },
 	[TELE_MONKEY] = { 2, 0,   9, false, -1, 10002103, PINK "Y",   basic_seek },
 	[PIXIE]       = { 1, 0,   9,  true, -1, 10401102, "n",        basic_seek },

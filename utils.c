@@ -354,16 +354,12 @@ static void monster_kill(Monster *m, DamageType type)
 // Deals damage to the given monster. Handles on-damage effects.
 static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 {
-	// Before-damage triggers that work even with 0 damage
+	// Crates and gargoyles can be pushed even with 0 damage
 	switch (m->class) {
 	case MINE_STATUE:
 		bomb_detonate(m, spawn);
 		return false;
 	case WIND_STATUE:
-		if (type == DMG_BOMB)
-			break;
-		knockback(m, dir, 0);
-		return false;
 	case BOMB_STATUE:
 		if (type == DMG_BOMB)
 			break;
@@ -375,10 +371,10 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 			break;
 		knockback(m, dir, 1);
 		return false;
-	default:
-		if (dmg == 0)
-			return false;
 	}
+
+	if (dmg == 0)
+		return false;
 
 	// Before-damage triggers
 	switch (m->class) {
@@ -439,8 +435,6 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	case GOOLEM:
 		tile_change(&TILE(player.pos), OOZE);
 		break;
-	default:
-		break;
 	}
 
 	// Finally, deal the damage!
@@ -458,13 +452,12 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	case SKELETANK_1:
 	case SKELETANK_2:
 	case SKELETANK_3:
-		if (m->hp == 1) {
-			m->class = HEADLESS;
-			m->delay = 0;
-			m->prev_pos = player.pos;
-			return false;
-		}
-		return true;
+		if (m->hp > 1)
+			break;
+		m->class = HEADLESS;
+		m->delay = 0;
+		m->prev_pos = player.pos;
+		return false;
 	case MONKEY_2:
 	case TELE_MONKEY:
 	case ASSASSIN_2:
@@ -472,9 +465,9 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	case BANSHEE_2:
 		knockback(m, dir, 1);
 		return false;
-	default:
-		return true;
 	}
+
+	return true;
 }
 
 static void lunge(Coords dir) {
