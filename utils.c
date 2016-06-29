@@ -10,7 +10,6 @@
 #define CLASS(m) (class_infos[(m)->class])
 #define NO_DIR ((Coords) {0, 0})
 
-#define IS_OPAQUE(x, y) (g.board[x][y].class == WALL)
 #define BLOCKS_MOVEMENT(pos) (TILE(pos).class == WALL)
 
 static const Coords plus_shape[] = {{-1, 0}, {0, -1}, {0, 1}, {1, 0}, {0, 0}};
@@ -217,28 +216,6 @@ static bool forced_move(Monster *m, Coords offset)
 	return false;
 }
 
-// Checks whether the straight line from the player to the given position
-// is free from obstacles.
-// Uses fractional coordinates: the center of tile (y, x) is at (y + 0.5, x + 0.5).
-static bool los(double x, double y)
-{
-	double dx = player.pos.x - x;
-	double dy = player.pos.y - y;
-	i64 cx = (i64) (x + .5);
-	i64 cy = (i64) (y + .5);
-	if ((player.pos.x > x || x > cx) && dy * (cy - y) > 0 && IS_OPAQUE(cx, cy))
-		return false;
-	while (cx != player.pos.x || cy != player.pos.y) {
-		double err_x = ABS((cx + SIGN(dx) - x) * dy - (cy - y) * dx);
-		double err_y = ABS((cx - x) * dy - (cy + SIGN(dy) - y) * dx);
-		if ((ABS(err_x - err_y) < .001 && IS_OPAQUE(cx, cy + SIGN(dy)))
-		    || (err_x < err_y + .001 && IS_OPAQUE(cx += SIGN(dx), cy))
-		    || (err_y < err_x + .001 && IS_OPAQUE(cx, cy += SIGN(dy))))
-			return false;
-	}
-	return true;
-}
-
 // Tests whether the player can see the tile at the given position.
 // This is true if there’s an unblocked line from the center of the player’s
 // tile to any corner or the center of the destination tile.
@@ -249,17 +226,58 @@ static bool can_see(Coords dest)
 		return false;
 
 	// Miner’s Cap
-	if (L2(dest - pos) < 9)
+	if (L2(dest - pos) < 6)
 		return true;
 
-	if (TILE(dest).light < 102)
-		return false;
+	return TILE(dest).revealed;
+}
 
-	return los(dest.x - .55, dest.y - .55)
-	    || los(dest.x + .55, dest.y - .55)
-	    || los(dest.x - .55, dest.y + .55)
-	    || los(dest.x + .55, dest.y + .55)
-	    || los(dest.x, dest.y);
+static void cast_light(i8 row, double start, double end, Coords x, Coords y)
+{
+begin:
+	if (start > end || row > 10)
+		return;
+
+	bool blocked = false;
+	Coords delta = {row, 0};
+
+	for (delta.y = 0; delta.y < row + 1; ++delta.y) {
+		Coords current = {delta.x * x.x + delta.y * x.y, delta.x * y.x + delta.y * y.y};
+		if (ABS(current.y) > 5)
+			continue;
+
+		current += player.pos;
+		double left_slope = (delta.y - 0.51) / (delta.x + 0.51);
+		double right_slope = (delta.y + 0.51) / (delta.x - 0.51);
+
+		if (current.x < 0 || current.x > LENGTH(g.board) ||
+		    current.y < 0 || current.y > LENGTH(*g.board) || right_slope < start)
+			continue;
+		if (left_slope > end)
+			break;
+
+		TILE(current).revealed = TILE(current).light >= 102;
+
+		bool was_blocked = blocked;
+		blocked = TILE(current).class == WALL;
+		if (!was_blocked && blocked)
+			cast_light(row + 1, start, left_slope, x, y);
+		if (blocked)
+			start = right_slope;
+	}
+	++row;
+	goto begin;
+}
+
+static void update_fov()
+{
+	static const Coords diagonals[] = {{-1, -1}, {-1, 1}, {1, -1}, {1, 1}};
+	TILE(player.pos).revealed = true;
+	for (i64 i = 0; i < 4; ++i) {
+		Coords d = diagonals[i];
+		cast_light(1, 0, 1, (Coords) {0, d.x}, (Coords) {d.y, 0});
+		cast_light(1, 0, 1, (Coords) {d.x, 0}, (Coords) {0, d.y});
+	}
 }
 
 // Knocks an enemy away from the player.

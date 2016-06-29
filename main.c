@@ -114,6 +114,7 @@ static void do_beat(u8 input)
 	player_turn(input);
 	if (player_won())
 		return;
+	update_fov();
 	g.bomb_exploded = false;
 	for (Monster *m = player.next; m; m = m->next)
 		enemy_turn(m);
@@ -126,5 +127,6 @@ i32 main(i32 argc, char **argv) {
 	if (argc < 2)
 		FATAL("Usage: %s dungeon_file.xml [level]", argv[0]);
 	xml_parse(argv[1], argc == 3 ? *argv[2] - '0' : 1);
+	update_fov();
 	run();
 }

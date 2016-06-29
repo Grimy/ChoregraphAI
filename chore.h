@@ -146,7 +146,8 @@ typedef struct {
 	i8 zone;
 	bool torch: 1;
 	bool traps_destroyed: 1;
-	bool: 22;
+	bool revealed: 1;
+	bool: 21;
 } Tile;
 
 typedef struct {
