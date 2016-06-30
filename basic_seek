@@ -1,59 +1,59 @@
-prev_pos to pos alignment (test using lunging):
-	skeleton moving right:
-		d.y = -3:
-		d.y = -2:
-		d.y = -1:
-		d.y = +1:
-		d.y = +2:
-		d.y = +3:
-	skeleton moving left:
-		d.y = -3:
-		d.y = -2:
-		d.y = -1:
-		d.y = +1:
-		d.y = +2:
-		d.y = +3:
-	skeleton moving up:
-		d.x = -3:
-		d.x = -2:
-		d.x = -1:
-		d.x = +1:
-		d.x = +2:
-		d.x = +3:
-	skeleton moving down:
-		d.x = -3:
-		d.x = -2:
-		d.x = -1:
-		d.x = +1:
-		d.x = +2:
-		d.x = +3:
+prev_pos to pos alignment (test using lunging): 
+	skeleton moving up (d.y = 1):
+		d.x = -3: h
+		d.x = -2: h
+		d.x = -1: h
+		d.x = +1: v
+		d.x = +2: h
+		d.x = +3: h
+	skeleton moving down (d.y = -1):
+		d.x = -3: h
+		d.x = -2: h
+		d.x = -1: h
+		d.x = +1: v
+		d.x = +2: h
+		d.x = +3: h
+	skeleton moving right (d.x = -1):
+		d.y = -3: v
+		d.y = -2: v
+		d.y = -1: h
+		d.y = +1: h
+		d.y = +2: v
+		d.y = +3: v
+	skeleton moving left (d.x = 1):
+		d.y = -3: v
+		d.y = -2: v
+		d.y = -1: v
+		d.y = +1: v
+		d.y = +2: v
+		d.y = +3: v
 
 prev_pos to pos alignment (test by moving in the opposite direction):
-	skeleton moving right:
-		d.y = -3:
-		d.y = -2:
-		d.y = -1:
-		d.y = +1:
-		d.y = +2:
-		d.y = +3:
-	skeleton moving left:
-		d.y = -3:
-		d.y = -2:
-		d.y = -1:
-		d.y = +1:
-		d.y = +2:
-		d.y = +3:
-	skeleton moving up:
-		d.x = -3:
-		d.x = -2:
-		d.x = -1:
-		d.x = +1:
-		d.x = +2:
-		d.x = +3:
-	skeleton moving down:
-		d.x = -3:
-		d.x = -2:
-		d.x = -1:
-		d.x = +1:
-		d.x = +2:
-		d.x = +3:
+	skeleton moving up (d.y = 2):
+		d.x = -3: h
+		d.x = -2: h
+		d.x = -1: v
+		d.x = +1: v
+		d.x = +2: x ≤ 0 ? h : v
+		d.x = +3: h
+	skeleton moving down (d.y = -2):
+		d.x = -3: h
+		d.x = -2: h
+		d.x = -1: v
+		d.x = +1: v
+		d.x = +2: x ≤ 0 ? h : v
+		d.x = +3: h
+	skeleton moving right (d.x = -2):
+		d.y = -3: v
+		d.y = -2: h
+		d.y = -1: h
+		d.y = +1: h
+		d.y = +2: h
+		d.y = +3: v
+	skeleton moving left (d.x = 2):
+		d.y = -3: v
+		d.y = -2: v
+		d.y = -1: h
+		d.y = +1: h
+		d.y = +2: v
+		d.y = +3: v

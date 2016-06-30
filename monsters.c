@@ -20,8 +20,6 @@ static void basic_seek(Monster *this, Coords d)
 	// Ignore the player’s previous position if they moved more than one tile
 	Coords prev_pos = L1(player.pos - player.prev_pos) > 1 ? player.pos : player.prev_pos;
 
-	// Spawn-asymmetry bug
-
 	this->vertical =
 		// #1: move toward the player
 		d.y == 0 ? 0 :
@@ -36,14 +34,12 @@ static void basic_seek(Monster *this, Coords d)
 		this->pos.x == prev_pos.x ? 1 :
 
 		// #4: weird edge cases
-		this->prev_pos.y == player.pos.y ? 0 :
-		this->prev_pos.x == player.pos.x ? 1 :
+		this->prev_pos.y == player.pos.y ? d.x == 1 :
+		this->prev_pos.x == player.pos.x ? !(d.x < 0 && ABS(d.y) == 1) :
+		this->prev_pos.y == prev_pos.y ? ABS(d.x) == 1 || (d.x == 2 && player.pos.x > spawn.x) :
+		this->prev_pos.x == prev_pos.x ? ABS(d.y) > 1 + (d.x < 0) :
 
-		// #5: if prevpos aligns with the player’s prevpos, do something weird
-		this->prev_pos.y == player.prev_pos.y ? d.x > 0 && player.pos.x > spawn.x :
-		this->prev_pos.x == player.prev_pos.x ? ABS(d.y) != 2 :
-
-		// #6: keep moving along the same axis
+		// #5: keep moving along the same axis
 		this->vertical;
 
 	enemy_move(this, this->vertical ? vertical : horizontal);
