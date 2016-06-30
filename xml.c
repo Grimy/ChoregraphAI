@@ -5,6 +5,8 @@
 #define STARTING_DELAY(c) (((c) >= WINDMAGE_1 && (c) <= WINDMAGE_3) || \
 		((c) >= LICH_1 && (c) <= LICH_3) || (c) == HARPY)
 
+static Monster *next = g.monsters;
+
 // Returns the numeric value of a named attribute of the current node.
 // If the attribute is absent, it defaults to 0.
 static i8 xml_attr(xmlTextReader *xml, char* attr)
@@ -19,6 +21,13 @@ static void xml_first_pass(xmlTextReader *xml)
 {
 	spawn.x = MAX(spawn.x, 4 - xml_attr(xml, "x"));
 	spawn.y = MAX(spawn.y, 4 - xml_attr(xml, "y"));
+}
+
+static Monster* monster_new(MonsterClass type, Coords pos) {
+	next->class = type;
+	next->pos = next->prev_pos = pos;
+	next->hp = CLASS(next).max_hp;
+	return next++;
 }
 
 // Converts a single XML node into an appropriate object (Trap, Tile or Monster).
@@ -37,7 +46,7 @@ static void xml_process_node(xmlTextReader *xml)
 
 	pos += spawn;
 	assert(MAX(pos.x, pos.y) <= LENGTH(g.board) - 4);
-	type = type == 255 ? SKELETANK_3 : type;
+	type = type == 255 ? SARCO_1 : type;
 
 	if (!strcmp(name, "trap")) {
 		if (type == 10) {
@@ -64,6 +73,11 @@ static void xml_process_node(xmlTextReader *xml)
 	else if (!strcmp(name, "enemy")) {
 		Monster *m = monster_new(type, pos);
 		m->delay = STARTING_DELAY(type);
+		printf("%p\n", (void*) next);
+		if (m->class >= SARCO_1 && m->class <= SARCO_3)
+			next++->class = m->class;
+		// || m->class == MOMMY;m->class >= SARCO_1 && m->class <= SARCO_3
+		printf("%p\n", (void*) next);
 	}
 
 	else if (!strcmp(name, "crate")) {
@@ -105,10 +119,12 @@ static void xml_parse(char *file, i64 level)
 	xml_process_file(file, level, xml_process_node);
 
 	move(&player, spawn);
-	qsort(g.monsters, g.monster_count, sizeof(*g.monsters), compare_priorities);
-	for (Monster *m = g.monsters; m->hp; ++m) {
+	for (i64 i = 0; i < 4; ++i)
+		*next++ = (Monster) {.class = BOMB, .aggro = true};
+
+	qsort(g.monsters, (size_t) (next - g.monsters), sizeof(*g.monsters), compare_priorities);
+	for (Monster *m = g.monsters; m < next; ++m) {
 		TILE(m->pos).monster = m;
-		(m == g.monsters ? &player : m - 1)->next = m;
 		if (m->class == NIGHTMARE_1 || m->class == NIGHTMARE_2)
 			nightmare = m;
 	}

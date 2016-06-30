@@ -89,7 +89,7 @@ static void trap_turn(Trap *this)
 		break;
 	case TRAPDOOR:
 	case TELEPORT:
-		monster_remove(m);
+		monster_kill(m, DMG_NORMAL);
 		break;
 	case CONFUSE:
 		if (!m->confusion)
@@ -116,8 +116,9 @@ static void do_beat(u8 input)
 		return;
 	update_fov();
 	g.bomb_exploded = false;
-	for (Monster *m = player.next; m; m = m->next)
-		enemy_turn(m);
+	for (Monster *m = g.monsters; m < next; ++m)
+		if (m->hp > 0)
+			enemy_turn(m);
 	for (Trap *t = g.traps; t->pos.x; ++t)
 		trap_turn(t);
 }

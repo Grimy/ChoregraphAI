@@ -123,8 +123,7 @@ typedef enum {
 
 // A “Monster” is either an enemy or the player. Yes, we are all monsters.
 // Honestly, “Entity” is way too generic, and “Character” sounds too much like “char*”.
-typedef struct monster {
-	struct monster *next;
+typedef struct {
 	MonsterClass class;
 	i8 hp;
 	Coords pos;
@@ -171,7 +170,7 @@ static const ClassInfos class_infos[256];
 static Coords spawn;
 static Coords stairs;
 static Monster *nightmare;
-static u64 seed;
+static u64 seed = 42;
 
 __extension__
 static struct game_state {
@@ -179,7 +178,6 @@ static struct game_state {
 	Monster _player;
 	Monster monsters[64];
 	Trap traps[64];
-	u64 monster_count;
 
 	bool player_moved;
 	bool bomb_exploded;

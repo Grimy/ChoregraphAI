@@ -437,7 +437,7 @@ static void headless(Monster *this, __attribute__((unused)) Coords d)
 
 static void sarcophagus(Monster *this, __attribute__((unused)) Coords d) {
 	this->delay = CLASS(this).beat_delay;
-	if (!g.sarco_on || !seed)
+	if (!g.sarco_on || !seed || this[1].hp > 0)
 		return;
 
 	// Make sure that at least one direction isn’t blocked
@@ -451,13 +451,11 @@ ok:
 	do dir = plus_shape[RNG()];
 		while (!can_move(this, dir));
 
-	MonsterClass type = this->class - SARCO_1;
-	type += (MonsterClass[]) {SKELETON_1, SKELETANK_1, WINDMAGE_1, RIDER_1} [RNG()];
-	Monster *new = monster_new(type, this->pos + dir);
-	TILE(this->pos + dir).monster = new;
-	new->delay = 1;
-	new->next = this->next;
-	this->next = new;
+	this[1].class = (MonsterClass[]) {SKELETON_1, SKELETANK_1, WINDMAGE_1, RIDER_1} [RNG()];
+	this[1].class += this->class - SARCO_1;
+	this[1].pos = this->pos + dir;
+	this[1].delay = 1;
+	TILE(this[1].pos).monster = &this[1];
 }
 
 static void ogre(Monster *this, Coords d) {

@@ -24,14 +24,6 @@ static const Coords square_shape[] = {
 	{1, -1}, {1, 0}, {1, 1},
 };
 
-static Monster* monster_new(MonsterClass type, Coords pos) {
-	Monster *new = &g.monsters[g.monster_count++];
-	new->class = type;
-	new->pos = new->prev_pos = pos;
-	new->hp = CLASS(new).max_hp;
-	return new;
-}
-
 // Moves the given monster to a specific position.
 // Keeps track of the monster’s previous position.
 static void move(Monster *m, Coords dest)
@@ -110,15 +102,6 @@ static void damage_tile(Coords pos, Coords origin, i64 dmg, DamageType type) {
 		damage(TILE(pos).monster, dmg, CARDINALIZE(pos - origin), type);
 }
 
-// Removes a monster from the priority queue.
-static void monster_remove(Monster *m)
-{
-	Monster *prev = &player;
-	while (prev->next != m)
-		prev = prev->next;
-	prev->next = m->next;
-}
-
 // Handles an enemy attacking the player.
 // Usually boils down to damaging the player, but some enemies are special-cased.
 static void enemy_attack(Monster *attacker)
@@ -130,7 +113,7 @@ static void enemy_attack(Monster *attacker)
 		// FALLTHROUGH
 	case PIXIE:
 		TILE(attacker->pos).monster = NULL;
-		monster_remove(attacker);
+		attacker->hp = 0;
 		break;
 	case SHOVE_1:
 	case SHOVE_2:
@@ -291,9 +274,12 @@ static void knockback(Monster *m, Coords dir, u8 delay)
 // Places a bomb at the given position.
 static void bomb_plant(Coords pos, u8 delay)
 {
-	Monster bomb = {.class = BOMB, .pos = pos, .next = player.next, .aggro = true, .delay = delay};
-	player.next = &g.monsters[g.monster_count];
-	g.monsters[g.monster_count++] = bomb;
+	Monster *bomb;
+	for (bomb = g.monsters; bomb->hp > 0; ++bomb);
+	assert(bomb->class == BOMB);
+	bomb->hp = 1;
+	bomb->pos = pos;
+	bomb->delay = delay;
 }
 
 static void bomb_detonate(Monster *this, __attribute__((unused)) Coords d)
@@ -307,7 +293,7 @@ static void bomb_detonate(Monster *this, __attribute__((unused)) Coords d)
 	}
 	for (i64 i = 0; i < 9; ++i)
 		damage_tile(this->pos + square_shape[i], this->pos, 4, DMG_BOMB);
-	monster_remove(this);
+	this->hp = 0;
 	g.bomb_exploded = true;
 }
 
@@ -326,14 +312,14 @@ static void tile_change(Tile *tile, TileClass new_class)
 // Kills the given monster, handling on-death effects.
 static void monster_kill(Monster *m, DamageType type)
 {
+	m->hp = 0;
+
 	if (m->class == PIXIE || m->class == BOMBSHROOM_) {
 		bomb_detonate(m, spawn);
 		return;
 	}
 
 	TILE(m->pos).monster = NULL;
-	if (m != &player)
-		monster_remove(m);
 
 	if (type == DMG_WEAPON && (m->class == WARLOCK_1 || m->class == WARLOCK_2))
 		move(&player, m->pos);
