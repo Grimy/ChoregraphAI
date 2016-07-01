@@ -1,0 +1,43 @@
+sleepers (accept this direction?)
+
+if (enemy_move)
+diagonal/moore (accept this direction?):
+	move = true
+	hit = true
+	dig/water/tar = true
+	none = false
+
+if (enemy_move)
+bats (accept this direction?):
+	move = true
+	hit = true
+	dig/water/tar = N/A
+	none = false
+
+if (enemy_move == MOVE_SUCCESS)
+armadillos (keep charging?):
+	move = true
+	hit = false
+	dig/water/tar = false
+	none = false
+
+if (enemy_move == MOVE_SUCCESS)
+slimes (change direction?):
+	move = true
+	hit = false
+	dig/water/tar = false
+	none = false
+
+if (enemy_move >= MOVE_ATTACK)
+zombies (keep direction?):
+	move = true
+	hit = true
+	water/tar = false
+	none = false
+
+if (enemy_move >= MOVE_ATTACK)
+sleepers (keep moving?)
+	move = true
+	hit = true
+	dig/water/tar = false
+	none = false
