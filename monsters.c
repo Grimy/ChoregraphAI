@@ -76,7 +76,7 @@ static void diagonal_seek(Monster *this, Coords d)
 // Move toward the player either cardinally or diagonally.
 static void moore_seek(Monster *this, Coords d)
 {
-	if (MOVE(SIGN(d.x), SIGN(d.y)))
+	if (MOVE(SIGN(d.x), SIGN(d.y)) || d.x == 0 || d.y == 0)
 		return;
 	if (d.x < 0)
 		MOVE(-1, 0) || MOVE(0, SIGN(d.y));
@@ -159,11 +159,20 @@ static void mushroom(Monster *this, Coords d)
 	this->delay = CLASS(this).beat_delay;
 }
 
+static bool has_moved(Monster *this)
+{
+	if (L1(this->pos - this->prev_pos) == 0)
+		return false;
+	bool result = this->state;
+	this->state = 1;
+	return result;
+}
+
 // Chase the player, then attack in a 3x3 zone.
 static void yeti(Monster *this, Coords d)
 {
 	basic_seek(this, d);
-	if (L1(this->pos - this->prev_pos) && L2(player.pos - this->pos) < 4)
+	if (has_moved(this) && L2(player.pos - this->pos) < 4)
 		enemy_attack(this);
 }
 
@@ -455,26 +464,35 @@ ok:
 		while (!IS_EMPTY(this->pos + spawn_dir));
 
 	monster_init(spawned, types[RNG()] + this->class - SARCO_1, this->pos + spawn_dir);
-	spawned->delay = 1;
+	spawned->delay = 2;
+	spawned->aggro = 1;
 	TILE(spawned->pos).monster = spawned;
 }
 
+// Move toward the player, then spawn a mummy on the empty tile closest
+// to the tile immediately below (L2 distance, then bomb-order).
+// ..K..
+// .E@F.
+// IBACJ
+// .GDH.
 static void mommy(Monster *this, Coords d)
 {
-	Coords spawn_dir = {0, 1};
+	static const Coords spawn_dirs[] = {
+		{0, 1}, {-1, 1}, {1, 1}, {0, 2}, {-1, 0}, {1, 0},
+		{-1, 2}, {1, 2}, {-2, 1}, {2, 1}, {0, -1},
+	};
+	const Coords *spawn_dir;
 	Monster *spawned = this + 1;
 
 	basic_seek(this, d);
 
-	if (L1(this->pos - this->prev_pos) == 0 || spawned->hp > 0)
-		return;
-
-	while (!IS_EMPTY(this->pos + spawn_dir))
-		spawn_dir.x = spawn_dir.x ? 1 : -1;
-
-	monster_init(spawned, MUMMY, this->pos + spawn_dir);
-	spawned->delay = 1;
-	TILE(spawned->pos).monster = spawned;
+	if (has_moved(this) && spawned->hp <= 0) {
+		for (spawn_dir = spawn_dirs; !IS_EMPTY(this->pos + *spawn_dir); ++spawn_dir);
+		monster_init(spawned, MUMMY, this->pos + *spawn_dir);
+		spawned->delay = 2;
+		spawned->aggro = 1;
+		TILE(spawned->pos).monster = spawned;
+	}
 }
 
 static void ogre(Monster *this, Coords d)
@@ -565,7 +583,7 @@ static const ClassInfos class_infos[256] = {
 	[HELLHOUND]   = { 1, 1,   9, false, -1, 10301202, RED "d",    moore_seek },
 	[SHOVE_1]     = { 2, 0,   9, false, -1, 10002102, PURPLE "~", basic_seek },
 	[SHOVE_2]     = { 3, 0,   9, false, -1, 10003102, BLACK "~",  basic_seek },
-	[YETI]        = { 1, 3,   9,  true,  2, 20301403, CYAN "Y",   yeti },
+	[YETI]        = { 1, 3,  49,  true,  2, 20301403, CYAN "Y",   yeti },
 	[GHAST]       = { 1, 0,   9,  true, -1, 10201102, PURPLE "W", basic_seek },
 	[FIRE_MIMIC]  = { 1, 0,   0, false, -1, 10201102, RED "m",    mimic },
 	[ICE_MIMIC]   = { 1, 0,   0, false, -1, 10201102, CYAN "m",   mimic },
@@ -615,7 +633,7 @@ static const ClassInfos class_infos[256] = {
 	[MINOTAUR_2]  = { 5, 0,  49,  true,  2, 30505115, BLACK "H",  minotaur },
 	[NIGHTMARE_1] = { 3, 1,  81,  true,  4, 30403210, BLACK "u",  basic_seek },
 	[NIGHTMARE_2] = { 5, 1,  81,  true,  4, 30505215, RED "u",    basic_seek },
-	[MOMMY]       = { 6, 3,   0,  true, -1, 30405215, BLACK "@",  mommy },
+	[MOMMY]       = { 6, 3,   9,  true, -1, 30405215, BLACK "@",  mommy },
 	[OGRE]        = { 5, 2,   9,  true,  2, 30505115, GREEN "O",  ogre },
 
 	[PLAYER]      = { 1, 0,   0, false, -1,      ~0u, "@",        NULL },

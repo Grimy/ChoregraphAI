@@ -225,6 +225,7 @@ __extension__ static GameState g = {
 	._player = {.class = PLAYER, .hp = 1},
 	.boots_on = true,
 	.dragon_exhausted = 4,
+	.seed = 42,
 };
 
 static Coords spawn;

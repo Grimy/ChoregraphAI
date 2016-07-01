@@ -1,12 +1,3 @@
-TESTS:
-* do yetis clap after digging?
-* knock riders, wind statues and bomb statues into the player
-* digging enemies vs metal doors
-* do mommies summon after attacking?
-* mommy activation radius?
-* mommy spawn order?
-* do turnip/skeletons spawn already aggroed?
-
 FEATURES:
 * metal doors (type=111) should close themselves
 * rolling barrels
