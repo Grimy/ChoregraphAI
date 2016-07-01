@@ -19,14 +19,15 @@ static i8 xml_attr(xmlTextReader *xml, char* attr)
 
 static void xml_first_pass(xmlTextReader *xml)
 {
-	spawn.x = MAX(spawn.x, 4 - xml_attr(xml, "x"));
-	spawn.y = MAX(spawn.y, 4 - xml_attr(xml, "y"));
+	spawn.x = max(spawn.x, 4 - xml_attr(xml, "x"));
+	spawn.y = max(spawn.y, 4 - xml_attr(xml, "y"));
 }
 
 static Monster* monster_new(MonsterClass type, Coords pos) {
-	next->class = type;
 	next->pos = next->prev_pos = pos;
+	next->class = type;
 	next->hp = CLASS(next).max_hp;
+	next->delay = STARTING_DELAY(type);
 	return next++;
 }
 
@@ -45,7 +46,7 @@ static void xml_process_node(xmlTextReader *xml)
 	Coords pos = {xml_attr(xml, "x"), xml_attr(xml, "y")};
 
 	pos += spawn;
-	assert(MAX(pos.x, pos.y) <= LENGTH(g.board) - 4);
+	assert(max(pos.x, pos.y) <= ARRAY_SIZE(g.board) - 4);
 	type = type == 255 ? SARCO_1 : type;
 
 	if (!strcmp(name, "trap")) {
@@ -72,12 +73,9 @@ static void xml_process_node(xmlTextReader *xml)
 
 	else if (!strcmp(name, "enemy")) {
 		Monster *m = monster_new(type, pos);
-		m->delay = STARTING_DELAY(type);
-		printf("%p\n", (void*) next);
 		if (m->class >= SARCO_1 && m->class <= SARCO_3)
 			next++->class = m->class;
-		// || m->class == MOMMY;m->class >= SARCO_1 && m->class <= SARCO_3
-		printf("%p\n", (void*) next);
+		// || m->class == MOMMY
 	}
 
 	else if (!strcmp(name, "crate")) {

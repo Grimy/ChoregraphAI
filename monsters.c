@@ -35,9 +35,9 @@ static void basic_seek(Monster *this, Coords d)
 
 		// #4: weird edge cases
 		this->prev_pos.y == player.pos.y ? d.x == 1 :
-		this->prev_pos.x == player.pos.x ? !(d.x < 0 && ABS(d.y) == 1) :
-		this->prev_pos.y == prev_pos.y ? ABS(d.x) == 1 || (d.x == 2 && player.pos.x > spawn.x) :
-		this->prev_pos.x == prev_pos.x ? ABS(d.y) > 1 + (d.x < 0) :
+		this->prev_pos.x == player.pos.x ? !(d.x < 0 && abs(d.y) == 1) :
+		this->prev_pos.y == prev_pos.y ? abs(d.x) == 1 || (d.x == 2 && player.pos.x > spawn.x) :
+		this->prev_pos.x == prev_pos.x ? abs(d.y) > 1 + (d.x < 0) :
 
 		// #5: keep moving along the same axis
 		this->vertical;
@@ -53,7 +53,7 @@ static void basic_flee(Monster *this, Coords d)
 		MOVE(-SIGN(d.x), 0) || MOVE(0, -1) || MOVE(0, 1);
 	else if (d.x == 0)
 		MOVE(0, -SIGN(d.y)) || MOVE(-1, 0) || MOVE(1, 0);
-	else if (ABS(d.y) > ABS(d.x))
+	else if (abs(d.y) > abs(d.x))
 		MOVE(0, -SIGN(d.y)) || MOVE(-SIGN(d.x), 0);
 	else
 		MOVE(-SIGN(d.x), 0) || MOVE(0, -SIGN(d.y));
@@ -191,7 +191,7 @@ static void harpy(Monster *this, Coords d)
 	}
 	Coords best_move = {0, 0};
 	i64 min = L1(d);
-	for (i64 i = 0; i < LENGTH(moves); ++i) {
+	for (u64 i = 0; i < ARRAY_SIZE(moves); ++i) {
 		Coords move = moves[i];
 		if ((L2(move) == 9 || L2(move) == 4)
 		    && (BLOCKS_MOVEMENT(this->pos + DIRECTION(move))
@@ -251,8 +251,8 @@ static void mimic(Monster *this, Coords d)
 
 static bool can_breath(Monster *this)
 {
-	i64 dx = ABS(player.pos.x - this->pos.x);
-	i64 dy = ABS(player.pos.y - this->pos.y);
+	i64 dx = abs(player.pos.x - this->pos.x);
+	i64 dy = abs(player.pos.y - this->pos.y);
 	return this->class == RED_DRAGON ? !dy : dx < 4 && dy < dx && !player.freeze;
 }
 
@@ -335,7 +335,7 @@ static void bomb_statue(Monster *this, Coords d)
 
 static bool can_charge(Monster *this, Coords d)
 {
-	if (d.x * d.y != 0 && (ABS(d.x) != ABS(d.y) || this->class != ARMADILDO))
+	if (d.x * d.y != 0 && (abs(d.x) != abs(d.y) || this->class != ARMADILDO))
 		return false;
 	Coords move = DIRECTION(d);
 	Coords dest = this->pos + d;
@@ -435,9 +435,12 @@ static void headless(Monster *this, __attribute__((unused)) Coords d)
 		this->prev_pos = prev_pos;
 }
 
-static void sarcophagus(Monster *this, __attribute__((unused)) Coords d) {
+static void sarcophagus(Monster *this, __attribute__((unused)) Coords d)
+{
+	static const MonsterClass types[] = {SKELETON_1, SKELETANK_1, WINDMAGE_1, RIDER_1};
+	Monster *spawned = this + 1;
 	this->delay = CLASS(this).beat_delay;
-	if (!g.sarco_on || !seed || this[1].hp > 0)
+	if (!g.sarco_on || !seed || spawned->hp > 0)
 		return;
 
 	// Make sure that at least one direction isn’t blocked
@@ -451,21 +454,22 @@ ok:
 	do dir = plus_shape[RNG()];
 		while (!can_move(this, dir));
 
-	this[1].class = (MonsterClass[]) {SKELETON_1, SKELETANK_1, WINDMAGE_1, RIDER_1} [RNG()];
-	this[1].class += this->class - SARCO_1;
-	this[1].pos = this->pos + dir;
-	this[1].delay = 1;
-	TILE(this[1].pos).monster = &this[1];
+	spawned->class = types[RNG()] + this->class - SARCO_1;
+	spawned->hp = CLASS(spawned).max_hp;
+	spawned->pos = this->pos + dir;
+	spawned->delay = 1;
+	TILE(spawned->pos).monster = spawned;
 }
 
-static void ogre(Monster *this, Coords d) {
+static void ogre(Monster *this, Coords d)
+{
 	if (this->state == 2) {
 		Coords clonk_dir = DIRECTION(player.prev_pos - this->pos);
 		for (i8 i = 1; i <= 3; ++i)
 			damage_tile(this->pos + i * clonk_dir, this->pos, 5, DMG_NORMAL);
 		this->state = 1;
 		this->delay = 2;
-	} else if (d.x * d.y == 0 && ABS(d.x + d.y) <= 3) {
+	} else if (d.x * d.y == 0 && abs(d.x + d.y) <= 3) {
 		// Clonk!
 		this->state = 2;
 	} else if (this->state == 1) {
@@ -476,8 +480,9 @@ static void ogre(Monster *this, Coords d) {
 	}
 }
 
-static void firepig(Monster *this, Coords d) {
-	if (d.y == 0 && ABS(d.x) <= 5 && (d.x > 0) == this->state) {
+static void firepig(Monster *this, Coords d)
+{
+	if (d.y == 0 && abs(d.x) <= 5 && (d.x > 0) == this->state) {
 		this->state += 2;
 	} else if (this->state > 1) {
 		fireball(this->pos, SIGN(player.pos.x - this->pos.x));
@@ -570,7 +575,7 @@ static const ClassInfos class_infos[256] = {
 	[SARCO_2]     = { 2, 9,   9, false, -1, 10102910, YELLOW "|", sarcophagus },
 	[SARCO_3]     = { 3, 11,  9, false, -1, 10103915, BLACK "|",  sarcophagus },
 	[SPIDER]      = { 1, 1,   9, false, -1, 10401202, YELLOW "s", basic_seek },
-	[FREE_SPIDER] = { 1, 0,   9, false, -1, 10401202, YELLOW "s", diagonal_seek },
+	[FREE_SPIDER] = { 1, 0,   9, false, -1, 10401202, RED "s",    diagonal_seek },
 	[WARLOCK_1]   = { 1, 1,   9, false, -1, 10401202, "w",        basic_seek },
 	[WARLOCK_2]   = { 2, 1,   9, false, -1, 10401302, YELLOW "w", basic_seek },
 	[MUMMY]       = { 1, 1,   9, false, -1, 30201103, "M",        moore_seek },

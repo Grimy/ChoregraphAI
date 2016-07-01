@@ -1,17 +1,5 @@
 // utils.c - core game logic
 
-#define DIRECTION(pos) ((Coords) {SIGN((pos).x), SIGN((pos).y)})
-#define CARDINALIZE(d) ((Coords) {SIGN((d).x), (d).x ? 0 : SIGN((d).y)})
-#define L1(pos) (ABS((pos).x) + ABS((pos).y))
-#define L2(pos) ((pos).x * (pos).x + (pos).y * (pos).y)
-
-#define player (g._player)
-#define TILE(pos) (g.board[(pos).x][(pos).y])
-#define CLASS(m) (class_infos[(m)->class])
-#define NO_DIR ((Coords) {0, 0})
-
-#define BLOCKS_MOVEMENT(pos) (TILE(pos).class == WALL)
-
 static const Coords plus_shape[] = {{-1, 0}, {0, -1}, {0, 1}, {1, 0}, {0, 0}};
 static const Coords cone_shape[] = {
 	{1, 0},
@@ -77,7 +65,7 @@ static void destroy_wall(Coords pos) {
 
 // Tries to dig away the given wall, replacing it with floor.
 // Returns whether the dig succeeded.
-static bool dig(Coords pos, i64 digging_power, bool z4)
+static bool dig(Coords pos, i32 digging_power, bool z4)
 {
 	Tile *wall = &TILE(pos);
 
@@ -91,7 +79,7 @@ static bool dig(Coords pos, i64 digging_power, bool z4)
 	destroy_wall(pos);
 	if (!z4 && wall->zone == 4 && (wall->hp == 1 || wall->hp == 2))
 		for (i64 i = 0; i < 4; ++i)
-			dig(pos + plus_shape[i], MIN(2, digging_power), true);
+			dig(pos + plus_shape[i], min(2, digging_power), true);
 	return true;
 }
 
@@ -226,15 +214,15 @@ begin:
 
 	for (delta.y = 0; delta.y < row + 1; ++delta.y) {
 		Coords current = {delta.x * x.x + delta.y * x.y, delta.x * y.x + delta.y * y.y};
-		if (ABS(current.y) > 5)
+		if (abs(current.y) > 5)
 			continue;
 
 		current += player.pos;
 		double left_slope = (delta.y - 0.51) / (delta.x + 0.51);
 		double right_slope = (delta.y + 0.51) / (delta.x - 0.51);
 
-		if (current.x < 0 || current.x > LENGTH(g.board) ||
-		    current.y < 0 || current.y > LENGTH(*g.board) || right_slope < start)
+		if (current.x < 0 || (u8) current.x > ARRAY_SIZE(g.board) ||
+		    current.y < 0 || (u8) current.y > ARRAY_SIZE(*g.board) || right_slope < start)
 			continue;
 		if (left_slope > end)
 			break;
@@ -315,7 +303,7 @@ static void monster_kill(Monster *m, DamageType type)
 	m->hp = 0;
 
 	if (m->class == PIXIE || m->class == BOMBSHROOM_) {
-		bomb_detonate(m, spawn);
+		bomb_detonate(m, NO_DIR);
 		return;
 	}
 
@@ -343,7 +331,7 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	// Crates and gargoyles can be pushed even with 0 damage
 	switch (m->class) {
 	case MINE_STATUE:
-		bomb_detonate(m, spawn);
+		bomb_detonate(m, NO_DIR);
 		return false;
 	case WIND_STATUE:
 	case BOMB_STATUE:
@@ -492,7 +480,7 @@ static void player_move(i8 x, i8 y)
 			lunge(offset);
 
 		// Miner’s cap
-		i64 digging_power = TILE(player.pos).class == OOZE ? 0 : 2;
+		i32 digging_power = TILE(player.pos).class == OOZE ? 0 : 2;
 		for (i64 i = 0; i < 4; ++i)
 			dig(player.pos + plus_shape[i], digging_power, false);
 	}
@@ -510,7 +498,7 @@ static void fireball(Coords pos, i8 dir)
 // Freezes all monsters in a 3x5 cone.
 static void cone_of_cold(Coords pos, i8 dir)
 {
-	for (i64 i = 0; i < LENGTH(cone_shape); ++i) {
+	for (u64 i = 0; i < ARRAY_SIZE(cone_shape); ++i) {
 		Tile *tile = &TILE(pos + dir * cone_shape[i]);
 		if (tile->monster)
 			tile->monster->freeze = 5;

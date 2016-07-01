@@ -1,11 +1,11 @@
 TESTS:
 * do yetis clap after digging?
 * knock riders, wind statues and bomb statues into the player
+* digging enemies vs metal doors
 
 FEATURES:
 * Metal doors (type=111)
 * Mummy summoning
-* basic_seek spawn-asymmetry
 
 BUGFIXES:
 * minotaurs should have digging power 3 while charging

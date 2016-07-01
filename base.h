@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 // Convenient name for integer types
@@ -19,13 +20,23 @@ typedef int32_t  i32;
 typedef int64_t  i64;
 
 // Some basic math macros
-#define LENGTH(array) ((i64) (sizeof(array) / sizeof(*(array))))
-#define MIN(a, b)     ((a) > (b) ? (b) : (a))
-#define MAX(a, b)     ((a) > (b) ? (a) : (b))
+#define ARRAY_SIZE(arr) ((i64) (sizeof(arr) / sizeof((arr)[0])))
+
+#define min(x, y) ({ \
+	__typeof(x) _min1 = (x), _min2 = (y); \
+	(__typeof(x)) (_min1 < _min2 ? _min1 : _min2); })
+
+#define max(x, y) ({ \
+	__typeof(x) _max1 = (x), _max2 = (y); \
+	(__typeof(x)) (_max1 > _max2 ? _max1 : _max2); })
+
+#define clamp(val, lo, hi) min((__typeof(val)) max(val, lo), hi)
+
+#define swap(a, b) do { __typeof(a) _swap = (a); (a) = (b); (b) = _swap; } while (0)
+
+#define abs(x) ({ __typeof(x) _abs = (x); _abs < 0 ? -_abs : _abs; })
+
 #define SIGN(x)       (((x) > 0) - ((x) < 0))
-#define ABS(x)        ((x) < 0 ? -(x) : (x))
-// Reasonable constant choices: (2, 3, 14), (2, 9, 16), (2, 9, 27), (2, 20, 9)
-#define RNG()         ((seed = seed >> 2 | seed << 3 | seed >> 14) & 3)
 
 // Terminal ANSI codes
 #define WHITE  "\033[m"

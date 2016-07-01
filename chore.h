@@ -1,5 +1,20 @@
 // chore.h - global types and vars definitions
 
+#define DIRECTION(pos) ((Coords) {SIGN((pos).x), SIGN((pos).y)})
+#define CARDINALIZE(d) ((Coords) {SIGN((d).x), (d).x ? 0 : SIGN((d).y)})
+#define L1(pos) (abs((pos).x) + abs((pos).y))
+#define L2(pos) ((pos).x * (pos).x + (pos).y * (pos).y)
+
+#define player (g._player)
+#define TILE(pos) (g.board[(pos).x][(pos).y])
+#define CLASS(m) (class_infos[(m)->class])
+#define NO_DIR ((Coords) {0, 0})
+
+#define BLOCKS_MOVEMENT(pos) (TILE(pos).class == WALL)
+
+// Reasonable constant choices: (2, 3, 14), (2, 9, 16), (2, 9, 27), (2, 20, 9)
+#define RNG() ((seed = seed >> 2 ^ seed << 3 ^ seed >> 14) & 3)
+
 // A pair of cartesian coordinates.
 typedef i8 Coords __attribute__((ext_vector_type(2)));
 

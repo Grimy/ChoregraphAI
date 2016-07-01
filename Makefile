@@ -1,7 +1,7 @@
 CFLAGS += -std=c99 -Weverything -Werror -march=native -mtune=native
 CFLAGS += -fstrict-aliasing -fstrict-overflow -fno-asynchronous-unwind-tables
-CFLAGS += -Wno-unknown-warning-option -Wno-c++-compat -Wno-switch -Wno-switch-enum
-CFLAGS += -I/usr/include/libxml2 -lxml2
+CFLAGS += -Wno-c++-compat -Wno-switch -Wno-switch-enum -Wno-gnu-statement-expression
+CFLAGS += -I/usr/include/libxml2 -lxml2 -Wno-unknown-warning-option
 CFLAGS += -Wno-documentation -Wno-documentation-unknown-command -Wno-reserved-id-macro
 
 SOURCES = $(wildcard *.c) $(wildcard *.h)

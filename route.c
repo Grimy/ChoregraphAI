@@ -50,13 +50,13 @@ static char* prettify_route(const Route *route)
 }
 
 // Appends the given route to the priority queue
-static void add_to_queue(Route *route, u16 score)
+static void add_to_queue(Route *route, i32 score)
 {
 	Route *new = malloc(sizeof(*new));
 	*new = *route;
 	new->next = routes[score];
 	routes[score] = new;
-	cur_score = MIN(cur_score, score);
+	cur_score = min(cur_score, score);
 }
 
 // Removes the best route from the priority queue and returns it

@@ -60,8 +60,8 @@ static void display_tile(Coords pos)
 // Clears and redraws the entire board.
 static void display_board(void)
 {
-	for (i8 y = 1; y < LENGTH(g.board) - 1; ++y) {
-		for (i8 x = 1; x < LENGTH(*g.board) - 1; ++x)
+	for (i8 y = 1; y < ARRAY_SIZE(g.board) - 1; ++y) {
+		for (i8 x = 1; x < ARRAY_SIZE(*g.board) - 1; ++x)
 			display_tile((Coords) {x, y});
 		putchar('\n');
 	}
