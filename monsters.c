@@ -1,6 +1,7 @@
 // monsters.c - defines all monsters in the game and their AIs
 
 #define MOVE(x, y) (enemy_move(this, (Coords) {(x), (y)}))
+#define IS_EMPTY(pos) (TILE(pos).class != WALL && !TILE(pos).monster)
 
 // Many things in the game follow the so-called “bomb order”:
 // 147
@@ -444,20 +445,42 @@ static void sarcophagus(Monster *this, __attribute__((unused)) Coords d)
 		return;
 
 	// Make sure that at least one direction isn’t blocked
-	Coords dir;
+	Coords spawn_dir;
 	for (i64 i = 0; i < 4; ++i)
-		if (can_move(this, plus_shape[i]))
+		if (IS_EMPTY(this->pos + plus_shape[i]))
 			goto ok;
 	return;
 ok:
 
-	do dir = plus_shape[RNG()];
-		while (!can_move(this, dir));
+	do spawn_dir = plus_shape[RNG()];
+		while (!IS_EMPTY(this->pos + spawn_dir));
 
 	spawned->class = types[RNG()] + this->class - SARCO_1;
 	spawned->hp = CLASS(spawned).max_hp;
-	spawned->pos = this->pos + dir;
 	spawned->delay = 1;
+	spawned->pos = this->pos + spawn_dir;
+	TILE(spawned->pos).monster = spawned;
+}
+
+static void mommy(Monster *this, Coords d)
+{
+	Coords spawn_dir = {0, 1};
+	Monster *spawned = this + 1;
+
+	basic_seek(this, d);
+
+	if (this->pos.x == this->prev_pos.x && this->pos.y == this->prev_pos.y)
+		return;
+	if (spawned->hp > 0)
+		return;
+
+	while (!IS_EMPTY(this->pos + spawn_dir))
+		spawn_dir.x = spawn_dir.x ? 1 : -1;
+
+	spawned->class = MUMMY;
+	spawned->hp = 1;
+	spawned->delay = 1;
+	spawned->pos = this->pos + spawn_dir;
 	TILE(spawned->pos).monster = spawned;
 }
 
@@ -599,7 +622,7 @@ static const ClassInfos class_infos[256] = {
 	[MINOTAUR_2]  = { 5, 0,  49,  true,  2, 30505115, BLACK "H",  minotaur },
 	[NIGHTMARE_1] = { 3, 1,  81,  true,  4, 30403210, BLACK "u",  basic_seek },
 	[NIGHTMARE_2] = { 5, 1,  81,  true,  4, 30505215, RED "u",    basic_seek },
-	[MOMMY]       = { 6, 3,  49,  true, -1, 30405215, BLACK "@",  basic_seek },
+	[MOMMY]       = { 6, 3,   0,  true, -1, 30405215, BLACK "@",  mommy },
 	[OGRE]        = { 5, 2,   9,  true,  2, 30505115, GREEN "O",  ogre },
 
 	[PLAYER]      = { 1, 0,   0, false, -1,      ~0u, "@",        NULL },

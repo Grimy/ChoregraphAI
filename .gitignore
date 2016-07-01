@@ -3,7 +3,8 @@
 *.png
 *.svg
 core.*
-perf.data
+perf.data*
 play
 solve
 debug
+test

@@ -2,18 +2,20 @@ TESTS:
 * do yetis clap after digging?
 * knock riders, wind statues and bomb statues into the player
 * digging enemies vs metal doors
-
-FEATURES:
-* Metal doors (type=111)
-* Mummy summoning
+* do mommies summon after attacking?
+* mommy activation radius?
+* mommy spawn order?
+* do turnip/skeletons spawn already aggroed?
 
 BUGFIXES:
+* metal doors (type=111) should close themselves
 * minotaurs should have digging power 3 while charging
 * moles shouldn’t be able to move through water/tar
 * knockback shouldn’t free enemies from water/tar
 * bombs shouldn’t damage unaggroed enemies
 
 REFACTORS:
+* basic_seek should return a value for mommies/yetis
 * Refactor harpy AI
 * Dragon exhaustion is implemented in a stupid way
 * (type % 100) + offset[type / 100] ?

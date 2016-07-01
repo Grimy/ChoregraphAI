@@ -47,7 +47,7 @@ static void xml_process_node(xmlTextReader *xml)
 
 	pos += spawn;
 	assert(max(pos.x, pos.y) <= ARRAY_SIZE(g.board) - 4);
-	type = type == 255 ? SARCO_1 : type;
+	type = type == 255 ? MOMMY : type;
 
 	if (!strcmp(name, "trap")) {
 		if (type == 10) {
@@ -73,9 +73,8 @@ static void xml_process_node(xmlTextReader *xml)
 
 	else if (!strcmp(name, "enemy")) {
 		Monster *m = monster_new(type, pos);
-		if (m->class >= SARCO_1 && m->class <= SARCO_3)
+		if ((m->class >= SARCO_1 && m->class <= SARCO_3) || m->class == MOMMY)
 			next++->class = m->class;
-		// || m->class == MOMMY
 	}
 
 	else if (!strcmp(name, "crate")) {
