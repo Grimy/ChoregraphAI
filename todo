@@ -1,19 +1,11 @@
-TESTS:
-* re-test all charging monsters
-
 FEATURES:
 * metal doors (type=111) should close themselves
 * green bats
 
 BUGFIXES:
-* minotaurs should have digging power 3 while charging
-* moles shouldn’t be able to move through water/tar
-* knockback shouldn’t free enemies/crates from water/tar
-* barrels should be immune to confusion
 * bombs shouldn’t damage unaggroed enemies
 
 REFACTORS:
-* basic_seek should return a value for mommies/yetis
 * Refactor harpy AI
 * Dragon exhaustion is implemented in a stupid way
 * (type % 100) + offset[type / 100] ?

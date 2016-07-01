@@ -1,5 +1,7 @@
 // utils.c - core game logic
 
+#define STUCK(m) (!CLASS(m).flying && (TILE((m)->pos).class == WATER \
+		|| (TILE((m)->pos).class == TAR && !(m)->untrapped)))
 #define STARTING_DELAY(c) (((c) >= WINDMAGE_1 && (c) <= WINDMAGE_3) || \
 		((c) >= LICH_1 && (c) <= LICH_3) || (c) == HARPY)
 
@@ -33,16 +35,16 @@ static void move(Monster *m, Coords dest)
 }
 
 // Tests whether the given monster can move in the given direction.
-// The code assumes that only spiders can be inside walls. This will need to
-// change before adding phasing enemies.
 static bool can_move(Monster *m, Coords offset)
 {
 	assert(m != &player || offset.x || offset.y);
 	Tile dest = TILE(m->pos + offset);
 	if (dest.monster)
 		return dest.monster == &player;
-	if (TILE(m->pos).class == WALL)
+	if (m->class == SPIDER)
 		return dest.class == WALL && !dest.torch;
+	if (m->class == MOLE && (dest.class == WATER || dest.class == TAR))
+		return false;
 	return dest.class != WALL;
 }
 
@@ -152,7 +154,7 @@ static MoveResult enemy_move(Monster *m, Coords offset)
 	m->delay = CLASS(m).beat_delay;
 	if (!before_move(m))
 		return MOVE_SPECIAL;
-	if (m->confusion)
+	if (m->confusion && m->class != BARREL)
 		offset = -offset;
 
 	if (TILE(m->pos + offset).monster == &player) {
@@ -165,15 +167,19 @@ static MoveResult enemy_move(Monster *m, Coords offset)
 	}
 
 	// Trampling
-	if (!m->aggro && CLASS(m).dig == 4) {
+	i32 digging_power = m->confusion ? -1 : CLASS(m).digging_power;
+	if (!m->aggro && digging_power == 4) {
 		for (i64 i = 0; i < 4; ++i)
 			damage_tile(m->pos + plus_shape[i], m->pos, 4, DMG_NORMAL);
 		return MOVE_SPECIAL;
 	}
 
-	if (dig(m->pos + offset, m->confusion ? -1 : CLASS(m).dig, false)) {
+	// Regular digging
+	digging_power += (m->class == MINOTAUR_1 || m->class == MINOTAUR_2) && m->state;
+	if (dig(m->pos + offset, digging_power, false)) {
 		return MOVE_SPECIAL;
 	}
+
 	m->delay = 0;
 	return MOVE_FAIL;
 }
@@ -264,7 +270,7 @@ static void update_fov()
 // Knocks an enemy away from the player.
 static void knockback(Monster *m, Coords dir, u8 delay)
 {
-	if (dir.x || dir.y)
+	if (L1(dir) && !STUCK(m))
 		forced_move(m, dir);
 	m->delay = delay;
 }

@@ -190,7 +190,7 @@ typedef struct {
 	u8 beat_delay;
 	u8 radius;
 	bool flying: 1;
-	signed dig: 7;
+	signed digging_power: 7;
 	u32 priority;
 	char *glyph;
 	void (*act) (Monster*, Coords);

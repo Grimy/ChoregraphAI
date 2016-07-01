@@ -115,6 +115,7 @@ static void explore(Route *route)
 // `solve` entry point: solves the dungeon
 static void run()
 {
+	g.seed = 0;
 	initial_state = g;
 	worst_score = fitness_function();
 	for (Route *route = calloc(1, sizeof(*route)); route; route = pop_queue()) {

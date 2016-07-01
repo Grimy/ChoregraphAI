@@ -92,6 +92,8 @@ static void charge(Monster *this, __attribute__((unused)) Coords d)
 		charging_dir = CARDINAL(charging_dir);
 	if (enemy_move(this, charging_dir) != MOVE_SUCCESS)
 		this->state = 0;
+	if (this->class != BARREL)
+		this->prev_pos = this->pos - charging_dir;
 }
 
 // Move in a random direction.
@@ -145,8 +147,7 @@ static void mage(Monster *this, Coords d)
 	bool can_cast = L2(d) == 4
 		&& can_move(this, DIRECTION(d))
 		&& !this->confusion
-		&& TILE(this->pos).class != WATER
-		&& (TILE(this->pos).class != TAR || this->untrapped)
+		&& !STUCK(this)
 		&& !(player.confusion && is_lich);
 
 	if (!can_cast) {
@@ -371,14 +372,11 @@ static bool can_charge(Monster *this, Coords d)
 // State 3: charging
 static void armadillo(Monster *this, Coords d)
 {
-	i64 old_state = this->state;
 	this->state = this->state >= 2 ? 3 : can_charge(this, d) ? this->state + 2 : this->aggro;
 	if (this->state == 3) {
 		charge(this, d);
-		this->delay = this->state ? 1 : 0;
+		this->delay = this->state ? 0 : 1;
 	}
-	if (old_state && this->confusion)
-		this->prev_pos = this->pos + this->pos - this->prev_pos;
 }
 
 // State 0: default
@@ -437,13 +435,6 @@ static void assassin(Monster *this, Coords d)
 {
 	this->state = L1(d) == 1 || (L1(d) + this->state) > L1(player.prev_pos - this->pos);
 	(this->state ? basic_seek : basic_flee)(this, d);
-}
-
-static void headless(Monster *this, __attribute__((unused)) Coords d)
-{
-	Coords prev_pos = this->prev_pos;
-	if (enemy_move(this, CARDINAL(this->pos - prev_pos)) != MOVE_SUCCESS)
-		this->prev_pos = prev_pos;
 }
 
 static void sarcophagus(Monster *this, __attribute__((unused)) Coords d)
@@ -547,7 +538,7 @@ static const ClassInfos class_infos[256] = {
 	[WRAITH]      = { 1, 0,   9,  true, -1, 10101102, RED "W",    basic_seek },
 	[MIMIC_1]     = { 1, 0,   0, false, -1, 10201100, YELLOW "m", mimic },
 	[MIMIC_2]     = { 1, 0,   0, false, -1, 10301100, BLUE "m",   mimic },
-	[HEADLESS]    = { 1, 0,   0, false, -1, 10302203, "∠",        headless },
+	[HEADLESS]    = { 1, 0,   0, false, -1, 10302203, "∠",        charge },
 
 	[SKELETANK_1] = { 1, 1,   9, false, -1, 10101202, "Z",        basic_seek },
 	[SKELETANK_2] = { 2, 1,   9, false, -1, 10302204, YELLOW "Z", basic_seek },
