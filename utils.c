@@ -87,7 +87,7 @@ static void damage_tile(Coords pos, Coords origin, i64 dmg, DamageType type) {
 	if (TILE(pos).class == WALL && TILE(pos).hp < 5)
 		destroy_wall(pos);
 	if (TILE(pos).monster)
-		damage(TILE(pos).monster, dmg, CARDINALIZE(pos - origin), type);
+		damage(TILE(pos).monster, dmg, CARDINAL(pos - origin), type);
 }
 
 // Handles an enemy attacking the player.

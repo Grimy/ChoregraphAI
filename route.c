@@ -16,7 +16,7 @@ static Route* routes[MAX_SCORE];      // Priority queue of routes to explore
 static i32 cur_score = MAX_SCORE;     // Index inside the queue
 static i32 worst_score;
 static u64 best_len = MAX_LENGTH;     // Length of the shortest winning route
-static struct game_state initial_state;
+static GameState initial_state;
 
 // Returns the current time in microseconds since the epoch
 static i64 get_cur_time(void)
@@ -89,7 +89,7 @@ static double success_rate(Route *route)
 
 	for (u32 i = 0; i < 256; ++i) {
 		g = initial_state;
-		seed = i;
+		g.seed = i;
 		for (u64 beat = 0; beat < route->len; ++beat)
 			do_beat(route->input[beat]);
 		ok += fitness_function() == 0;
@@ -106,10 +106,9 @@ static void explore(Route *route)
 		return;
 
 	g = initial_state;
-	seed = 0;
 	for (u64 i = 0; i < route->len; ++i)
 		do_beat(route->input[i]);
-	struct game_state saved_state = g;
+	GameState saved_state = g;
 	++route->len;
 
 	// Try adding each possible input at the end

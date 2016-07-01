@@ -93,7 +93,7 @@ static void bat(Monster *this, Coords d)
 		basic_seek(this, d);
 		return;
 	}
-	if (!seed) {
+	if (!g.seed) {
 		monster_kill(this, DMG_NORMAL);
 		return;
 	}
@@ -357,7 +357,7 @@ static void armadillo(Monster *this, Coords d)
 	if (this->state == 3) {
 		Coords charging_dir = this->pos - this->prev_pos;
 		if (this->class != ARMADILDO)
-			charging_dir = CARDINALIZE(charging_dir);
+			charging_dir = CARDINAL(charging_dir);
 		if (enemy_move(this, this->pos - this->prev_pos) != MOVE_SUCCESS) {
 			this->delay = 1;
 			this->state = 0;
@@ -431,7 +431,7 @@ static void assassin(Monster *this, Coords d)
 static void headless(Monster *this, __attribute__((unused)) Coords d)
 {
 	Coords prev_pos = this->prev_pos;
-	if (!enemy_move(this, CARDINALIZE(this->pos - prev_pos)))
+	if (!enemy_move(this, CARDINAL(this->pos - prev_pos)))
 		this->prev_pos = prev_pos;
 }
 
@@ -440,7 +440,7 @@ static void sarcophagus(Monster *this, __attribute__((unused)) Coords d)
 	static const MonsterClass types[] = {SKELETON_1, SKELETANK_1, WINDMAGE_1, RIDER_1};
 	Monster *spawned = this + 1;
 	this->delay = CLASS(this).beat_delay;
-	if (!g.sarco_on || !seed || spawned->hp > 0)
+	if (!g.sarco_on || spawned->hp > 0 || !g.seed)
 		return;
 
 	// Make sure that at least one direction isn’t blocked

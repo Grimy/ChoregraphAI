@@ -1,25 +1,34 @@
 // chore.h - global types and vars definitions
 
-#define DIRECTION(pos) ((Coords) {SIGN((pos).x), SIGN((pos).y)})
-#define CARDINALIZE(d) ((Coords) {SIGN((d).x), (d).x ? 0 : SIGN((d).y)})
-#define L1(pos) (abs((pos).x) + abs((pos).y))
-#define L2(pos) ((pos).x * (pos).x + (pos).y * (pos).y)
-
 #define player (g._player)
 #define TILE(pos) (g.board[(pos).x][(pos).y])
-#define CLASS(m) (class_infos[(m)->class])
-#define NO_DIR ((Coords) {0, 0})
-
 #define BLOCKS_MOVEMENT(pos) (TILE(pos).class == WALL)
+#define RNG() ((g.seed = g.seed >> 2 ^ g.seed << 3 ^ g.seed >> 14) & 3)
 
-// Reasonable constant choices: (2, 3, 14), (2, 9, 16), (2, 9, 27), (2, 20, 9)
-#define RNG() ((seed = seed >> 2 ^ seed << 3 ^ seed >> 14) & 3)
-
-// A pair of cartesian coordinates.
+// A pair of cartesian coordinates. Each variable of this type is either:
+// * A point, representing an absolute position within the grid (usually named `pos`)
+// * A vector, representing the relative position of another entity (usually named `d`)
+// * A unit vector, representing a direction of movement (usually named `dir` or `move`)
 typedef i8 Coords __attribute__((ext_vector_type(2)));
 
-// Human-friendly names for monster classes.
-// Numerical values were arbitrarily picked to make parsing dungeon XML easier.
+// The direction of non-directional damage.
+#define NO_DIR ((Coords) {0, 0})
+
+// Converts relative coordinates to a direction.
+// For example, {5, -7} becomes {1, -1}.
+#define DIRECTION(d) ((Coords) {SIGN((d).x), SIGN((d).y)})
+
+// Converts relative coordinates to a *cardinal* direction.
+// Diagonals are turned into horizontals.
+#define CARDINAL(d) ((Coords) {SIGN((d).x), (d).x ? 0 : SIGN((d).y)})
+
+// L¹ norm of a vector (= number of beats it takes to move to this relative position).
+#define L1(d) (abs((d).x) + abs((d).y))
+
+// *Square* of the L² norm of a vector (mostly used for aggro/lighting).
+#define L2(d) ((d).x * (d).x + (d).y * (d).y)
+
+// Monster types.
 typedef enum __attribute__((__packed__)) {
 	// Z1 enemies
 	GREEN_SLIME, BLUE_SLIME, YOLO_SLIME,
@@ -30,7 +39,7 @@ typedef enum __attribute__((__packed__)) {
 	ZOMBIE,
 	WRAITH,
 	MIMIC_1, MIMIC_2,
-	HEADLESS,
+	HEADLESS, // a decapitated skeleton
 
 	// Z2 enemies
 	SKELETANK_1 = 100, SKELETANK_2, SKELETANK_3,
@@ -43,7 +52,8 @@ typedef enum __attribute__((__packed__)) {
 	MOLE,
 	WIGHT,
 	WALL_MIMIC,
-	LIGHTSHROOM, BOMBSHROOM, BOMBSHROOM_,
+	LIGHTSHROOM, BOMBSHROOM,
+	BOMBSHROOM_, // an “activated” explosive mushroom
 
 	// Z3 enemies
 	FIRE_SLIME = 200, ICE_SLIME,
@@ -58,7 +68,7 @@ typedef enum __attribute__((__packed__)) {
 	FIRE_MIMIC, ICE_MIMIC,
 	FIRE_POT, ICE_POT,
 	SHOVE_2,
-	BEETLE,
+	BEETLE, // a fire/ice beetle that has shed its armor
 
 	// Z4 enemies
 	BOMBER = 44,
@@ -78,8 +88,8 @@ typedef enum __attribute__((__packed__)) {
 	MUMMY,
 	WIND_STATUE, SEEK_STATUE, BOMB_STATUE, MINE_STATUE,
 	CRATE_1, CRATE_2,
-	FREE_SPIDER,
-	FIREPIG,
+	FREE_SPIDER, // a spider that isn’t inside a wall
+	FIREPIG, // a fire trap (they’re treated as monsters, not traps)
 
 	// Minibosses
 	DIREBAT_1 = 144, DIREBAT_2,
@@ -95,12 +105,11 @@ typedef enum __attribute__((__packed__)) {
 	BOMB,
 } MonsterClass;
 
-// Human-readable names for tile types.
-// Note that WALL can be any wall type, including level edges and doors.
+// Tile types.
 typedef enum __attribute__((__packed__)) {
-	WALL = 0,
+	WALL = 0,   // actually includes level edges and doors
 	FLOOR = 1,
-	SHOP = 3,
+	SHOP = 3,   // shop floor (behaves like FLOOR, but looks different)
 	WATER = 4,
 	TAR = 8,
 	STAIRS = 9,
@@ -109,35 +118,39 @@ typedef enum __attribute__((__packed__)) {
 	OOZE = 17,
 } TileClass;
 
-// Human-readable names for traps.
-// BOUNCE includes all eight directional bounce traps, but not omni-bounce nor random-bounce.
+// Trap types.
 typedef enum {
 	OMNIBOUNCE,
-	BOUNCE,
+	BOUNCE,      // any of the eight directional bounce traps
 	SPIKE,
 	TRAPDOOR,
 	CONFUSE,
 	TELEPORT,
 	TEMPO_DOWN,
 	TEMPO_UP,
-	BOMBTRAP = 9,
+	RAND_BOUNCE, // not implemented
+	BOMBTRAP,
 } TrapClass;
 
+// When a monster attempts a movement, it can either:
 typedef enum {
-	MOVE_FAIL,
-	MOVE_SPECIAL,
-	MOVE_ATTACK,
-	MOVE_SUCCESS,
+	MOVE_FAIL,     // bump in a wall or other monster
+	MOVE_SPECIAL,  // crawl out of water/tar, or dig a wall
+	MOVE_ATTACK,   // attack another monster
+	MOVE_SUCCESS,  // actually change position
 } MoveResult;
 
+// Each damage has a type. It determines which on-damage triggers are in effect.
 typedef enum {
 	DMG_NORMAL,
 	DMG_WEAPON,
 	DMG_BOMB,
+	// Piercing and phasing damage aren’t implemented at the moment
+	// DMG_PIERCING,
+	// DMG_PHASING,
 } DamageType;
 
-// A “Monster” is either an enemy or the player. Yes, we are all monsters.
-// Honestly, “Entity” is way too generic, and “Character” sounds too much like “char*”.
+// A “Monster” can be either an enemy, a bomb, or the player (yes, we are all monsters).
 typedef struct {
 	MonsterClass class;
 	i8 hp;
@@ -170,6 +183,8 @@ typedef struct {
 	Coords dir;
 } Trap;
 
+// Properties that are common to all monsters of a type.
+// This avoids duplicating information between all monsters of the same type.
 typedef struct {
 	i8 max_hp;
 	u8 beat_delay;
@@ -182,13 +197,15 @@ typedef struct {
 } ClassInfos;
 
 static const ClassInfos class_infos[256];
+
+// Gets the ClassInfos entry of the given monster’s class
+#define CLASS(m) (class_infos[(m)->class])
+
 static Coords spawn;
 static Coords stairs;
 static Monster *nightmare;
-static u64 seed = 42;
 
-__extension__
-static struct game_state {
+typedef struct {
 	Tile board[35][35];
 	Monster _player;
 	Monster monsters[64];
@@ -204,7 +221,10 @@ static struct game_state {
 	i32 sarcophagus_killed;
 	i32 harpies_killed;
 	i32 current_beat;
-} g = {
+	u64 seed;
+} GameState;
+
+__extension__ static GameState g = {
 	.board = {[0 ... 34] = {[0 ... 34] = {.class = WALL, .hp = 5}}},
 	._player = {.class = PLAYER, .hp = 1},
 	.boots_on = true,
