@@ -1,5 +1,8 @@
 // utils.c - core game logic
 
+#define STARTING_DELAY(c) (((c) >= WINDMAGE_1 && (c) <= WINDMAGE_3) || \
+		((c) >= LICH_1 && (c) <= LICH_3) || (c) == HARPY)
+
 static const Coords plus_shape[] = {{-1, 0}, {0, -1}, {0, 1}, {1, 0}, {0, 0}};
 static const Coords cone_shape[] = {
 	{1, 0},
@@ -11,6 +14,13 @@ static const Coords square_shape[] = {
 	{0, -1}, {0, 0}, {0, 1},
 	{1, -1}, {1, 0}, {1, 1},
 };
+
+static void monster_init(Monster *new, MonsterClass type, Coords pos) {
+	new->class = type;
+	new->pos = new->prev_pos = pos;
+	new->hp = CLASS(new).max_hp;
+	new->delay = STARTING_DELAY(type);
+}
 
 // Moves the given monster to a specific position.
 // Keeps track of the monster’s previous position.

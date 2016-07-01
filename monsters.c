@@ -163,8 +163,7 @@ static void mushroom(Monster *this, Coords d)
 static void yeti(Monster *this, Coords d)
 {
 	basic_seek(this, d);
-	if ((this->pos.x != this->prev_pos.x || this->pos.y != this->prev_pos.y)
-	    && L2(player.pos - this->pos) < 4)
+	if (L1(this->pos - this->prev_pos) && L2(player.pos - this->pos) < 4)
 		enemy_attack(this);
 }
 
@@ -455,10 +454,8 @@ ok:
 	do spawn_dir = plus_shape[RNG()];
 		while (!IS_EMPTY(this->pos + spawn_dir));
 
-	spawned->class = types[RNG()] + this->class - SARCO_1;
-	spawned->hp = CLASS(spawned).max_hp;
+	monster_init(spawned, types[RNG()] + this->class - SARCO_1, this->pos + spawn_dir);
 	spawned->delay = 1;
-	spawned->pos = this->pos + spawn_dir;
 	TILE(spawned->pos).monster = spawned;
 }
 
@@ -469,18 +466,14 @@ static void mommy(Monster *this, Coords d)
 
 	basic_seek(this, d);
 
-	if (this->pos.x == this->prev_pos.x && this->pos.y == this->prev_pos.y)
-		return;
-	if (spawned->hp > 0)
+	if (L1(this->pos - this->prev_pos) == 0 || spawned->hp > 0)
 		return;
 
 	while (!IS_EMPTY(this->pos + spawn_dir))
 		spawn_dir.x = spawn_dir.x ? 1 : -1;
 
-	spawned->class = MUMMY;
-	spawned->hp = 1;
+	monster_init(spawned, MUMMY, this->pos + spawn_dir);
 	spawned->delay = 1;
-	spawned->pos = this->pos + spawn_dir;
 	TILE(spawned->pos).monster = spawned;
 }
 

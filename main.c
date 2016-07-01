@@ -116,7 +116,7 @@ static void do_beat(u8 input)
 		return;
 	update_fov();
 	g.bomb_exploded = false;
-	for (Monster *m = g.monsters; m < next; ++m)
+	for (Monster *m = g.monsters; m < last_monster; ++m)
 		if (m->hp > 0)
 			enemy_turn(m);
 	for (Trap *t = g.traps; t->pos.x; ++t)

@@ -201,10 +201,6 @@ static const ClassInfos class_infos[256];
 // Gets the ClassInfos entry of the given monster’s class
 #define CLASS(m) (class_infos[(m)->class])
 
-static Coords spawn;
-static Coords stairs;
-static Monster *nightmare;
-
 typedef struct {
 	Tile board[35][35];
 	Monster _player;
@@ -230,6 +226,11 @@ __extension__ static GameState g = {
 	.boots_on = true,
 	.dragon_exhausted = 4,
 };
+
+static Coords spawn;
+static Coords stairs;
+static Monster *nightmare;
+static Monster *last_monster = g.monsters;
 
 // Some pre-declarations
 static void do_beat(u8 input);
