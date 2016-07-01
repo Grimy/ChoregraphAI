@@ -4,6 +4,7 @@
 
 #define MAX_LENGTH    32
 #define MAX_SCORE     64
+#define MAX_BACKTRACK 5
 
 typedef struct route {
 	struct route *next;           // Next element, if any
@@ -11,31 +12,12 @@ typedef struct route {
 	u8 input[MAX_LENGTH];         // Inputs composing the route
 } Route;
 
-static i64 start_time;                // Unix start time (us)
 static Route* routes[MAX_SCORE];      // Priority queue of routes to explore
+static i32 explored_routes;
 static i32 cur_score = MAX_SCORE;     // Index inside the queue
 static i32 worst_score;
 static u64 best_len = MAX_LENGTH;     // Length of the shortest winning route
 static GameState initial_state;
-
-// Returns the current time in microseconds since the epoch
-static i64 get_cur_time(void)
-{
-	static struct timeval tv;
-	gettimeofday(&tv, NULL);
-	return tv.tv_sec * 1000000L + tv.tv_usec;
-}
-
-// Prints the time since the program started to STDOUT
-static char* timestamp()
-{
-	static char buf[16];
-	i64 hundredths = (get_cur_time() - start_time) / 10000;
-	i64 seconds = (hundredths / 100) % 60;
-	i64 minutes = (hundredths / 100 / 60) % 60;
-	sprintf(buf, "[%02ld:%02ld.%02ld]", minutes, seconds, hundredths % 100);
-	return buf;
-}
 
 // Returns a human-readable representation of a route
 static char* prettify_route(const Route *route)
@@ -76,14 +58,14 @@ static i32 fitness_function() {
 		return 255;
 	if (player_won())
 		return 0;
-	return 5 * g.current_beat / 2
-		+ L1(player.pos - stairs)
-		- 7 * g.miniboss_killed
-		- 6 * g.sarcophagus_killed
-		- 2 * g.harpies_killed;
+	return g.current_beat
+			- 2 * g.miniboss_killed
+			- 2 * g.sarcophagus_killed
+			- g.harpies_killed
+			+ (L1(player.pos - stairs) + 1) / 2;
 }
 
-static double success_rate(Route *route)
+static void winning_route(Route *route)
 {
 	u32 ok = 0;
 
@@ -95,7 +77,11 @@ static double success_rate(Route *route)
 		ok += fitness_function() == 0;
 	}
 
-	return (double) ok / 256;
+	if (ok < 51)
+		return;
+	best_len = route->len;
+	printf("[% 6d] " GREEN "%s (%2.1f%%)\n" WHITE,
+		explored_routes, prettify_route(route), ok / 2.56);
 }
 
 // Starts with the given route, then tries all possible inputs
@@ -104,6 +90,7 @@ static void explore(Route *route)
 	// Don’t explore routes that cannot beat the current best
 	if (route->len >= best_len)
 		return;
+	++explored_routes;
 
 	g = initial_state;
 	for (u64 i = 0; i < route->len; ++i)
@@ -118,23 +105,16 @@ static void explore(Route *route)
 		do_beat(i);
 		i32 status = fitness_function();
 		assert(status >= 0);
-		if (status == 0) {
-			double rate = success_rate(route);
-			if (rate > .2) {
-				best_len = route->len;
-				printf("%s " GREEN "%s (%2.1f%%)\n" WHITE,
-					timestamp(), prettify_route(route), rate * 100);
-			}
-		} else if (status < worst_score + 8) {
+		if (status == 0)
+			winning_route(route);
+		else if (status < worst_score + MAX_BACKTRACK)
 			add_to_queue(route, (u16) status);
-		}
 	}
 }
 
 // `solve` entry point: solves the dungeon
 static void run()
 {
-	start_time = get_cur_time();
 	initial_state = g;
 	worst_score = fitness_function();
 	for (Route *route = calloc(1, sizeof(*route)); route; route = pop_queue()) {

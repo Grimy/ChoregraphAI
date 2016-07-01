@@ -104,7 +104,7 @@ static void xml_parse(char *file, i64 level)
 	xml_process_file(file, level, xml_process_node);
 
 	move(&player, spawn);
-	for (i64 i = 0; i < 4; ++i)
+	for (i64 i = 0; i < 5; ++i)
 		*last_monster++ = (Monster) {.class = BOMB, .aggro = true};
 
 	qsort(g.monsters, (size_t) (last_monster - g.monsters),
