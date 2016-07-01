@@ -84,6 +84,16 @@ static void moore_seek(Monster *this, Coords d)
 		MOVE(0, SIGN(d.y)) || MOVE(1, 0);
 }
 
+// Keep moving in the same direction
+static void charge(Monster *this, __attribute__((unused)) Coords d)
+{
+	Coords charging_dir = this->pos - this->prev_pos;
+	if (this->class != ARMADILDO && this->class != BARREL)
+		charging_dir = CARDINAL(charging_dir);
+	if (enemy_move(this, charging_dir) != MOVE_SUCCESS)
+		this->state = 0;
+}
+
 // Move in a random direction.
 // If the chosen direction is blocked, cycles through the other directions
 // in the order right > left > down > up (mnemonic: Ryan Loves to Dunk Us).
@@ -364,13 +374,8 @@ static void armadillo(Monster *this, Coords d)
 	i64 old_state = this->state;
 	this->state = this->state >= 2 ? 3 : can_charge(this, d) ? this->state + 2 : this->aggro;
 	if (this->state == 3) {
-		Coords charging_dir = this->pos - this->prev_pos;
-		if (this->class != ARMADILDO)
-			charging_dir = CARDINAL(charging_dir);
-		if (enemy_move(this, this->pos - this->prev_pos) != MOVE_SUCCESS) {
-			this->delay = 1;
-			this->state = 0;
-		}
+		charge(this, d);
+		this->delay = this->state ? 1 : 0;
 	}
 	if (old_state && this->confusion)
 		this->prev_pos = this->pos + this->pos - this->prev_pos;
@@ -380,14 +385,11 @@ static void armadillo(Monster *this, Coords d)
 // State 1: charging
 static void minotaur(Monster *this, Coords d)
 {
-	if (this->state == 0) {
+	if (this->state == 0)
 		this->state = can_charge(this, d) || can_charge(this, player.prev_pos - this->pos);
-	}
 	if (this->state == 1) {
-		if (!enemy_move(this, this->pos - this->prev_pos)) {
-			this->delay = 2;
-			this->state = 0;
-		}
+		charge(this, d);
+		this->delay = this->state ? 0 : 2;
 	} else {
 		basic_seek(this, d);
 	}
@@ -440,7 +442,7 @@ static void assassin(Monster *this, Coords d)
 static void headless(Monster *this, __attribute__((unused)) Coords d)
 {
 	Coords prev_pos = this->prev_pos;
-	if (!enemy_move(this, CARDINAL(this->pos - prev_pos)))
+	if (enemy_move(this, CARDINAL(this->pos - prev_pos)) != MOVE_SUCCESS)
 		this->prev_pos = prev_pos;
 }
 
@@ -565,8 +567,8 @@ static const ClassInfos class_infos[256] = {
 	[WIGHT]       = { 1, 0,   9,  true, -1, 10201103, GREEN "W",  basic_seek },
 	[WALL_MIMIC]  = { 1, 0,   0, false, -1, 10201103, GREEN "m",  mimic },
 	[LIGHTSHROOM] = { 1, 9,   9, false, -1,        0, "%",        nop },
-	[BOMBSHROOM]  = { 1, 0,   0, false, -1,      ~1u, YELLOW "%", nop },
-	[BOMBSHROOM_] = { 1, 0,   9, false, -1,      ~1u, RED "%",    bomb_detonate },
+	[BOMBSHROOM]  = { 1, 0,   0, false, -1,      ~2u, YELLOW "%", nop },
+	[BOMBSHROOM_] = { 1, 0,   9, false, -1,      ~2u, RED "%",    bomb_detonate },
 
 	[FIRE_SLIME]  = { 1, 0, 225, false,  2, 10301101, RED "P",    diagonal_slime },
 	[ICE_SLIME]   = { 1, 0, 225, false,  2, 10301101, CYAN "P",   diagonal_slime },
@@ -616,12 +618,13 @@ static const ClassInfos class_infos[256] = {
 	[WIND_STATUE] = { 1, 0,   0, false, -1, 10401102, CYAN "g",   wind_statue },
 	[SEEK_STATUE] = { 1, 0,   0, false, -1, 10401102, BLACK "g",  mimic },
 	[BOMB_STATUE] = { 1, 0,   0, false, -1, 10401102, YELLOW "g", bomb_statue },
-	[MINE_STATUE] = { 1, 0,   0, false, -1, 10401102, RED "g",    nop },
-	[CRATE_1]     = { 1, 1,   0, false, -1, 10401102, "(",        nop },
-	[CRATE_2]     = { 1, 1,   0, false, -1, 10401102, "g",        nop },
+	[MINE_STATUE] = { 1, 0,   0, false, -1,        0, RED "g",    nop },
+	[CRATE_1]     = { 1, 0,   0, false, -1,        0, "(",        nop },
+	[CRATE_2]     = { 1, 0,   0, false, -1,        0, "(",        nop },
+	[BARREL]      = { 1, 0, 225, false,  1,       80, YELLOW "(", charge },
+	[TEH_URN]     = { 3, 0,   0, false, -1,        0, PURPLE "(", nop },
 	[FIREPIG]     = { 1, 0,   0, false, -1,        1, RED "q",    firepig },
 
-	[SHOPKEEPER]  = { 9, 9,   9, false, -1, 99999997, "@",        nop },
 	[DIREBAT_1]   = { 2, 1,   9,  true, -1, 30302210, YELLOW "B", bat },
 	[DIREBAT_2]   = { 3, 1,   9,  true, -1, 30403215, "B",        bat },
 	[DRAGON]      = { 4, 1,  49,  true,  4, 30404210, GREEN "D",  basic_seek },
@@ -636,6 +639,7 @@ static const ClassInfos class_infos[256] = {
 	[MOMMY]       = { 6, 3,   9,  true, -1, 30405215, BLACK "@",  mommy },
 	[OGRE]        = { 5, 2,   9,  true,  2, 30505115, GREEN "O",  ogre },
 
+	[SHOPKEEPER]  = { 9, 9,   9, false, -1, 99999997, "@",        nop },
 	[PLAYER]      = { 1, 0,   0, false, -1,      ~0u, "@",        NULL },
 	[BOMB]        = { 0, 0,   0, false, -1,      ~1u, "o",        bomb_detonate },
 };

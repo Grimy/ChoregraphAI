@@ -352,8 +352,23 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	case CRATE_1:
 	case CRATE_2:
 		if (dmg >= 3)
+			break; // Literally
+		knockback(m, dir, 0);
+		return false;
+	case BARREL:
+		if (dmg >= 3)
 			break;
-		knockback(m, dir, 1);
+		// Do a barrel roll!
+		m->prev_pos = m->pos - dir;
+		return false;
+	case TEH_URN:
+		if (dmg >= 5)
+			break;
+		if (type != DMG_WEAPON) {
+			dmg = 1;
+			break;
+		}
+		knockback(m, dir, 0);
 		return false;
 	}
 
@@ -406,7 +421,7 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	case ARMADILDO:
 		if (m->state != 3)
 			break;
-		m->prev_pos = player.pos;
+		m->prev_pos = m->pos - dir;
 		return false;
 	case ICE_BEETLE:
 	case FIRE_BEETLE:

@@ -66,7 +66,7 @@ static void xml_process_node(xmlTextReader *xml)
 	}
 
 	else if (!strcmp(name, "crate")) {
-		monster_init(last_monster++, CRATE_1, pos);
+		monster_init(last_monster++, CRATE_2 + type, pos);
 	}
 }
 
