@@ -4,7 +4,7 @@
 
 #define MAX_LENGTH    32
 #define MAX_SCORE     64
-#define MAX_BACKTRACK 5
+#define MAX_BACKTRACK 3
 
 typedef struct route {
 	struct route *next;           // Next element, if any
@@ -62,14 +62,14 @@ static i32 fitness_function() {
 			- 2 * g.miniboss_killed
 			- 2 * g.sarcophagus_killed
 			- g.harpies_killed
-			+ (L1(player.pos - stairs) + 1) / 2;
+			+ L1(player.pos - stairs) * 2 / 5;
 }
 
 static void winning_route(Route *route)
 {
 	u32 ok = 0;
 
-	for (u32 i = 0; i < 256; ++i) {
+	for (u32 i = 1; i <= 256 && (ok + 2) * 4 >= i; ++i) {
 		g = initial_state;
 		g.seed = i;
 		for (u64 beat = 0; beat < route->len; ++beat)
@@ -77,10 +77,10 @@ static void winning_route(Route *route)
 		ok += fitness_function() == 0;
 	}
 
-	if (ok < 51)
+	if (ok < 64)
 		return;
 	best_len = route->len;
-	printf("[% 6d] " GREEN "%s (%2.1f%%)\n" WHITE,
+	printf("[%6d] " GREEN "%s (%2.1f%%)\n" WHITE,
 		explored_routes, prettify_route(route), ok / 2.56);
 }
 

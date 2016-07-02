@@ -27,7 +27,8 @@ static void player_turn(u8 input)
 		player_move( 0, -1);
 		break;
 	case 4:
-		bomb_plant(player.pos, 3);
+		if (g.player_bombs-- > 0)
+			bomb_plant(player.pos, 3);
 		break;
 	case 5:
 		g.boots_on ^= 1;

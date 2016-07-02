@@ -35,10 +35,10 @@ static void move(Monster *m, Coords dest)
 }
 
 // Tests whether the given monster can move in the given direction.
-static bool can_move(Monster *m, Coords offset)
+static bool can_move(Monster *m, Coords dir)
 {
-	assert(m != &player || offset.x || offset.y);
-	Tile dest = TILE(m->pos + offset);
+	assert(m != &player || L1(dir));
+	Tile dest = TILE(m->pos + dir);
 	if (dest.monster)
 		return dest.monster == &player;
 	if (m->class == SPIDER)
@@ -145,24 +145,24 @@ static bool before_move(Monster *m)
 	return true;
 }
 
-// Attempts to move the given monster by the given offset.
+// Attempts to move the given monster in the given direction.
 // Will trigger attacking/digging if the destination contains the player/a wall.
 // On success, resets the enemy’s delay and returns true.
-static MoveResult enemy_move(Monster *m, Coords offset)
+static MoveResult enemy_move(Monster *m, Coords dir)
 {
 	m->prev_pos = m->pos;
 	m->delay = CLASS(m).beat_delay;
 	if (!before_move(m))
 		return MOVE_SPECIAL;
 	if (m->confusion && m->class != BARREL)
-		offset = -offset;
+		dir = -dir;
 
-	if (TILE(m->pos + offset).monster == &player) {
+	if (TILE(m->pos + dir).monster == &player) {
 		enemy_attack(m);
 		return MOVE_ATTACK;
 	}
-	if (can_move(m, offset)) {
-		move(m, m->pos + offset);
+	if (can_move(m, dir)) {
+		move(m, m->pos + dir);
 		return MOVE_SUCCESS;
 	}
 
@@ -176,7 +176,7 @@ static MoveResult enemy_move(Monster *m, Coords offset)
 
 	// Regular digging
 	digging_power += (m->class == MINOTAUR_1 || m->class == MINOTAUR_2) && m->state;
-	if (dig(m->pos + offset, digging_power, false)) {
+	if (dig(m->pos + dir, digging_power, false)) {
 		return MOVE_SPECIAL;
 	}
 
@@ -186,18 +186,18 @@ static MoveResult enemy_move(Monster *m, Coords offset)
 
 // Moves something by force (as caused by bounce traps, wind mages and knockback).
 // Unlike enemy_move, ignores confusion, delay, and digging.
-static bool forced_move(Monster *m, Coords offset)
+static bool forced_move(Monster *m, Coords dir)
 {
-	assert(offset.x || offset.y);
+	assert(m != &player || L1(dir));
 	if (!before_move(m))
 		return false;
-	Tile *dest = &TILE(m->pos + offset);
+	Tile *dest = &TILE(m->pos + dir);
 	if (dest->monster == &player) {
 		enemy_attack(m);
 		return true;
 	} else if (!dest->monster && dest->class != WALL) {
 		m->prev_pos = m->pos;
-		move(m, m->pos + offset);
+		move(m, m->pos + dir);
 		return true;
 	}
 	return false;
@@ -209,7 +209,7 @@ static bool forced_move(Monster *m, Coords offset)
 static bool can_see(Coords dest)
 {
 	Coords pos = player.pos;
-	if (dest.x < pos.x - 10 || dest.x > pos.x + 9 || dest.y < pos.y - 5 || dest.y > pos.y + 5)
+	if (dest.x < pos.x - 10 || dest.x > pos.x + 9 || dest.y < pos.y - 6 || dest.y > pos.y + 5)
 		return false;
 
 	// Miner’s Cap
@@ -230,9 +230,6 @@ begin:
 
 	for (delta.y = 0; delta.y < row + 1; ++delta.y) {
 		Coords current = {delta.x * x.x + delta.y * x.y, delta.x * y.x + delta.y * y.y};
-		if (abs(current.y) > 5)
-			continue;
-
 		current += player.pos;
 		double left_slope = (delta.y - 0.51) / (delta.x + 0.51);
 		double right_slope = (delta.y + 0.51) / (delta.x - 0.51);
@@ -270,7 +267,7 @@ static void update_fov()
 // Knocks an enemy away from the player.
 static void knockback(Monster *m, Coords dir, u8 delay)
 {
-	if (L1(dir) && !STUCK(m))
+	if (!STUCK(m))
 		forced_move(m, dir);
 	m->delay = delay;
 }
@@ -484,7 +481,7 @@ static void lunge(Coords dir) {
 		knockback(next->monster, dir, 1);
 }
 
-// Attempts to move the player by the given offset.
+// Attempts to move the player in the given direction
 // Will trigger attacking/digging if the destination contains an enemy/a wall.
 static void player_move(i8 x, i8 y)
 {
@@ -494,21 +491,21 @@ static void player_move(i8 x, i8 y)
 	if (!before_move(&player))
 		return;
 
-	Coords offset = {x, y};
+	Coords dir = {x, y};
 	if (player.confusion)
-		offset = -offset;
+		dir = -dir;
 
-	Tile *dest = &TILE(player.pos + offset);
+	Tile *dest = &TILE(player.pos + dir);
 
 	if (dest->class == WALL) {
-		dig(player.pos + offset, TILE(player.pos).class == OOZE ? 0 : 2, false);
+		dig(player.pos + dir, TILE(player.pos).class == OOZE ? 0 : 2, false);
 	} else if (dest->monster) {
-		damage(dest->monster, TILE(player.pos).class == OOZE ? 0 : 5, offset, DMG_WEAPON);
+		damage(dest->monster, TILE(player.pos).class == OOZE ? 0 : 5, dir, DMG_WEAPON);
 	} else {
 		g.player_moved = true;
-		move(&player, player.pos + offset);
+		move(&player, player.pos + dir);
 		if (g.boots_on)
-			lunge(offset);
+			lunge(dir);
 
 		// Miner’s cap
 		i32 digging_power = TILE(player.pos).class == OOZE ? 0 : 2;
