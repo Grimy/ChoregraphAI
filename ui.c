@@ -3,9 +3,6 @@
 
 #include <time.h>
 
-// For display purposes, doors count as walls, but level edges don’t
-#define IS_WALL(pos) (TILE(pos).class == WALL && TILE(pos).hp < 5)
-
 static const u8 floor_colors[] = {
 	[STAIRS] = 105, [SHOP] = 43,
 	[WATER] = 44, [TAR] = 40,

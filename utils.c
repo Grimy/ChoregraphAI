@@ -42,7 +42,7 @@ static bool can_move(Monster *m, Coords dir)
 	if (dest.monster)
 		return dest.monster == &player;
 	if (m->class == SPIDER)
-		return dest.class == WALL && !dest.torch;
+		return IS_WALL(m->pos + dir) && !dest.torch;
 	if (m->class == MOLE && (dest.class == WATER || dest.class == TAR))
 		return false;
 	return dest.class != WALL;
@@ -60,8 +60,8 @@ static void adjust_lights(Coords pos, i8 diff) {
 }
 
 static void destroy_wall(Coords pos) {
+	assert(IS_WALL(pos));
 	Tile *wall = &TILE(pos);
-	assert(wall->class == WALL && wall->hp < 5);
 
 	wall->class =
 		wall->hp == 2 && wall->zone == 2 ? FIRE :
@@ -96,7 +96,7 @@ static bool dig(Coords pos, i32 digging_power, bool z4)
 }
 
 static void damage_tile(Coords pos, Coords origin, i64 dmg, DamageType type) {
-	if (TILE(pos).class == WALL && TILE(pos).hp < 5)
+	if (IS_WALL(pos))
 		destroy_wall(pos);
 	if (TILE(pos).monster)
 		damage(TILE(pos).monster, dmg, CARDINAL(pos - origin), type);
@@ -243,7 +243,7 @@ begin:
 		TILE(current).revealed = TILE(current).light >= 102;
 
 		bool was_blocked = blocked;
-		blocked = TILE(current).class == WALL;
+		blocked = BLOCKS_LOS(current);
 		if (!was_blocked && blocked)
 			cast_light(row + 1, start, left_slope, x, y);
 		if (blocked)
@@ -518,7 +518,7 @@ static void player_move(i8 x, i8 y)
 static void fireball(Coords pos, i8 dir)
 {
 	assert(dir != 0);
-	for (pos.x += dir; TILE(pos).class != WALL; pos.x += dir)
+	for (pos.x += dir; !BLOCKS_LOS(pos); pos.x += dir)
 		if (TILE(pos).monster)
 			damage(TILE(pos).monster, 5, (Coords) {dir, 0}, DMG_NORMAL);
 }

@@ -214,13 +214,13 @@ static void harpy(Monster *this, Coords d)
 	for (u64 i = 0; i < ARRAY_SIZE(moves); ++i) {
 		Coords move = moves[i];
 		if ((L2(move) == 9 || L2(move) == 4)
-		    && (BLOCKS_MOVEMENT(this->pos + DIRECTION(move))
-		    || BLOCKS_MOVEMENT(this->pos + 2*DIRECTION(move))))
+		    && (BLOCKS_LOS(this->pos + DIRECTION(move))
+		    || BLOCKS_LOS(this->pos + 2*DIRECTION(move))))
 			continue;
 		if (L2(move) == 5
-		    && BLOCKS_MOVEMENT(this->pos + move / 2)
-		    && (BLOCKS_MOVEMENT(this->pos + DIRECTION(move))
-		    || BLOCKS_MOVEMENT(this->pos + DIRECTION(move) - move / 2)))
+		    && BLOCKS_LOS(this->pos + move / 2)
+		    && (BLOCKS_LOS(this->pos + DIRECTION(move))
+		    || BLOCKS_LOS(this->pos + DIRECTION(move) - move / 2)))
 			continue;
 		i64 score = L1(d - move);
 		if (score && score < min && can_move(this, move)) {
@@ -360,7 +360,7 @@ static bool can_charge(Monster *this, Coords d)
 	Coords move = DIRECTION(d);
 	Coords dest = this->pos + d;
 	for (Coords pos = this->pos + move; pos.x != dest.x || pos.y != dest.y; pos += move)
-		if (TILE(pos).class == WALL || TILE(pos).monster)
+		if (BLOCKS_LOS(pos) || TILE(pos).monster)
 			return false;
 	this->prev_pos = this->pos - DIRECTION(d);
 	return true;

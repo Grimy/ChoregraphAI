@@ -2,7 +2,8 @@
 
 #define player (g._player)
 #define TILE(pos) (g.board[(pos).x][(pos).y])
-#define BLOCKS_MOVEMENT(pos) (TILE(pos).class == WALL)
+#define BLOCKS_LOS(pos) (TILE(pos).class == WALL)
+#define IS_WALL(pos) (TILE(pos).class == WALL && TILE(pos).hp < 5)
 #define RNG() ((g.seed = g.seed >> 2 ^ g.seed << 3 ^ g.seed >> 14) & 3)
 
 // A pair of cartesian coordinates. Each variable of this type is either:
