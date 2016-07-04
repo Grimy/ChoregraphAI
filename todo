@@ -1,3 +1,9 @@
+TESTS:
+* Priority of requeued mintoaur vs windmages?
+* Requeueing vs trampling?
+* Edge cases of bomb/nightmare/revealed aggro
+* Activation radius of red dragons
+
 FEATURES:
 * metal doors (type=111) should close themselves
 * green bats

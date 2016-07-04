@@ -111,15 +111,28 @@ static void trap_turn(Trap *this)
 // Enemies act in decreasing priority order. Traps have an arbitrary order.
 static void do_beat(u8 input)
 {
+	Monster *m = g.monsters;
 	++g.current_beat;
+	g.bomb_exploded = false;
+
 	player_turn(input);
 	if (player_won())
 		return;
 	update_fov();
-	g.bomb_exploded = false;
-	for (Monster *m = g.monsters; m < last_monster; ++m)
-		if (m->hp > 0)
-			enemy_turn(m);
+
+	for (; CLASS(m).act; ++m) {
+		if (m->hp <= 0)
+			continue;
+		u32 old_state = m->state;
+		enemy_turn(m);
+		if (m->requeued)
+			m->state = old_state;
+	}
+
+	while (--m >= g.monsters)
+		if (m->requeued)
+			CLASS(m).act(m, player.pos - m->pos);
+
 	for (Trap *t = g.traps; t->pos.x; ++t)
 		trap_turn(t);
 }

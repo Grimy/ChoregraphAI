@@ -27,7 +27,8 @@ static void basic_seek(Monster *this, Coords d)
 		d.x == 0 ? 1 :
 
 		// #2: avoid obstacles
-		!can_move(this, vertical) ? 0 :
+		!can_move(this, vertical) ?
+		!can_move(this, horizontal) && abs(d.y) > abs(d.x) :
 		!can_move(this, horizontal) ? 1 :
 
 		// #3: move toward the player’s previous position
@@ -406,7 +407,7 @@ static void digger(Monster *this, Coords d)
 	}
 	Coords moves[4] = {{-SIGN(d.x), 0}, {0, -SIGN(d.y)}, {0, SIGN(d.y)}, {SIGN(d.x), 0}};
 	Coords move = {0, 0};
-	this->vertical = d.y > (d.x + 1) / 3;
+	this->vertical = abs(d.y) > (abs(d.x) + 1) / 3;
 	for (i64 i = 0; i < 3; ++i) {
 		move = moves[i ^ this->vertical];
 		if (!TILE(this->pos + move).monster)
@@ -557,7 +558,7 @@ static const ClassInfos class_infos[256] = {
 	[MOLE]        = { 1, 0,   9,  true, -1,  1020113, "r",        mole },
 	[WIGHT]       = { 1, 0,   9,  true, -1, 10201103, GREEN "W",  basic_seek },
 	[WALL_MIMIC]  = { 1, 0,   0, false, -1, 10201103, GREEN "m",  mimic },
-	[LIGHTSHROOM] = { 1, 9,   9, false, -1,        0, "%",        nop },
+	[LIGHTSHROOM] = { 1, 9,   9, false, -1,        0, "%",        NULL },
 	[BOMBSHROOM]  = { 1, 0,   0, false, -1,      ~2u, YELLOW "%", nop },
 	[BOMBSHROOM_] = { 1, 0,   9, false, -1,      ~2u, RED "%",    bomb_detonate },
 
@@ -580,8 +581,8 @@ static const ClassInfos class_infos[256] = {
 	[GHAST]       = { 1, 0,   9,  true, -1, 10201102, PURPLE "W", basic_seek },
 	[FIRE_MIMIC]  = { 1, 0,   0, false, -1, 10201102, RED "m",    mimic },
 	[ICE_MIMIC]   = { 1, 0,   0, false, -1, 10201102, CYAN "m",   mimic },
-	[FIRE_POT]    = { 1, 9,   9, false, -1,        0, RED "(",    nop },
-	[ICE_POT]     = { 1, 0,   9, false, -1,        0, CYAN "(",   nop },
+	[FIRE_POT]    = { 1, 9,   9, false, -1,        0, RED "(",    NULL },
+	[ICE_POT]     = { 1, 0,   9, false, -1,        0, CYAN "(",   NULL },
 
 	[BOMBER]      = { 1, 1,   0, false, -1, 99999998, RED "G",    diagonal_seek },
 	[DIGGER]      = { 1, 1,   9, false,  2, 10101201, "G",        digger },
@@ -609,11 +610,11 @@ static const ClassInfos class_infos[256] = {
 	[WIND_STATUE] = { 1, 0,   0, false, -1, 10401102, CYAN "g",   wind_statue },
 	[SEEK_STATUE] = { 1, 0,   0, false, -1, 10401102, BLACK "g",  mimic },
 	[BOMB_STATUE] = { 1, 0,   0, false, -1, 10401102, YELLOW "g", bomb_statue },
-	[MINE_STATUE] = { 1, 0,   0, false, -1,        0, RED "g",    nop },
-	[CRATE_1]     = { 1, 0,   0, false, -1,        0, "(",        nop },
-	[CRATE_2]     = { 1, 0,   0, false, -1,        0, "(",        nop },
+	[MINE_STATUE] = { 1, 0,   0, false, -1,        0, RED "g",    NULL },
+	[CRATE_1]     = { 1, 0,   0, false, -1,        0, "(",        NULL },
+	[CRATE_2]     = { 1, 0,   0, false, -1,        0, "(",        NULL },
 	[BARREL]      = { 1, 0, 225, false,  1,       80, YELLOW "(", charge },
-	[TEH_URN]     = { 3, 0,   0, false, -1,        0, PURPLE "(", nop },
+	[TEH_URN]     = { 3, 0,   0, false, -1,        0, PURPLE "(", NULL },
 	[FIREPIG]     = { 1, 0,   0, false, -1,        1, RED "q",    firepig },
 
 	[DIREBAT_1]   = { 2, 1,   9,  true, -1, 30302210, YELLOW "B", bat },

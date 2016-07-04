@@ -146,8 +146,9 @@ static bool before_move(Monster *m)
 }
 
 // Attempts to move the given monster in the given direction.
-// Will trigger attacking/digging if the destination contains the player/a wall.
-// On success, resets the enemy’s delay and returns true.
+// Updates the enemy’s delay as appropriate.
+// Can trigger attacking/digging if the destination contains the player/a wall.
+// The return code indicates what action actually took place.
 static MoveResult enemy_move(Monster *m, Coords dir)
 {
 	m->prev_pos = m->pos;
@@ -157,14 +158,26 @@ static MoveResult enemy_move(Monster *m, Coords dir)
 	if (m->confusion && m->class != BARREL)
 		dir = -dir;
 
+	// Attack
 	if (TILE(m->pos + dir).monster == &player) {
 		enemy_attack(m);
+		m->requeued = false;
 		return MOVE_ATTACK;
 	}
+
+	// Actual movement
 	if (can_move(m, dir)) {
 		move(m, m->pos + dir);
+		m->requeued = false;
 		return MOVE_SUCCESS;
 	}
+
+	// Try the move again after other monsters have moved
+	if (!m->requeued) {
+		m->requeued = true;
+		return MOVE_FAIL;
+	}
+	m->requeued = false;
 
 	// Trampling
 	i32 digging_power = m->confusion ? -1 : CLASS(m).digging_power;
@@ -174,7 +187,7 @@ static MoveResult enemy_move(Monster *m, Coords dir)
 		return MOVE_SPECIAL;
 	}
 
-	// Regular digging
+	// Digging
 	digging_power += (m->class == MINOTAUR_1 || m->class == MINOTAUR_2) && m->state;
 	if (dig(m->pos + dir, digging_power, false)) {
 		return MOVE_SPECIAL;

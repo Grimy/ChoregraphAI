@@ -153,17 +153,18 @@ typedef enum {
 
 // A “Monster” can be either an enemy, a bomb, or the player (yes, we are all monsters).
 typedef struct {
-	MonsterClass class;
-	i8 hp;
 	Coords pos;
 	Coords prev_pos;
+	MonsterClass class;
+	int hp: 5;
 	unsigned delay: 4;
 	unsigned confusion: 4;
-	unsigned freeze: 3;
+	unsigned freeze: 5;
 	unsigned state: 2;
 	bool aggro: 1;
 	bool vertical: 1;
 	bool untrapped: 1;
+	bool requeued: 1;
 } Monster;
 
 typedef struct {
