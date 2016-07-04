@@ -202,7 +202,7 @@ static const ClassInfos class_infos[256];
 #define CLASS(m) (class_infos[(m)->class])
 
 typedef struct {
-	Tile board[36][36];
+	Tile board[41][41];
 	Monster _player;
 	Monster monsters[64];
 	Trap traps[64];
@@ -222,7 +222,7 @@ typedef struct {
 } GameState;
 
 __extension__ static GameState g = {
-	.board = {[0 ... 35] = {[0 ... 35] = {.class = WALL, .hp = 5}}},
+	.board = {[0 ... 40] = {[0 ... 40] = {.class = WALL, .hp = 5}}},
 	._player = {.class = PLAYER, .hp = 1},
 	.player_bombs = 3,
 	.boots_on = true,
