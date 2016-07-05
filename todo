@@ -1,13 +1,5 @@
 TESTS:
-* When do monkeys take damage? water, freeze, skip, spell, throw…
-* Can confuse traps proc immediately after getting conf-monkeyed?
-* Do monkeys grant clonking/shroom/bombshroom/yeti immunity?
-* Can lord white (armored) skeletons become headless?
-* Priority of requeued mintoaur vs windmages?
-* Requeueing vs trampling?
 * Edge cases of bomb/nightmare/revealed aggro
-* Activation radius of red dragons
-* Bomb triggers a gargoyle/pixie/bombshroom: knockback direction?
 
 FEATURES:
 * metal doors (type=111) should close themselves
@@ -15,7 +7,14 @@ FEATURES:
 * lord enemies
 
 BUGFIXES:
+* monkeys should still take damage on water/tar
+* monkey should tank explosions/fireballs for the player
+* clonking should hit both player and monkey
+* the `knocked` flag should be reset during the player’s turn
+* requeueing should be recursive and in normal priority order
 * bombs shouldn’t damage unaggroed enemies
+* pixie explosions shouldn’t change terrain or destroy phasing enemies (but still destroy traps/walls)
+* non-player damage on Goolem shouldn’t spawn ooze
 
 REFACTORS:
 * Refactor harpy AI

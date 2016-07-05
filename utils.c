@@ -280,11 +280,11 @@ static void update_fov()
 	}
 }
 
-// Knocks an enemy away from the player.
 static void knockback(Monster *m, Coords dir, u8 delay)
 {
-	if (!STUCK(m))
+	if (!m->knocked && !STUCK(m))
 		forced_move(m, dir);
+	m->knocked = true;
 	m->delay = delay;
 }
 
@@ -308,9 +308,8 @@ static void bomb_detonate(Monster *this, __attribute__((unused)) Coords d)
 		Tile *tile = &TILE(this->pos + square_shape[i]);
 		tile->traps_destroyed = true;
 		tile->class = tile->class == WATER ? FLOOR : tile->class == ICE ? WATER : tile->class;
-	}
-	for (i64 i = 0; i < 9; ++i)
 		damage_tile(this->pos + square_shape[i], this->pos, 4, DMG_BOMB);
+	}
 	this->hp = 0;
 	g.bomb_exploded = true;
 }
@@ -463,10 +462,8 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 
 	// After-damage triggers
 	switch (m->class) {
-	case SKELETON_1:
 	case SKELETON_2:
 	case SKELETON_3:
-	case SKELETANK_1:
 	case SKELETANK_2:
 	case SKELETANK_3:
 		if (m->hp > 1)
@@ -505,25 +502,23 @@ static void player_move(i8 x, i8 y)
 	player.prev_pos = player.pos;
 	if (!before_move(&player))
 		return;
+	Coords dir = {x, y};
+	if (player.confusion || (g.monkey && g.monkey->class == CONF_MONKEY))
+		dir = -dir;
 
 	i32 dmg = TILE(player.pos).class == OOZE ? 0 : 5;
 
 	if (g.monkey) {
+		player.untrapped = false;
 		Monster *m = g.monkey;
 		m->hp -= dmg;
 		if (m->hp <= 0)
 			g.monkey = NULL;
-		if (m->class == CONF_MONKEY)
-			player.confusion = 1;
-		else if (m->class == TELE_MONKEY)
+		if (m->class == TELE_MONKEY)
 			monster_kill(&player, DMG_NORMAL);
-		else
+		else if (m->class != CONF_MONKEY)
 			return;
 	}
-
-	Coords dir = {x, y};
-	if (player.confusion)
-		dir = -dir;
 
 	Tile *dest = &TILE(player.pos + dir);
 

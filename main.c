@@ -49,6 +49,7 @@ static void enemy_turn(Monster *m)
 	Coords d = player.pos - m->pos;
 	m->confusion -= SIGN(m->confusion);
 	m->freeze -= SIGN(m->freeze);
+	m->knocked = false;
 
 	// The bomb-aggro bug
 	if (!m->aggro && (g.bomb_exploded || (nightmare && L2(m->pos - nightmare->pos) < 9)))
