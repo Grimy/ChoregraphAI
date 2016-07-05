@@ -1,4 +1,5 @@
 TESTS:
+* Can lord white (armored) skeletons become headless?
 * Priority of requeued mintoaur vs windmages?
 * Requeueing vs trampling?
 * Edge cases of bomb/nightmare/revealed aggro

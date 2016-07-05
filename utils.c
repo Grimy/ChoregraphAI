@@ -288,8 +288,9 @@ static void knockback(Monster *m, Coords dir, u8 delay)
 // Places a bomb at the given position.
 static void bomb_plant(Coords pos, u8 delay)
 {
-	Monster *bomb;
-	for (bomb = g.monsters; bomb->hp > 0; ++bomb);
+	Monster *bomb = g.monsters + 1;
+	while (bomb->hp > 0)
+		++bomb;
 	assert(bomb->class == BOMB);
 	bomb->hp = 1;
 	bomb->pos = pos;
@@ -348,7 +349,7 @@ static void monster_kill(Monster *m, DamageType type)
 	else if (m->class >= SARCO_1 && m->class <= SARCO_3)
 		g.sarcophagus_killed = true;
 	else if (m->class == HARPY)
-		g.harpies_killed++;
+		++g.harpies_killed;
 }
 
 // Deals damage to the given monster. Handles on-damage effects.

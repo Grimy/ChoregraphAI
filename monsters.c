@@ -523,7 +523,7 @@ static void nop() {}
 
 static const ClassInfos class_infos[256] = {
 	// [Name] = { max_hp, beat_delay, radius, flying, dig, priority, glyph, act }
-	[GREEN_SLIME] = { 1, 9, 225, false, -1, 19901101, GREEN "P",  nop },
+	[GREEN_SLIME] = { 1, 9, 225, false, -1,        0, GREEN "P",  NULL },
 	[BLUE_SLIME]  = { 2, 1, 225, false, -1, 10202202, BLUE "P",   blue_slime },
 	[YOLO_SLIME]  = { 1, 0, 225, false, -1, 10101102, YELLOW "P", yellow_slime },
 	[SKELETON_1]  = { 1, 1,   9, false, -1, 10101202, "Z",        basic_seek },

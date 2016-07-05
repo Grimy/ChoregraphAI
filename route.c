@@ -99,7 +99,7 @@ static void explore(Route *route)
 	++route->len;
 
 	// Try adding each possible input at the end
-	for (u8 i = 0; i < 6; i++) {
+	for (u8 i = 0; i < 6; ++i) {
 		route->input[route->len - 1] = i;
 		g = saved_state;
 		do_beat(i);

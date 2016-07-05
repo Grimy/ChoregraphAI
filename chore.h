@@ -1,6 +1,6 @@
 // chore.h - global types and vars definitions
 
-#define player (g._player)
+#define player (g.monsters[0])
 #define TILE(pos) (g.board[(pos).x][(pos).y])
 #define BLOCKS_LOS(pos) (TILE(pos).class == WALL)
 #define IS_WALL(pos) (TILE(pos).class == WALL && TILE(pos).hp < 5)
@@ -205,8 +205,7 @@ static const ClassInfos class_infos[256];
 
 typedef struct {
 	Tile board[41][41];
-	Monster _player;
-	Monster monsters[64];
+	Monster monsters[80];
 	Trap traps[64];
 
 	u64 seed;
@@ -225,7 +224,6 @@ typedef struct {
 
 __extension__ static GameState g = {
 	.board = {[0 ... 40] = {[0 ... 40] = {.class = WALL, .hp = 5}}},
-	._player = {.class = PLAYER, .hp = 1},
 	.player_bombs = 3,
 	.boots_on = true,
 	.dragon_exhausted = 4,
@@ -235,7 +233,6 @@ __extension__ static GameState g = {
 static Coords spawn;
 static Coords stairs;
 static Monster *nightmare;
-static Monster *last_monster = g.monsters;
 
 // Some pre-declarations
 static void do_beat(u8 input);

@@ -2,6 +2,9 @@
 
 #include <libxml/xmlreader.h>
 
+// Pointer to the end of the monsters array
+static Monster *last_monster = g.monsters;
+
 // Returns the numeric value of a named attribute of the current node.
 // If the attribute is absent, it defaults to 0.
 static i8 xml_attr(xmlTextReader *xml, char* attr)
@@ -25,7 +28,7 @@ static void xml_process_node(xmlTextReader *xml)
 		{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, 1}, {-1, -1}, {1, -1}
 	};
 	static const i8 wall_hp[] = {1, 1, 5, 0, 4, 4, 0, 2, 3, 5, 4, 0};
-	static u64 trap_count = 0;
+	static Trap *last_trap = g.traps;
 
 	const char *name = (const char*) xmlTextReaderConstName(xml);
 	u8 type = (u8) xml_attr(xml, "type");
@@ -42,10 +45,10 @@ static void xml_process_node(xmlTextReader *xml)
 			monster_init(last_monster++, FIREPIG, pos);
 			return;
 		}
-		Trap *trap = &g.traps[trap_count++];
-		trap->class = subtype == 8 ? OMNIBOUNCE : type;
-		trap->pos = pos;
-		trap->dir = trap_dirs[subtype & 7];
+		last_trap->class = subtype == 8 ? OMNIBOUNCE : type;
+		last_trap->pos = pos;
+		last_trap->dir = trap_dirs[subtype & 7];
+		++last_trap;
 	}
 
 	else if (!strcmp(name, "tile")) {
@@ -103,13 +106,15 @@ static void xml_parse(char *file, i64 level)
 	xml_process_file(file, level, xml_first_pass);
 	xml_process_file(file, level, xml_process_node);
 
-	move(&player, spawn);
+	monster_init(last_monster++, PLAYER, spawn);
 	for (i64 i = 0; i < 5; ++i)
-		*last_monster++ = (Monster) {.class = BOMB, .aggro = true};
+		monster_init(last_monster++, BOMB, spawn);
 
-	qsort(g.monsters, (size_t) (last_monster - g.monsters),
-			sizeof(*g.monsters), compare_priorities);
-	for (Monster *m = g.monsters; m < last_monster; ++m) {
+	assert((last_monster - g.monsters) < ARRAY_SIZE(g.monsters));
+	qsort(g.monsters, ARRAY_SIZE(g.monsters), sizeof(Monster), compare_priorities);
+	assert(player.class == PLAYER);
+
+	for (Monster *m = last_monster; m >= g.monsters; --m) {
 		TILE(m->pos).monster = m;
 		if (m->class == NIGHTMARE_1 || m->class == NIGHTMARE_2)
 			nightmare = m;

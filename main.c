@@ -27,7 +27,7 @@ static void player_turn(u8 input)
 		player_move( 0, -1);
 		break;
 	case 4:
-		if (g.player_bombs-- > 0)
+		if (--g.player_bombs >= 0)
 			bomb_plant(player.pos, 3);
 		break;
 	case 5:
@@ -63,7 +63,7 @@ static void enemy_turn(Monster *m)
 	}
 
 	if (m->delay)
-		m->delay--;
+		--m->delay;
 	else if (!m->freeze)
 		CLASS(m).act(m, d);
 }
@@ -120,7 +120,7 @@ static void do_beat(u8 input)
 		return;
 	update_fov();
 
-	for (; CLASS(m).act; ++m) {
+	while (CLASS(++m).act) {
 		if (m->hp <= 0)
 			continue;
 		u32 old_state = m->state;
