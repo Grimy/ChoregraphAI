@@ -44,7 +44,7 @@ static void display_tile(Coords pos)
 	if (tile->class > FLOOR)
 		printf("\033[%um", floor_colors[tile->class]);
 	if (tile->monster)
-		printf("%s", CLASS(tile->monster).glyph);
+		printf("%s", CLASS(&MONSTER(pos)).glyph);
 	else if (!can_see(pos))
 		putchar(' ');
 	else if (tile->class == WALL)

@@ -1,7 +1,6 @@
 // monsters.c - defines all monsters in the game and their AIs
 
 #define MOVE(x, y) (enemy_move(this, (Coords) {(x), (y)}))
-#define IS_EMPTY(pos) (TILE(pos).class != WALL && !TILE(pos).monster)
 
 // Many things in the game follow the so-called “bomb order”:
 // 147
@@ -460,7 +459,7 @@ ok:
 	monster_init(spawned, types[RNG()] + this->class - SARCO_1, this->pos + spawn_dir);
 	spawned->delay = 2;
 	spawned->aggro = 1;
-	TILE(spawned->pos).monster = spawned;
+	TILE(spawned->pos).monster = (u8) (spawned - g.monsters);
 }
 
 // Move toward the player, then spawn a mummy on the empty tile closest
@@ -485,7 +484,7 @@ static void mommy(Monster *this, Coords d)
 		monster_init(spawned, MUMMY, this->pos + *spawn_dir);
 		spawned->delay = 2;
 		spawned->aggro = 1;
-		TILE(spawned->pos).monster = spawned;
+		TILE(spawned->pos).monster = (u8) (spawned - g.monsters);
 	}
 }
 

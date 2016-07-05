@@ -1,9 +1,11 @@
 // chore.h - global types and vars definitions
 
-#define player (g.monsters[0])
+#define player (g.monsters[1])
 #define TILE(pos) (g.board[(pos).x][(pos).y])
+#define MONSTER(pos) (g.monsters[TILE(pos).monster])
 #define BLOCKS_LOS(pos) (TILE(pos).class == WALL)
 #define IS_WALL(pos) (TILE(pos).class == WALL && TILE(pos).hp < 5)
+#define IS_EMPTY(pos) (TILE(pos).class != WALL && !TILE(pos).monster)
 #define RNG() ((g.seed = g.seed >> 2 ^ g.seed << 3 ^ g.seed >> 14) & 3)
 
 // A pair of cartesian coordinates. Each variable of this type is either:
@@ -168,15 +170,15 @@ typedef struct {
 } Monster;
 
 typedef struct {
-	Monster *monster;
 	TileClass class;
 	i8 hp;
-	i16 light;
 	i8 zone;
+	u8 monster;
+	i16 light;
 	bool torch: 1;
 	bool traps_destroyed: 1;
 	bool revealed: 1;
-	bool: 21;
+	bool: 13;
 } Tile;
 
 typedef struct {

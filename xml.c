@@ -42,7 +42,7 @@ static void xml_process_node(xmlTextReader *xml)
 	if (!strcmp(name, "trap")) {
 		if (type == 10) {
 			last_monster->state = !subtype;
-			monster_init(last_monster++, FIREPIG, pos);
+			monster_init(++last_monster, FIREPIG, pos);
 			return;
 		}
 		last_trap->class = subtype == 8 ? OMNIBOUNCE : type;
@@ -63,13 +63,13 @@ static void xml_process_node(xmlTextReader *xml)
 	}
 
 	else if (!strcmp(name, "enemy")) {
-		monster_init(last_monster++, type, pos);
+		monster_init(++last_monster, type, pos);
 		if ((type >= SARCO_1 && type <= SARCO_3) || type == MOMMY)
-			last_monster++->class = type;
+			(++last_monster)->class = type;
 	}
 
 	else if (!strcmp(name, "crate")) {
-		monster_init(last_monster++, CRATE_2 + type, pos);
+		monster_init(++last_monster, CRATE_2 + type, pos);
 	}
 }
 
@@ -106,16 +106,17 @@ static void xml_parse(char *file, i64 level)
 	xml_process_file(file, level, xml_first_pass);
 	xml_process_file(file, level, xml_process_node);
 
-	monster_init(last_monster++, PLAYER, spawn);
+	monster_init(++last_monster, PLAYER, spawn);
 	for (i64 i = 0; i < 5; ++i)
-		monster_init(last_monster++, BOMB, spawn);
+		monster_init(++last_monster, BOMB, spawn);
 
 	assert((last_monster - g.monsters) < ARRAY_SIZE(g.monsters));
-	qsort(g.monsters, ARRAY_SIZE(g.monsters), sizeof(Monster), compare_priorities);
+	qsort(g.monsters + 1, ARRAY_SIZE(g.monsters) - 1,
+			sizeof(Monster), compare_priorities);
 	assert(player.class == PLAYER);
 
 	for (Monster *m = last_monster; m >= g.monsters; --m) {
-		TILE(m->pos).monster = m;
+		TILE(m->pos).monster = (u8) (m - g.monsters);
 		if (m->class == NIGHTMARE_1 || m->class == NIGHTMARE_2)
 			nightmare = m;
 	}

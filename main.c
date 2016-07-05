@@ -73,7 +73,7 @@ static void trap_turn(Trap *this)
 	if (TILE(this->pos).traps_destroyed)
 		return;
 
-	Monster *m = TILE(this->pos).monster;
+	Monster *m = &MONSTER(this->pos);
 	if (m == NULL || m->untrapped || CLASS(m).flying)
 		return;
 	m->untrapped = true;
@@ -111,7 +111,7 @@ static void trap_turn(Trap *this)
 // Enemies act in decreasing priority order. Traps have an arbitrary order.
 static void do_beat(u8 input)
 {
-	Monster *m = g.monsters;
+	Monster *m = &player;
 	++g.current_beat;
 	g.bomb_exploded = false;
 

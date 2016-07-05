@@ -4,10 +4,13 @@ TESTS:
 * Requeueing vs trampling?
 * Edge cases of bomb/nightmare/revealed aggro
 * Activation radius of red dragons
+* Bomb triggers a gargoyle/pixie/bombshroom: knockback direction?
 
 FEATURES:
+* monkeyfication
 * metal doors (type=111) should close themselves
 * green bats
+* lord enemies
 
 BUGFIXES:
 * bombs shouldn’t damage unaggroed enemies

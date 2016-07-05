@@ -28,10 +28,10 @@ static void monster_init(Monster *new, MonsterClass type, Coords pos) {
 // Keeps track of the monster’s previous position.
 static void move(Monster *m, Coords dest)
 {
-	TILE(m->pos).monster = NULL;
+	TILE(m->pos).monster = 0;
 	m->untrapped = false;
 	m->pos = dest;
-	TILE(m->pos).monster = m;
+	TILE(m->pos).monster = (u8) (m - g.monsters);
 }
 
 // Tests whether the given monster can move in the given direction.
@@ -40,7 +40,7 @@ static bool can_move(Monster *m, Coords dir)
 	assert(m != &player || L1(dir));
 	Tile dest = TILE(m->pos + dir);
 	if (dest.monster)
-		return dest.monster == &player;
+		return &MONSTER(m->pos + dir) == &player;
 	if (m->class == SPIDER)
 		return IS_WALL(m->pos + dir) && !dest.torch;
 	if (m->class == MOLE && (dest.class == WATER || dest.class == TAR))
@@ -67,9 +67,9 @@ static void destroy_wall(Coords pos) {
 		wall->hp == 2 && wall->zone == 2 ? FIRE :
 		wall->hp == 2 && wall->zone == 3 ? ICE :
 		FLOOR;
-	if (wall->monster && wall->monster->class == SPIDER) {
-		wall->monster->class = FREE_SPIDER;
-		wall->monster->delay = 1;
+	if (MONSTER(pos).class == SPIDER) {
+		MONSTER(pos).class = FREE_SPIDER;
+		MONSTER(pos).delay = 1;
 	}
 	if (wall->torch)
 		adjust_lights(pos, -1);
@@ -98,8 +98,7 @@ static bool dig(Coords pos, i32 digging_power, bool z4)
 static void damage_tile(Coords pos, Coords origin, i64 dmg, DamageType type) {
 	if (IS_WALL(pos))
 		destroy_wall(pos);
-	if (TILE(pos).monster)
-		damage(TILE(pos).monster, dmg, CARDINAL(pos - origin), type);
+	damage(&MONSTER(pos), dmg, CARDINAL(pos - origin), type);
 }
 
 // Handles an enemy attacking the player.
@@ -112,7 +111,7 @@ static void enemy_attack(Monster *attacker)
 		player.confusion = 2;
 		// FALLTHROUGH
 	case PIXIE:
-		TILE(attacker->pos).monster = NULL;
+		TILE(attacker->pos).monster = 0;
 		attacker->hp = 0;
 		break;
 	case SHOVE_1:
@@ -159,7 +158,7 @@ static MoveResult enemy_move(Monster *m, Coords dir)
 		dir = -dir;
 
 	// Attack
-	if (TILE(m->pos + dir).monster == &player) {
+	if (&MONSTER(m->pos + dir) == &player) {
 		enemy_attack(m);
 		m->requeued = false;
 		return MOVE_ATTACK;
@@ -204,11 +203,10 @@ static bool forced_move(Monster *m, Coords dir)
 	assert(m != &player || L1(dir));
 	if (!before_move(m))
 		return false;
-	Tile *dest = &TILE(m->pos + dir);
-	if (dest->monster == &player) {
+	if (&MONSTER(m->pos + dir) == &player) {
 		enemy_attack(m);
 		return true;
-	} else if (!dest->monster && dest->class != WALL) {
+	} else if (IS_EMPTY(m->pos + dir)) {
 		m->prev_pos = m->pos;
 		move(m, m->pos + dir);
 		return true;
@@ -288,7 +286,7 @@ static void knockback(Monster *m, Coords dir, u8 delay)
 // Places a bomb at the given position.
 static void bomb_plant(Coords pos, u8 delay)
 {
-	Monster *bomb = g.monsters + 1;
+	Monster *bomb = &player + 1;
 	while (bomb->hp > 0)
 		++bomb;
 	assert(bomb->class == BOMB);
@@ -299,8 +297,8 @@ static void bomb_plant(Coords pos, u8 delay)
 
 static void bomb_detonate(Monster *this, __attribute__((unused)) Coords d)
 {
-	if (TILE(this->pos).monster == this)
-		TILE(this->pos).monster = NULL;
+	if (&MONSTER(this->pos) == this)
+		TILE(this->pos).monster = 0;
 	for (i64 i = 0; i < 9; ++i) {
 		Tile *tile = &TILE(this->pos + square_shape[i]);
 		tile->traps_destroyed = true;
@@ -328,13 +326,7 @@ static void tile_change(Tile *tile, TileClass new_class)
 static void monster_kill(Monster *m, DamageType type)
 {
 	m->hp = 0;
-
-	if (m->class == PIXIE || m->class == BOMBSHROOM_) {
-		bomb_detonate(m, NO_DIR);
-		return;
-	}
-
-	TILE(m->pos).monster = NULL;
+	TILE(m->pos).monster = 0;
 
 	if (type == DMG_WEAPON && (m->class == WARLOCK_1 || m->class == WARLOCK_2))
 		move(&player, m->pos);
@@ -389,7 +381,7 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 		return false;
 	}
 
-	if (dmg == 0)
+	if (dmg == 0 || m->hp <= 0)
 		return false;
 
 	// Before-damage triggers
@@ -448,6 +440,10 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 			tile_change(tile, m->class == FIRE_BEETLE ? FIRE : ICE);
 		}
 		return false;
+	case PIXIE:
+	case BOMBSHROOM_:
+		bomb_detonate(m, NO_DIR);
+		return false;
 	case GOOLEM:
 		tile_change(&TILE(player.pos), OOZE);
 		break;
@@ -491,8 +487,8 @@ static void lunge(Coords dir) {
 	while (--steps && can_move(&player, dir))
 		move(&player, player.pos + dir);
 	Tile *next = &TILE(player.pos + dir);
-	if (steps && next->monster && damage(next->monster, 4, dir, DMG_NORMAL))
-		knockback(next->monster, dir, 1);
+	if (steps && next->monster && damage(&MONSTER(player.pos + dir), 4, dir, DMG_NORMAL))
+		knockback(&MONSTER(player.pos + dir), dir, 1);
 }
 
 // Attempts to move the player in the given direction
@@ -514,7 +510,7 @@ static void player_move(i8 x, i8 y)
 	if (dest->class == WALL) {
 		dig(player.pos + dir, TILE(player.pos).class == OOZE ? 0 : 2, false);
 	} else if (dest->monster) {
-		damage(dest->monster, TILE(player.pos).class == OOZE ? 0 : 5, dir, DMG_WEAPON);
+		damage(&MONSTER(player.pos + dir), TILE(player.pos).class == OOZE ? 0 : 5, dir, DMG_WEAPON);
 	} else {
 		g.player_moved = true;
 		move(&player, player.pos + dir);
@@ -533,18 +529,14 @@ static void fireball(Coords pos, i8 dir)
 {
 	assert(dir != 0);
 	for (pos.x += dir; !BLOCKS_LOS(pos); pos.x += dir)
-		if (TILE(pos).monster)
-			damage(TILE(pos).monster, 5, (Coords) {dir, 0}, DMG_NORMAL);
+		damage(&MONSTER(pos), 5, (Coords) {dir, 0}, DMG_NORMAL);
 }
 
 // Freezes all monsters in a 3x5 cone.
 static void cone_of_cold(Coords pos, i8 dir)
 {
-	for (u64 i = 0; i < ARRAY_SIZE(cone_shape); ++i) {
-		Tile *tile = &TILE(pos + dir * cone_shape[i]);
-		if (tile->monster)
-			tile->monster->freeze = 5;
-	}
+	for (u64 i = 0; i < ARRAY_SIZE(cone_shape); ++i)
+		MONSTER(pos + dir * cone_shape[i]).freeze = 5;
 }
 
 static bool player_won() {
