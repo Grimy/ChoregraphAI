@@ -211,6 +211,7 @@ typedef struct {
 	Trap traps[64];
 
 	u64 seed;
+	Monster *monkey;
 	bool player_moved;
 	bool bomb_exploded;
 	bool sliding_on_ice;

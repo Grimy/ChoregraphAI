@@ -107,9 +107,14 @@ static void enemy_attack(Monster *attacker)
 {
 	Coords d = player.pos - attacker->pos;
 	switch (attacker->class) {
+	case MONKEY_1:
+	case MONKEY_2:
 	case CONF_MONKEY:
-		player.confusion = 2;
-		// FALLTHROUGH
+	case TELE_MONKEY:
+		g.monkey = attacker;
+		TILE(attacker->pos).monster = 0;
+		attacker->hp *= attacker->class == MONKEY_2 ? 3 : 4;
+		break;
 	case PIXIE:
 		TILE(attacker->pos).monster = 0;
 		attacker->hp = 0;
@@ -501,6 +506,21 @@ static void player_move(i8 x, i8 y)
 	if (!before_move(&player))
 		return;
 
+	i32 dmg = TILE(player.pos).class == OOZE ? 0 : 5;
+
+	if (g.monkey) {
+		Monster *m = g.monkey;
+		m->hp -= dmg;
+		if (m->hp <= 0)
+			g.monkey = NULL;
+		if (m->class == CONF_MONKEY)
+			player.confusion = 1;
+		else if (m->class == TELE_MONKEY)
+			monster_kill(&player, DMG_NORMAL);
+		else
+			return;
+	}
+
 	Coords dir = {x, y};
 	if (player.confusion)
 		dir = -dir;
@@ -510,7 +530,7 @@ static void player_move(i8 x, i8 y)
 	if (dest->class == WALL) {
 		dig(player.pos + dir, TILE(player.pos).class == OOZE ? 0 : 2, false);
 	} else if (dest->monster) {
-		damage(&MONSTER(player.pos + dir), TILE(player.pos).class == OOZE ? 0 : 5, dir, DMG_WEAPON);
+		damage(&MONSTER(player.pos + dir), dmg, dir, DMG_WEAPON);
 	} else {
 		g.player_moved = true;
 		move(&player, player.pos + dir);
