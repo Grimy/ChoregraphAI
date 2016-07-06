@@ -206,8 +206,8 @@ static const ClassInfos class_infos[256];
 // Gets the ClassInfos entry of the given monster’s class
 #define CLASS(m) (class_infos[(m)->class])
 
-typedef struct {
-	Tile board[41][41];
+typedef __attribute__((aligned(4096))) struct {
+	Tile board[37][37];
 	Monster monsters[80];
 	Trap traps[64];
 
@@ -226,8 +226,8 @@ typedef struct {
 	i32 current_beat;
 } GameState;
 
-__extension__ static GameState g = {
-	.board = {[0 ... 40] = {[0 ... 40] = {.class = WALL, .hp = 5}}},
+__extension__ static __thread GameState g = {
+	.board = {[0 ... 36] = {[0 ... 36] = {.class = WALL, .hp = 5}}},
 	.player_bombs = 3,
 	.boots_on = true,
 	.dragon_exhausted = 4,

@@ -6,7 +6,7 @@ CFLAGS += -Wno-c++-compat -Wno-switch -Wno-switch-enum -Wno-gnu-statement-expres
 CFLAGS += -I/usr/include/libxml2 -lxml2 -Wno-unknown-warning-option
 CFLAGS += -Wno-documentation -Wno-documentation-unknown-command -Wno-reserved-id-macro
 play test: CFLAGS += -g -fsanitize=address,leak,undefined
-solve: CFLAGS += -O3 -fno-omit-frame-pointer -funroll-loops
+solve: CFLAGS += -DJOBS=4 -O3 -lpthread
 
 .PHONY: all report
 all: play solve test
@@ -14,6 +14,7 @@ all: play solve test
 %: %.c main.c monsters.c xml.c *.h Makefile
 	clang $(CFLAGS) -o $@ $<
 
+report: CFLAGS += -fno-omit-frame-pointer -fno-inline
 report: solve
 	perf record -g ./$< LUNGEBARD.xml
-	perf report
+	perf report --no-children

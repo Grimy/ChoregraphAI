@@ -3,7 +3,8 @@
 #include <libxml/xmlreader.h>
 
 // Pointer to the end of the monsters array
-static Monster *last_monster = g.monsters;
+static Monster *last_monster;
+static Trap *last_trap;
 
 // Returns the numeric value of a named attribute of the current node.
 // If the attribute is absent, it defaults to 0.
@@ -28,7 +29,6 @@ static void xml_process_node(xmlTextReader *xml)
 		{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, 1}, {-1, -1}, {1, -1}
 	};
 	static const i8 wall_hp[] = {1, 1, 5, 0, 4, 4, 0, 2, 3, 5, 4, 0};
-	static Trap *last_trap = g.traps;
 
 	const char *name = (const char*) xmlTextReaderConstName(xml);
 	u8 type = (u8) xml_attr(xml, "type");
@@ -105,6 +105,9 @@ static void xml_parse(i32 argc, char **argv)
 	if (argc < 2)
 		FATAL("Usage: %s dungeon_file.xml [level]", argv[0]);
 	i32 level = argc == 3 ? *argv[2] - '0' : 1;
+
+	last_monster = g.monsters;
+	last_trap = g.traps;
 
 	LIBXML_TEST_VERSION;
 	xml_process_file(argv[1], level, xml_first_pass);

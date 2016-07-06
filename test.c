@@ -1,6 +1,8 @@
+// test.c - unit testing
+
 #include "main.c"
 
-static Monster *skeleton = &g.monsters[2];
+static Monster *skeleton;
 
 static void test(Coords dir, Coords d, bool expected)
 {
@@ -21,6 +23,8 @@ static void test(Coords dir, Coords d, bool expected)
 int main(void)
 {
 	static const Coords up = {0, -1}, down = {0, 1}, right = {1, 0}, left = {-1, 0};
+	skeleton = &g.monsters[2];
+
 	xml_parse(2, (char*[]) {"", "TEST.xml"});
 
 	test(up, (Coords) {-3, 1}, false);

@@ -1,6 +1,7 @@
 // solve.c - finds the optimal route for a level
 
 #include <sys/time.h>
+#include <pthread.h>
 
 #include "main.c"
 
@@ -15,11 +16,11 @@ typedef struct route {
 } Route;
 
 static Route* routes[MAX_SCORE];      // Priority queue of routes to explore
-static i32 explored_routes;
-static i32 cur_score = MAX_SCORE;     // Index inside the queue
+static i32 cur_score = MAX_SCORE - 1; // Index inside the queue
 static i32 worst_score;
 static u64 best_len = MAX_LENGTH;     // Length of the shortest winning route
 static GameState initial_state;
+static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 // Returns a human-readable representation of a route
 static char* prettify_route(const Route *route)
@@ -38,19 +39,25 @@ static void add_to_queue(Route *route, i32 score)
 {
 	Route *new = malloc(sizeof(*new));
 	*new = *route;
+
+	pthread_mutex_lock(&mutex);
 	new->next = routes[score];
 	routes[score] = new;
 	cur_score = min(cur_score, score);
+	pthread_mutex_unlock(&mutex);
 }
 
 // Removes the best route from the priority queue and returns it
 static Route* pop_queue()
 {
+	pthread_mutex_lock(&mutex);
 	while (routes[cur_score] == NULL)
 		if (++cur_score >= MAX_SCORE)
-			return NULL;
+			exit(0);
 	Route *result = routes[cur_score];
 	routes[cur_score] = result->next;
+	pthread_mutex_unlock(&mutex);
+
 	return result;
 }
 
@@ -82,8 +89,7 @@ static void winning_route(Route *route)
 	if (ok < 64)
 		return;
 	best_len = route->len;
-	printf("[%6d] " GREEN "%s (%2.1f%%)\n" WHITE,
-		explored_routes, prettify_route(route), ok / 2.56);
+	printf("%s\t(%2.1f%%)\n", prettify_route(route), ok / 2.56);
 }
 
 // Starts with the given route, then tries all possible inputs
@@ -92,7 +98,6 @@ static void explore(Route *route)
 	// Don’t explore routes that cannot beat the current best
 	if (route->len >= best_len)
 		return;
-	++explored_routes;
 
 	g = initial_state;
 	for (u64 i = 0; i < route->len; ++i)
@@ -112,6 +117,13 @@ static void explore(Route *route)
 		else if (status < worst_score + MAX_BACKTRACK)
 			add_to_queue(route, (u16) status);
 	}
+
+	free(route);
+}
+
+static void* thread() {
+	for (;;)
+		explore(pop_queue());
 }
 
 // `solve` entry point: solves the dungeon
@@ -121,8 +133,11 @@ int main(i32 argc, char **argv)
 	g.seed = 0;
 	initial_state = g;
 	worst_score = fitness_function();
-	for (Route *route = calloc(1, sizeof(*route)); route; route = pop_queue()) {
-		explore(route);
-		free(route);
-	}
+	Route *route = calloc(1, sizeof(*route));
+	explore(route);
+
+	pthread_t children;
+	for (i64 i = 0; i < JOBS; ++i)
+		pthread_create(&children, NULL, thread, NULL);
+	pthread_exit(NULL);
 }
