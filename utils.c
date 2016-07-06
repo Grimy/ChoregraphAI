@@ -111,6 +111,8 @@ static void enemy_attack(Monster *attacker)
 	case MONKEY_2:
 	case CONF_MONKEY:
 	case TELE_MONKEY:
+		if (g.monkey)
+			break;
 		g.monkey = attacker;
 		TILE(attacker->pos).monster = 0;
 		attacker->hp *= attacker->class == MONKEY_2 ? 3 : 4;
@@ -131,21 +133,17 @@ static void enemy_attack(Monster *attacker)
 	}
 }
 
-// Test whether a monster’s movement is blocked by freezing, water or tar.
+// Tests whether a monster’s movement is blocked by water or tar.
 // As a side effect, removes the water or frees the monster from tar, as appropriate.
 // Common to all movement types (player, enemy, forced).
-static bool before_move(Monster *m)
+static bool is_bogged(Monster *m)
 {
-	if (m->freeze)
-		return false;
-	if (TILE(m->pos).class == WATER && !CLASS(m).flying) {
+	if (TILE(m->pos).class == WATER && !CLASS(m).flying)
 		TILE(m->pos).class = FLOOR;
-		return false;
-	}
-	if (TILE(m->pos).class == TAR && !CLASS(m).flying && !m->untrapped) {
+	else if (TILE(m->pos).class == TAR && !CLASS(m).flying && !m->untrapped)
 		m->untrapped = true;
+	else
 		return false;
-	}
 	return true;
 }
 
@@ -157,7 +155,7 @@ static MoveResult enemy_move(Monster *m, Coords dir)
 {
 	m->prev_pos = m->pos;
 	m->delay = CLASS(m).beat_delay;
-	if (!before_move(m))
+	if (is_bogged(m))
 		return MOVE_SPECIAL;
 	if (m->confusion && m->class != BARREL)
 		dir = -dir;
@@ -206,7 +204,7 @@ static MoveResult enemy_move(Monster *m, Coords dir)
 static bool forced_move(Monster *m, Coords dir)
 {
 	assert(m != &player || L1(dir));
-	if (!before_move(m))
+	if (m->freeze || is_bogged(m))
 		return false;
 	if (&MONSTER(m->pos + dir) == &player) {
 		enemy_attack(m);
@@ -497,19 +495,14 @@ static void lunge(Coords dir) {
 // Will trigger attacking/digging if the destination contains an enemy/a wall.
 static void player_move(i8 x, i8 y)
 {
-	if (g.sliding_on_ice)
-		return;
 	player.prev_pos = player.pos;
-	if (!before_move(&player))
-		return;
 	Coords dir = {x, y};
+	i32 dmg = TILE(player.pos).class == OOZE ? 0 : 5;
+
 	if (player.confusion || (g.monkey && g.monkey->class == CONF_MONKEY))
 		dir = -dir;
 
-	i32 dmg = TILE(player.pos).class == OOZE ? 0 : 5;
-
 	if (g.monkey) {
-		player.untrapped = false;
 		Monster *m = g.monkey;
 		m->hp -= dmg;
 		if (m->hp <= 0)
@@ -519,6 +512,9 @@ static void player_move(i8 x, i8 y)
 		else if (m->class != CONF_MONKEY)
 			return;
 	}
+
+	if (is_bogged(&player))
+		return;
 
 	Tile *dest = &TILE(player.pos + dir);
 

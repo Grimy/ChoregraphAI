@@ -1,13 +1,17 @@
 TESTS:
 * Edge cases of bomb/nightmare/revealed aggro
+* Monkey+tar interactions (get monkeyed while untrapped in tar…)
+* Is prev_pos updated while monkeyed?
+* Goblin bomber + bounce trap + blue dragon
+* Check that ice still works
 
 FEATURES:
-* metal doors (type=111) should close themselves
+* metal doors (type=111)
 * green bats
 * lord enemies
+* requeue enemies when close to enemies of the same priority
 
 BUGFIXES:
-* monkeys should still take damage on water/tar
 * monkey should tank explosions/fireballs for the player
 * clonking should hit both player and monkey
 * the `knocked` flag should be reset during the player’s turn
@@ -19,7 +23,6 @@ BUGFIXES:
 REFACTORS:
 * Refactor harpy AI
 * Dragon exhaustion is implemented in a stupid way
-* (type % 100) + offset[type / 100] ?
 
 Metal doors try to close themselves before and after each player turn, except
 on the first two turns they are open. This explains both the weird priority

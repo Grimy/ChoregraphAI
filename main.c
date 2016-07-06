@@ -13,6 +13,10 @@ static void player_turn(u8 input)
 	player.freeze -= SIGN(player.freeze);
 	g.player_moved = false;
 
+	// While frozen or ice-sliding, directional inputs are ignored
+	if ((g.sliding_on_ice || player.freeze) && input < 4)
+		input = 6;
+
 	switch (input) {
 	case 0:
 		player_move(-1,  0);
