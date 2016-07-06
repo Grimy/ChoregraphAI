@@ -100,11 +100,15 @@ static void xml_process_file(char *file, i64 level, void callback(xmlTextReader 
 // Initializes the game’s state based on the given custom dungeon file.
 // Aborts if the file doesn’t exist or isn’t valid XML.
 // Valid, non-dungeon XML yields undefined results (most likely, an empty dungeon).
-static void xml_parse(char *file, i64 level)
+static void xml_parse(i32 argc, char **argv)
 {
+	if (argc < 2)
+		FATAL("Usage: %s dungeon_file.xml [level]", argv[0]);
+	i32 level = argc == 3 ? *argv[2] - '0' : 1;
+
 	LIBXML_TEST_VERSION;
-	xml_process_file(file, level, xml_first_pass);
-	xml_process_file(file, level, xml_process_node);
+	xml_process_file(argv[1], level, xml_first_pass);
+	xml_process_file(argv[1], level, xml_process_node);
 
 	monster_init(++last_monster, PLAYER, spawn);
 	for (i64 i = 0; i < 5; ++i)
@@ -120,4 +124,6 @@ static void xml_parse(char *file, i64 level)
 		if (m->class == NIGHTMARE_1 || m->class == NIGHTMARE_2)
 			nightmare = m;
 	}
+
+	update_fov();
 }

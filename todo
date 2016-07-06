@@ -4,6 +4,11 @@ TESTS:
 * Is prev_pos updated while monkeyed?
 * Goblin bomber + bounce trap + blue dragon
 * Check that ice still works
+* Double-fireball a rider
+* Are lord monkeys/assassins knocked back on hit?
+* Do monkeys protect from freeze?
+* forced_move while monkeyed
+* Fireball ghost-SK on top of another monster
 
 FEATURES:
 * metal doors (type=111)

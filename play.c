@@ -1,7 +1,9 @@
-// ui.c - manages terminal input/output
+// play.c - manages terminal input/output
 // All output code assumes an ANSI-compatible UTF-8 terminal.
 
 #include <time.h>
+
+#include "main.c"
 
 static const u8 floor_colors[] = {
 	[STAIRS] = 105, [SHOP] = 43,
@@ -75,14 +77,14 @@ static void display_board(void)
 }
 
 // `play` entry point: alternatively updates the interface and prompts the user for a command.
-static void run()
+int main(i32 argc, char **argv)
 {
-	const char *inputs = "efij< z";
+	static const char *inputs = "efij< z";
 	char *p;
 
+	xml_parse(argc, argv);
 	printf(TERM_CLEAR);
 	system("stty -echo -icanon eol \1");
-	srand((u32) time(NULL));
 
 	while (player.hp > 0 && !player_won()) {
 		display_board();

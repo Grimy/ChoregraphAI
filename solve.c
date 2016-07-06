@@ -1,6 +1,8 @@
-// route.c - finds the optimal route for a level
+// solve.c - finds the optimal route for a level
 
 #include <sys/time.h>
+
+#include "main.c"
 
 #define MAX_LENGTH    32
 #define MAX_SCORE     64
@@ -113,8 +115,9 @@ static void explore(Route *route)
 }
 
 // `solve` entry point: solves the dungeon
-static void run()
+int main(i32 argc, char **argv)
 {
+	xml_parse(argc, argv);
 	g.seed = 0;
 	initial_state = g;
 	worst_score = fitness_function();

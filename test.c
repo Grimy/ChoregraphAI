@@ -1,22 +1,28 @@
-static Monster skeleton = {.class = SKELETON_1, .hp = 1};
+#include "main.c"
+
+static Monster *skeleton = &g.monsters[2];
 
 static void test(Coords dir, Coords d, bool expected)
 {
-	TILE(skeleton.pos).monster = NULL;
+	// Setup the player
 	player.pos = player.prev_pos = spawn;
-	if (ABS(dir.y ? d.y : d.x) == 2)
+	if (abs(dir.y ? d.y : d.x) == 2)
 		player.prev_pos += dir;
-	skeleton.pos = spawn - d;
-	skeleton.prev_pos = spawn - d - dir;
-	assert(player.pos.x - skeleton.pos.x == d.x);
-	assert(player.pos.y - skeleton.pos.y == d.y);
-	basic_seek(&skeleton, d);
-	assert(skeleton.vertical == expected);
+
+	// Setup the skeleton
+	move(skeleton, spawn - d);
+	skeleton->prev_pos = spawn - d - dir;
+
+	// Do the test
+	basic_seek(skeleton, d);
+	assert(skeleton->vertical == expected);
 }
 
-static void run()
+int main(void)
 {
 	static const Coords up = {0, -1}, down = {0, 1}, right = {1, 0}, left = {-1, 0};
+	xml_parse(2, (char*[]) {"", "TEST.xml"});
+
 	test(up, (Coords) {-3, 1}, false);
 	test(up, (Coords) {-2, 1}, false);
 	test(up, (Coords) {-1, 1}, false);
@@ -73,5 +79,6 @@ static void run()
 	test(left, (Coords) {2,  1}, false);
 	test(left, (Coords) {2,  2}, true);
 	test(left, (Coords) {2,  3}, true);
-	do_beat('t');
+
+	do_beat('\0');
 }

@@ -239,6 +239,5 @@ static Coords stairs;
 static Monster *nightmare;
 
 // Some pre-declarations
-static void do_beat(u8 input);
 static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type);
 static bool forced_move(Monster *m, Coords offset);
