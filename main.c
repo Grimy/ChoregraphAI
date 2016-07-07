@@ -315,8 +315,6 @@ static void monster_kill(Monster *m, DamageType type)
 		g.miniboss_killed = true;
 	else if (m->class >= SARCO_1 && m->class <= SARCO_3)
 		g.sarcophagus_killed = true;
-	else if (m->class == HARPY)
-		++g.harpies_killed;
 }
 
 // Deals damage to the given monster. Handles on-damage effects.
@@ -532,7 +530,7 @@ static void cone_of_cold(Coords pos, i8 dir)
 static bool player_won() {
 	return TILE(player.pos).class == STAIRS
 		&& g.miniboss_killed
-		&& g.sarcophagus_killed;
+		&& (TILE(player.pos).zone != 4 || g.sarcophagus_killed);
 }
 
 static void player_turn(u8 input)
@@ -647,7 +645,6 @@ static void trap_turn(Trap *this)
 // Enemies act in decreasing priority order. Traps have an arbitrary order.
 static void do_beat(u8 input)
 {
-	Monster *m = &player;
 	++g.current_beat;
 	g.bomb_exploded = false;
 
@@ -656,7 +653,7 @@ static void do_beat(u8 input)
 		return;
 	update_fov();
 
-	while (CLASS(++m).act) {
+	for (Monster *m = &player + 1; CLASS(m).act; ++m) {
 		if (m->hp <= 0)
 			continue;
 		u8 old_state = m->state;
@@ -665,7 +662,7 @@ static void do_beat(u8 input)
 			m->state = old_state;
 	}
 
-	while (--m >= g.monsters)
+	for (Monster *m = &player + 1; CLASS(m).act; ++m)
 		if (m->requeued)
 			CLASS(m).act(m, player.pos - m->pos);
 

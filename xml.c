@@ -18,8 +18,8 @@ static i8 xml_attr(xmlTextReader *xml, char* attr)
 
 static void xml_first_pass(xmlTextReader *xml)
 {
-	spawn.x = max(spawn.x, 4 - xml_attr(xml, "x"));
-	spawn.y = max(spawn.y, 4 - xml_attr(xml, "y"));
+	spawn.x = max(spawn.x, 2 - xml_attr(xml, "x"));
+	spawn.y = max(spawn.y, 2 - xml_attr(xml, "y"));
 }
 
 // Converts a single XML node into an appropriate object (Trap, Tile or Monster).
@@ -36,7 +36,7 @@ static void xml_process_node(xmlTextReader *xml)
 	Coords pos = {xml_attr(xml, "x"), xml_attr(xml, "y")};
 
 	pos += spawn;
-	assert(max(pos.x, pos.y) <= ARRAY_SIZE(g.board) - 4);
+	assert(max(pos.x, pos.y) <= ARRAY_SIZE(g.board) - 2);
 	type = type == 255 ? CONF_MONKEY : type;
 
 	if (!strcmp(name, "trap")) {

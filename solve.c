@@ -7,7 +7,7 @@
 
 #define MAX_LENGTH    32
 #define MAX_SCORE     64
-#define MAX_BACKTRACK 3
+#define MAX_BACKTRACK 6
 
 typedef struct route {
 	struct route *next;           // Next element, if any
@@ -17,8 +17,9 @@ typedef struct route {
 
 static Route* routes[MAX_SCORE];      // Priority queue of routes to explore
 static i32 cur_score = MAX_SCORE - 1; // Index inside the queue
-static i32 worst_score;
+static i32 best_score;
 static u64 best_len = MAX_LENGTH;     // Length of the shortest winning route
+static u64 total_paths;
 static GameState initial_state;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -44,6 +45,7 @@ static void add_to_queue(Route *route, i32 score)
 	new->next = routes[score];
 	routes[score] = new;
 	cur_score = min(cur_score, score);
+	total_paths += 6;
 	pthread_mutex_unlock(&mutex);
 }
 
@@ -52,8 +54,10 @@ static Route* pop_queue()
 {
 	pthread_mutex_lock(&mutex);
 	while (routes[cur_score] == NULL)
-		if (++cur_score >= MAX_SCORE)
+		if (++cur_score >= MAX_SCORE) {
+			printf("%lu\n", total_paths);
 			exit(0);
+		}
 	Route *result = routes[cur_score];
 	routes[cur_score] = result->next;
 	pthread_mutex_unlock(&mutex);
@@ -65,12 +69,9 @@ static Route* pop_queue()
 static i32 fitness_function() {
 	if (player.hp <= 0)
 		return 255;
-	if (player_won())
-		return 0;
 	return g.current_beat
 			- 2 * g.miniboss_killed
 			- 2 * g.sarcophagus_killed
-			- g.harpies_killed
 			+ L1(player.pos - stairs) * 2 / 5;
 }
 
@@ -81,14 +82,14 @@ static void handle_victory(Route *route)
 	for (u32 i = 1; i <= 256 && (ok + 2) * 4 >= i; ++i) {
 		g = initial_state;
 		g.seed = i;
-		for (u64 beat = 0; beat < route->len; ++beat)
+		for (u64 beat = 0; beat < route->len && player.hp > 0; ++beat)
 			do_beat(route->input[beat]);
-		ok += fitness_function() == 0;
+		ok += player_won();
 	}
 
 	if (ok < 64)
 		return;
-	best_len = route->len;
+	best_len = min(best_len, route->len);
 	printf("%s\t(%2.1f%%)\n", prettify_route(route), ok / 2.56);
 }
 
@@ -110,12 +111,13 @@ static void explore(Route *route)
 		route->input[route->len - 1] = i;
 		g = saved_state;
 		do_beat(i);
-		i32 status = fitness_function();
-		assert(status >= 0);
-		if (status == 0)
+		i32 score = fitness_function();
+		assert(score >= 0);
+		best_score = min(best_score, score);
+		if (player_won())
 			handle_victory(route);
-		else if (status < worst_score + MAX_BACKTRACK)
-			add_to_queue(route, (u16) status);
+		else if (score < best_score + MAX_BACKTRACK)
+			add_to_queue(route, (u16) score);
 	}
 
 	free(route);
@@ -130,9 +132,11 @@ static void* thread() {
 int main(i32 argc, char **argv)
 {
 	xml_parse(argc, argv);
+	do_beat(6);
+
 	g.seed = 0;
 	initial_state = g;
-	worst_score = fitness_function();
+	best_score = fitness_function();
 	Route *route = calloc(1, sizeof(*route));
 	explore(route);
 

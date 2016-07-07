@@ -213,6 +213,9 @@ static void harpy(Monster *this, Coords d)
 	i64 min = L1(d);
 	for (u64 i = 0; i < ARRAY_SIZE(moves); ++i) {
 		Coords move = moves[i];
+		i64 score = L1(d - move);
+		if (!score || score >= min || !can_move(this, move))
+			continue;
 		if ((L2(move) == 9 || L2(move) == 4)
 		    && (BLOCKS_LOS(this->pos + DIRECTION(move))
 		    || BLOCKS_LOS(this->pos + 2*DIRECTION(move))))
@@ -222,11 +225,10 @@ static void harpy(Monster *this, Coords d)
 		    && (BLOCKS_LOS(this->pos + DIRECTION(move))
 		    || BLOCKS_LOS(this->pos + DIRECTION(move) - move / 2)))
 			continue;
-		i64 score = L1(d - move);
-		if (score && score < min && can_move(this, move)) {
-			min = score;
-			best_move = move;
-		}
+		min = score;
+		best_move = move;
+		if (score == 1 || score == L1(d) - 3)
+			break;
 	}
 	enemy_move(this, best_move);
 }
@@ -238,26 +240,17 @@ static void zombie(Monster *this, __attribute__((unused)) Coords d)
 	this->delay = 1;
 }
 
-static void blue_slime(Monster *this, __attribute__((unused)) Coords d)
-{
-	static const Coords moves[] = {{0, -1}, {0, 1}, {0, -1}, {0, 1}};
-	this->state += enemy_move(this, moves[this->state]) == MOVE_SUCCESS;
-	this->state &= 3;
+#define SLIME(name, ...) \
+static void name ## _slime(Monster *this, __attribute__((unused)) Coords d) \
+{ \
+	this->state += enemy_move(this, (Coords[]) __VA_ARGS__ [this->state]) == MOVE_SUCCESS; \
+	this->state &= 3; \
 }
 
-static void yellow_slime(Monster *this, __attribute__((unused)) Coords d)
-{
-	static const Coords moves[] = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}};
-	this->state += enemy_move(this, moves[this->state]) == MOVE_SUCCESS;
-	this->state &= 3;
-}
-
-static void diagonal_slime(Monster *this, __attribute__((unused)) Coords d)
-{
-	static const Coords moves[] = {{1, 1}, {-1, 1}, {-1, -1}, {1, -1}};
-	this->state += enemy_move(this, moves[this->state]) == MOVE_SUCCESS;
-	this->state &= 3;
-}
+SLIME(blue,   {{ 0, -1}, { 0, 1}, { 0, -1}, { 0,  1}})
+SLIME(yellow, {{ 1,  0}, { 0, 1}, {-1,  0}, { 0, -1}})
+SLIME(ice,    {{ 1,  1}, {-1, 1}, {-1, -1}, { 1, -1}})
+SLIME(fire,   {{-1,  1}, { 1, 1}, { 1, -1}, {-1, -1}})
 
 // State 0: camouflaged
 // State 1: invulnerable (right after waking up)
@@ -291,8 +284,11 @@ static void breath_attack(Monster *this)
 // They then resume chasing, but can’t charge another breath in the next two beats.
 static void dragon(Monster *this, Coords d)
 {
-	if (!this->aggro)
+	if (this->aggro)
+		this->exhausted -= SIGN(this->exhausted);
+	else
 		this->exhausted = 4;
+
 	switch (this->state) {
 	case 0:
 		basic_seek(this, d);
@@ -565,21 +561,21 @@ static const ClassInfos class_infos[256] = {
 	[BOMBSHROOM]  = { 1, 0,   0, false, -1,      ~2u, YELLOW "%", nop },
 	[BOMBSHROOM_] = { 1, 0,   9, false, -1,      ~2u, RED "%",    bomb_detonate },
 
-	[FIRE_SLIME]  = { 1, 0, 225, false,  2, 10301101, RED "P",    diagonal_slime },
-	[ICE_SLIME]   = { 1, 0, 225, false,  2, 10301101, CYAN "P",   diagonal_slime },
-	[RIDER_1]     = { 1, 0,   9,  true, -1, 10201102, "&",        basic_seek },
-	[RIDER_2]     = { 2, 0,   9,  true, -1, 10402104, YELLOW "&", basic_seek },
-	[RIDER_3]     = { 3, 0,   9,  true, -1, 10603106, BLACK "&",  basic_seek },
-	[EFREET]      = { 2, 2,   9,  true,  2, 20302302, RED "E",    elemental },
-	[DJINN]       = { 2, 2,   9,  true,  2, 20302302, CYAN "E",   elemental },
+	[FIRE_SLIME]  = { 1, 0, 225, false,  2, 10301101, RED "P",    fire_slime },
+	[ICE_SLIME]   = { 1, 0, 225, false,  2, 10301101, CYAN "P",   ice_slime },
+	[RIDER_1]     = { 1, 0,  49,  true, -1, 10201102, "&",        basic_seek },
+	[RIDER_2]     = { 2, 0,  49,  true, -1, 10402104, YELLOW "&", basic_seek },
+	[RIDER_3]     = { 3, 0,  49,  true, -1, 10603106, BLACK "&",  basic_seek },
+	[EFREET]      = { 2, 2,  49,  true,  2, 20302302, RED "E",    elemental },
+	[DJINN]       = { 2, 2,  49,  true,  2, 20302302, CYAN "E",   elemental },
 	[ASSASSIN_1]  = { 1, 0,  49, false, -1, 10401103, PURPLE "G", assassin },
 	[ASSASSIN_2]  = { 2, 0,  49, false, -1, 10602105, BLACK "G",  assassin },
 	[FIRE_BEETLE] = { 3, 1,  49, false, -1, 10303202, RED "a",    beetle },
 	[ICE_BEETLE]  = { 3, 1,  49, false, -1, 10303202, CYAN "a",   beetle },
 	[BEETLE]      = { 3, 1,  49, false, -1, 10303202, "a",        basic_seek },
 	[HELLHOUND]   = { 1, 1,   9, false, -1, 10301202, RED "d",    moore_seek },
-	[SHOVE_1]     = { 2, 0,   9, false, -1, 10002102, PURPLE "~", basic_seek },
-	[SHOVE_2]     = { 3, 0,   9, false, -1, 10003102, BLACK "~",  basic_seek },
+	[SHOVE_1]     = { 2, 0,  49, false, -1, 10002102, PURPLE "~", basic_seek },
+	[SHOVE_2]     = { 3, 0,  49, false, -1, 10003102, BLACK "~",  basic_seek },
 	[YETI]        = { 1, 3,  49,  true,  2, 20301403, CYAN "Y",   yeti },
 	[GHAST]       = { 1, 0,   9,  true, -1, 10201102, PURPLE "W", basic_seek },
 	[FIRE_MIMIC]  = { 1, 0,   0, false, -1, 10201102, RED "m",    mimic },

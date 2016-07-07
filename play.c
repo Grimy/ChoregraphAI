@@ -94,5 +94,5 @@ int main(i32 argc, char **argv)
 		do_beat((u8) (p - inputs));
 	}
 
-	fprintf(stderr, "See you soon!");
+	fprintf(stderr, player_won() ? "You won!" : "See you soon!");
 }
