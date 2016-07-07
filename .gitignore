@@ -7,6 +7,7 @@ core.*
 perf.data*
 play
 solve
+solve-perf
 debug
 test
 los

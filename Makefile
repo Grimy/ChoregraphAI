@@ -8,16 +8,21 @@ CFLAGS += -Wno-documentation -Wno-documentation-unknown-command -Wno-reserved-id
 play test: CFLAGS += -g -fsanitize=address,leak,undefined
 solve: CFLAGS += -DJOBS=4 -O3 -lpthread
 
-.PHONY: all report
-all: play solve test los
+.PHONY: all report stat
+all: play solve test
 
 %: %.c main.c monsters.c xml.c los.gen *.h Makefile
 	clang $(CFLAGS) -o $@ $<
 
+solve-perf: solve.c main.c monsters.c xml.c los.gen *.h Makefile
+	clang $(CFLAGS) -DJOBS=1 -O3 -lpthread -fno-omit-frame-pointer -fno-inline -o $@ $<
+
 los.gen: los
 	./$< >$@
 
-report: CFLAGS += -fno-omit-frame-pointer -fno-inline
-report: solve
+stat: solve-perf
+	perf stat ./$< LUNGEBARD.xml
+
+report: solve-perf
 	perf record -g ./$< LUNGEBARD.xml
 	perf report --no-children
