@@ -21,8 +21,8 @@ los.gen: los
 	./$< >$@
 
 stat: solve-perf
-	perf stat ./$< LUNGEBARD.xml
+	perf stat ./$< BARDZ4.xml 2
 
 report: solve-perf
-	perf record -g ./$< LUNGEBARD.xml
+	perf record -g ./$< BARDZ4.xml 2
 	perf report --no-children
