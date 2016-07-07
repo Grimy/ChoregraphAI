@@ -158,16 +158,17 @@ typedef struct {
 	Coords pos;
 	Coords prev_pos;
 	MonsterClass class;
-	int hp: 5;
-	unsigned delay: 4;
-	unsigned confusion: 4;
-	unsigned freeze: 4;
-	unsigned state: 2;
-	bool aggro: 1;
-	bool vertical: 1;
-	bool untrapped: 1;
-	bool requeued: 1;
-	bool knocked: 1;
+	i8 hp;
+	u8 delay;
+	u8 confusion;
+	u8 freeze;
+	u8 aggro;
+	u8 state;
+	u8 exhausted;
+	bool vertical;
+	bool untrapped;
+	bool requeued;
+	bool knocked;
 } Monster;
 
 typedef struct {
@@ -176,7 +177,7 @@ typedef struct {
 	i8 zone;
 	u8 monster;
 	i16 light;
-	u8 revealed;
+	bool revealed;
 	bool torch: 1;
 	bool traps_destroyed: 1;
 	bool: 6;
@@ -193,10 +194,11 @@ typedef struct {
 typedef struct {
 	i8 max_hp;
 	u8 beat_delay;
-	u8 radius;
-	bool flying: 1;
-	signed digging_power: 7;
-	u32 priority;
+	u16 radius;
+	bool flying;
+	i8 digging_power;
+	u16: 16;
+	u64 priority;
 	char *glyph;
 	void (*act) (Monster*, Coords);
 } ClassInfos;
@@ -211,18 +213,17 @@ typedef __attribute__((aligned(4096))) struct {
 	Monster monsters[80];
 	Trap traps[64];
 
-	u64 seed;
 	Monster *monkey;
 	bool player_moved;
 	bool bomb_exploded;
 	bool sliding_on_ice;
 	bool boots_on;
 	bool sarco_on;
+	bool miniboss_killed;
+	bool sarcophagus_killed;
+	u8: 8;
+	u64 seed;
 	i32 player_bombs;
-	i64 dragon_exhausted;
-	i32 miniboss_killed;
-	i32 sarcophagus_killed;
-	i32 harpies_killed;
 	i32 current_beat;
 } GameState;
 
@@ -230,8 +231,6 @@ __extension__ static __thread GameState g = {
 	.board = {[0 ... 36] = {[0 ... 36] = {.class = WALL, .hp = 5}}},
 	.player_bombs = 3,
 	.boots_on = true,
-	.dragon_exhausted = 4,
-	.seed = 42,
 };
 
 static Coords spawn;

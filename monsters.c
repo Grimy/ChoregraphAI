@@ -242,18 +242,21 @@ static void blue_slime(Monster *this, __attribute__((unused)) Coords d)
 {
 	static const Coords moves[] = {{0, -1}, {0, 1}, {0, -1}, {0, 1}};
 	this->state += enemy_move(this, moves[this->state]) == MOVE_SUCCESS;
+	this->state &= 3;
 }
 
 static void yellow_slime(Monster *this, __attribute__((unused)) Coords d)
 {
 	static const Coords moves[] = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}};
 	this->state += enemy_move(this, moves[this->state]) == MOVE_SUCCESS;
+	this->state &= 3;
 }
 
 static void diagonal_slime(Monster *this, __attribute__((unused)) Coords d)
 {
 	static const Coords moves[] = {{1, 1}, {-1, 1}, {-1, -1}, {1, -1}};
 	this->state += enemy_move(this, moves[this->state]) == MOVE_SUCCESS;
+	this->state &= 3;
 }
 
 // State 0: camouflaged
@@ -288,7 +291,8 @@ static void breath_attack(Monster *this)
 // They then resume chasing, but can’t charge another breath in the next two beats.
 static void dragon(Monster *this, Coords d)
 {
-	g.dragon_exhausted -= this->aggro && g.dragon_exhausted;
+	if (!this->aggro)
+		this->exhausted = 4;
 	switch (this->state) {
 	case 0:
 		basic_seek(this, d);
@@ -300,11 +304,11 @@ static void dragon(Monster *this, Coords d)
 		break;
 	case 2:
 		breath_attack(this);
-		g.dragon_exhausted = 3;
+		this->exhausted = 3;
 		this->state = 1;
 		break;
 	}
-	if (!g.dragon_exhausted && can_breath(this) && can_see(this->pos))
+	if (!this->exhausted && can_breath(this) && can_see(this->pos))
 		this->state = 2;
 }
 

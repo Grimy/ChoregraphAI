@@ -659,7 +659,7 @@ static void do_beat(u8 input)
 	while (CLASS(++m).act) {
 		if (m->hp <= 0)
 			continue;
-		u32 old_state = m->state;
+		u8 old_state = m->state;
 		enemy_turn(m);
 		if (m->requeued)
 			m->state = old_state;

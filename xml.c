@@ -76,8 +76,8 @@ static void xml_process_node(xmlTextReader *xml)
 // Compares the priorities of two monsters. Callback for qsort.
 static i32 compare_priorities(const void *a, const void *b)
 {
-	u32 pa = CLASS((const Monster*) a).priority;
-	u32 pb = CLASS((const Monster*) b).priority;
+	u64 pa = CLASS((const Monster*) a).priority;
+	u64 pb = CLASS((const Monster*) b).priority;
 	return (pb > pa) - (pb < pa);
 }
 

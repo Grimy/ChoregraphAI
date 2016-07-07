@@ -7,7 +7,7 @@
 #include <string.h>
 
 // Convenient name for integer types
-typedef enum {false, true} bool;
+typedef enum __attribute__((__packed__)) {false, true} bool;
 
 typedef uint8_t  u8;
 typedef uint16_t u16;

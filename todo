@@ -21,7 +21,6 @@ BUGFIXES:
 
 REFACTORS:
 * Refactor harpy AI
-* Dragon exhaustion is implemented in a stupid way
 
 Metal doors try to close themselves before and after each player turn, except
 on the first two turns they are open. This explains both the weird priority
