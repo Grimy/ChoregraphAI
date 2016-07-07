@@ -1,22 +1,16 @@
 TESTS:
 * Edge cases of bomb/nightmare/revealed aggro
-* Monkey+tar interactions (get monkeyed while untrapped in tar…)
-* Is prev_pos updated while monkeyed?
-* Goblin bomber + bounce trap + blue dragon
-* Check that ice still works
-* Double-fireball a rider
-* Are lord monkeys/assassins knocked back on hit?
-* Do monkeys protect from freeze?
-* forced_move while monkeyed
-* Fireball ghost-SK on top of another monster
 
 FEATURES:
 * metal doors (type=111)
-* green bats
+* green bats (R, L, D, U, UR, DR, UL, DL)
 * lord enemies
 * requeue enemies when close to enemies of the same priority
 
 BUGFIXES:
+* when monkeyed while untrapped in tar, the player should stay untrapped
+* charged breath attacks should have extreme priority
+* skeleton knights should take two stacks of damage from fire traps
 * monkey should tank explosions/fireballs for the player
 * clonking should hit both player and monkey
 * the `knocked` flag should be reset during the player’s turn

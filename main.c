@@ -196,7 +196,7 @@ static MoveResult enemy_move(Monster *m, Coords dir)
 static bool forced_move(Monster *m, Coords dir)
 {
 	assert(m != &player || L1(dir));
-	if (m->freeze || is_bogged(m))
+	if (m->freeze || is_bogged(m) || (m == &player && g.monkey))
 		return false;
 	if (&MONSTER(m->pos + dir) == &player) {
 		enemy_attack(m);
@@ -469,6 +469,7 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 		return false;
 	case MONKEY_2:
 	case TELE_MONKEY:
+	case ASSASSIN_1:
 	case ASSASSIN_2:
 	case BANSHEE_1:
 	case BANSHEE_2:
@@ -501,7 +502,7 @@ static void player_move(i8 x, i8 y)
 
 	if (g.monkey) {
 		Monster *m = g.monkey;
-		m->hp -= dmg;
+		m->hp -= max(1, dmg);
 		if (m->hp <= 0)
 			g.monkey = NULL;
 		if (m->class == TELE_MONKEY)
@@ -567,6 +568,9 @@ static void player_turn(u8 input)
 	// While frozen or ice-sliding, directional inputs are ignored
 	if ((g.sliding_on_ice || player.freeze) && input < 4)
 		input = 6;
+
+	if (g.monkey)
+		player.untrapped = false;
 
 	switch (input) {
 	case 0:
