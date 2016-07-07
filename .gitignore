@@ -2,9 +2,11 @@
 *.expand
 *.png
 *.svg
+*.gen
 core.*
 perf.data*
 play
 solve
 debug
 test
+los

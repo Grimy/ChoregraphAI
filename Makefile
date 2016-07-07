@@ -9,10 +9,13 @@ play test: CFLAGS += -g -fsanitize=address,leak,undefined
 solve: CFLAGS += -DJOBS=4 -O3 -lpthread
 
 .PHONY: all report
-all: play solve test
+all: play solve test los
 
-%: %.c main.c monsters.c xml.c *.h Makefile
+%: %.c main.c monsters.c xml.c los.gen *.h Makefile
 	clang $(CFLAGS) -o $@ $<
+
+los.gen: los
+	./$< >$@
 
 report: CFLAGS += -fno-omit-frame-pointer -fno-inline
 report: solve

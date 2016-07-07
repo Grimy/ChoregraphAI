@@ -176,10 +176,10 @@ typedef struct {
 	i8 zone;
 	u8 monster;
 	i16 light;
+	u8 revealed;
 	bool torch: 1;
 	bool traps_destroyed: 1;
-	bool revealed: 1;
-	bool: 13;
+	bool: 6;
 } Tile;
 
 typedef struct {

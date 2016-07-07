@@ -36,7 +36,7 @@ typedef int64_t  i64;
 
 #define abs(x) ({ __typeof(x) _abs = (x); _abs < 0 ? -_abs : _abs; })
 
-#define SIGN(x)       (((x) > 0) - ((x) < 0))
+#define SIGN(x) (((x) > 0) - ((x) < 0))
 
 // Terminal ANSI codes
 #define WHITE  "\033[m"

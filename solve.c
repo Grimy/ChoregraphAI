@@ -74,7 +74,7 @@ static i32 fitness_function() {
 			+ L1(player.pos - stairs) * 2 / 5;
 }
 
-static void winning_route(Route *route)
+static void handle_victory(Route *route)
 {
 	u32 ok = 0;
 
@@ -113,7 +113,7 @@ static void explore(Route *route)
 		i32 status = fitness_function();
 		assert(status >= 0);
 		if (status == 0)
-			winning_route(route);
+			handle_victory(route);
 		else if (status < worst_score + MAX_BACKTRACK)
 			add_to_queue(route, (u16) status);
 	}

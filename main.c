@@ -222,52 +222,28 @@ static bool can_see(Coords dest)
 	if (L2(dest - pos) < 6)
 		return true;
 
-	return TILE(dest).revealed;
+	return TILE(dest).light >= 102 && TILE(dest).revealed;
 }
 
-static void cast_light(i8 row, double start, double end, Coords x, Coords y)
+static void cast_light(Tile *tile, i64 x, i64 y)
 {
-begin:
-	if (start > end || row > 10)
-		return;
-
-	bool blocked = false;
-	Coords delta = {row, 0};
-
-	for (delta.y = 0; delta.y < row + 1; ++delta.y) {
-		Coords current = {delta.x * x.x + delta.y * x.y, delta.x * y.x + delta.y * y.y};
-		current += player.pos;
-		double left_slope = (delta.y - 0.51) / (delta.x + 0.51);
-		double right_slope = (delta.y + 0.51) / (delta.x - 0.51);
-
-		if (current.x < 0 || (u8) current.x > ARRAY_SIZE(g.board) ||
-		    current.y < 0 || (u8) current.y > ARRAY_SIZE(*g.board) || right_slope < start)
-			continue;
-		if (left_slope > end)
-			break;
-
-		TILE(current).revealed = TILE(current).light >= 102;
-
-		bool was_blocked = blocked;
-		blocked = BLOCKS_LOS(current);
-		if (!was_blocked && blocked)
-			cast_light(row + 1, start, left_slope, x, y);
-		if (blocked)
-			start = right_slope;
-	}
-	++row;
-	goto begin;
+	tile += y;
+	u64 walls = 0;
+#include "los.gen"
 }
 
 static void update_fov()
 {
-	static const Coords diagonals[] = {{-1, -1}, {-1, 1}, {1, -1}, {1, 1}};
-	TILE(player.pos).revealed = true;
-	for (i64 i = 0; i < 4; ++i) {
-		Coords d = diagonals[i];
-		cast_light(1, 0, 1, (Coords) {0, d.x}, (Coords) {d.y, 0});
-		cast_light(1, 0, 1, (Coords) {d.x, 0}, (Coords) {0, d.y});
-	}
+	Tile *tile = &TILE(player.pos);
+	tile->revealed = true;
+	cast_light(tile, +1, +ARRAY_SIZE(g.board));
+	cast_light(tile, +1, -ARRAY_SIZE(g.board));
+	cast_light(tile, -1, +ARRAY_SIZE(g.board));
+	cast_light(tile, -1, -ARRAY_SIZE(g.board));
+	cast_light(tile, +ARRAY_SIZE(g.board), +1);
+	cast_light(tile, -ARRAY_SIZE(g.board), +1);
+	cast_light(tile, +ARRAY_SIZE(g.board), -1);
+	cast_light(tile, -ARRAY_SIZE(g.board), -1);
 }
 
 static void knockback(Monster *m, Coords dir, u8 delay)
