@@ -10,7 +10,7 @@ static u64 los(double x, double y)
 	i64 cy = (i64) (y + .5);
 	u64 path = 0;
 	if (cx > cy)
-		return 0xFFFFFFFFFFFFFFFF;
+		return ~0ul;
 	while (cy) {
 		double err_x = abs((cx - 1 - x) * y - (cy - y) * x);
 		double err_y = abs((cx - x) * y - (cy - 1 - y) * x);
@@ -26,17 +26,27 @@ static u64 los(double x, double y)
 	return path;
 }
 
-// _mm256_and_pd
 static void codegen(i8 x, i8 y)
 {
-	if (INDEX(x, y) > 1)
-		printf("if (!(walls & %#018lx) || !(walls & %#018lx) || !(walls & %#018lx)"
-			"|| !(walls & %#018lx) || !(walls & %#018lx))\n",
-			los(x - .55, y - .55),
-			los(x + .55, y + .55),
-			los(x - .55, y + .55),
-			los(x + .55, y - .55),
-			los(x, y));
+	printf("if (0");
+	u64 masks[] = {
+		los(x - .51, y - .51),
+		los(x + .51, y + .51),
+		los(x - .51, y + .51),
+		los(x + .51, y - .51),
+		los(x, y),
+	};
+	for (i64 i = 0; i < 5; ++i)
+		masks[i] &= (1ul << INDEX(x, y)) - 1;
+	for (i64 i = 0; i < 5; ++i)
+		for (i64 j = 0; j < 5; ++j)
+			if (i != j && (masks[i] & ~masks[j]) == 0)
+				masks[j] = ~0ul;
+	for (i64 i = 0; i < 5; ++i)
+		if (masks[i] != ~0ul)
+			printf(" || !(walls & %#018lx)", masks[i]);
+	printf(")\n");
+
 	printf("tile->revealed = true;\n");
 	printf("walls |= (u64) (tile->class == WALL) << %d;\n", INDEX(x, y));
 	printf("tile += x;\n");
@@ -53,7 +63,7 @@ int main(void)
 		}
 		printf("if (walls >= %#018lx) return;\n", mask);
 		printf("if (!(walls & %#018lx))\ntile->revealed = true;\n",
-			los(x - .55, y + .55));
+			los(x - .51, y + .51));
 		printf("tile += y - %d * x;\n", y + 1);
 	}
 }

@@ -46,8 +46,9 @@ static void adjust_lights(Coords pos, i8 diff) {
 		94, 83, -1, -1, 53, -1, -1, 19, 10, 2,
 	};
 	Coords d = {0, 0};
-	for (d.x = -4; d.x <= 4; ++d.x)
-		for (d.y = -4; d.y <= 4; ++d.y)
+	assert(ARRAY_SIZE(g.board) == 37);
+	for (d.x = -min(pos.x, 4); d.x <= min(4, 36 - pos.x); ++d.x)
+		for (d.y = -min(pos.y, 4); d.y <= min(4, 36 - pos.y); ++d.y)
 			TILE(pos + d).light += diff * lights[L2(d)];
 }
 
@@ -408,10 +409,9 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	case ICE_BEETLE:
 	case FIRE_BEETLE:
 		knockback(m, dir, 1);
-		for (i64 i = 0; i < 5; ++i) {
-			Tile *tile = &TILE(m->pos + plus_shape[i]);
-			tile_change(tile, m->class == FIRE_BEETLE ? FIRE : ICE);
-		}
+		TileClass hazard = m->class == FIRE_BEETLE ? FIRE : ICE;
+		for (i64 i = 0; i < 5; ++i)
+			tile_change(&TILE(m->pos + plus_shape[i]), hazard);
 		return false;
 	case PIXIE:
 	case BOMBSHROOM_:

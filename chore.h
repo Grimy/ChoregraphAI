@@ -208,7 +208,7 @@ static const ClassInfos class_infos[256];
 // Gets the ClassInfos entry of the given monster’s class
 #define CLASS(m) (class_infos[(m)->class])
 
-typedef __attribute__((aligned(4096))) struct {
+typedef struct {
 	Tile board[37][37];
 	Monster monsters[80];
 	Trap traps[64];
