@@ -7,7 +7,7 @@
 
 #define MAX_LENGTH    32
 #define MAX_SCORE     64
-#define MAX_BACKTRACK 6
+#define MAX_BACKTRACK 8
 
 typedef struct route {
 	struct route *next;           // Next element, if any

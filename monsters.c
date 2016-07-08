@@ -240,17 +240,19 @@ static void zombie(Monster *this, __attribute__((unused)) Coords d)
 	this->delay = 1;
 }
 
-#define SLIME(name, ...) \
-static void name ## _slime(Monster *this, __attribute__((unused)) Coords d) \
-{ \
-	this->state += enemy_move(this, (Coords[]) __VA_ARGS__ [this->state]) == MOVE_SUCCESS; \
-	this->state &= 3; \
+static void slime(Monster *this, __attribute__((unused)) Coords d)
+{
+	static const Coords moves[][4] = {
+		{{ 0,  0}, { 0, 0}, { 0,  0}, { 0,  0}},
+		{{ 0, -1}, { 0, 1}, { 0, -1}, { 0,  1}},
+		{{ 1,  0}, { 0, 1}, {-1,  0}, { 0, -1}},
+		{{-1,  1}, { 1, 1}, { 1, -1}, {-1, -1}},
+		{{ 1,  1}, {-1, 1}, {-1, -1}, { 1, -1}},
+	};
+	i64 index = (this->class & 3) + (this->class >> 6);
+	this->state += enemy_move(this, moves[index][this->state]) == MOVE_SUCCESS;
+	this->state &= 3;
 }
-
-SLIME(blue,   {{ 0, -1}, { 0, 1}, { 0, -1}, { 0,  1}})
-SLIME(yellow, {{ 1,  0}, { 0, 1}, {-1,  0}, { 0, -1}})
-SLIME(ice,    {{ 1,  1}, {-1, 1}, {-1, -1}, { 1, -1}})
-SLIME(fire,   {{-1,  1}, { 1, 1}, { 1, -1}, {-1, -1}})
 
 // State 0: camouflaged
 // State 1: invulnerable (right after waking up)
@@ -284,10 +286,8 @@ static void breath_attack(Monster *this)
 // They then resume chasing, but can’t charge another breath in the next two beats.
 static void dragon(Monster *this, Coords d)
 {
-	if (this->aggro)
-		this->exhausted -= SIGN(this->exhausted);
-	else
-		this->exhausted = 4;
+	if (this->aggro && this->exhausted)
+		--this->exhausted;
 
 	switch (this->state) {
 	case 0:
@@ -522,9 +522,9 @@ static void nop() {}
 
 static const ClassInfos class_infos[256] = {
 	// [Name] = { max_hp, beat_delay, radius, flying, dig, priority, glyph, act }
-	[GREEN_SLIME] = { 1, 9, 225, false, -1,        0, GREEN "P",  NULL },
-	[BLUE_SLIME]  = { 2, 1, 225, false, -1, 10202202, BLUE "P",   blue_slime },
-	[YOLO_SLIME]  = { 1, 0, 225, false, -1, 10101102, YELLOW "P", yellow_slime },
+	[GREEN_SLIME] = { 1, 9, 999, false, -1,        0, GREEN "P",  NULL },
+	[BLUE_SLIME]  = { 2, 1, 999, false, -1, 10202202, BLUE "P",   slime },
+	[YOLO_SLIME]  = { 1, 0, 999, false, -1, 10101102, YELLOW "P", slime },
 	[SKELETON_1]  = { 1, 1,   9, false, -1, 10101202, "Z",        basic_seek },
 	[SKELETON_2]  = { 2, 1,   9, false, -1, 10302203, YELLOW "Z", basic_seek },
 	[SKELETON_3]  = { 3, 1,   9, false, -1, 10403204, BLACK "Z",  basic_seek },
@@ -534,7 +534,7 @@ static const ClassInfos class_infos[256] = {
 	[MONKEY_1]    = { 1, 0,   9, false, -1, 10004101, PURPLE "Y", basic_seek },
 	[MONKEY_2]    = { 2, 0,   9, false, -1, 10006103, "Y",        basic_seek },
 	[GHOST]       = { 1, 0,   9,  true, -1, 10201102, "8",        ghost },
-	[ZOMBIE]      = { 1, 1, 225, false, -1, 10201201, GREEN "Z",  zombie },
+	[ZOMBIE]      = { 1, 1, 999, false, -1, 10201201, GREEN "Z",  zombie },
 	[WRAITH]      = { 1, 0,   9,  true, -1, 10101102, RED "W",    basic_seek },
 	[MIMIC_1]     = { 1, 0,   0, false, -1, 10201100, YELLOW "m", mimic },
 	[MIMIC_2]     = { 1, 0,   0, false, -1, 10301100, BLUE "m",   mimic },
@@ -550,8 +550,8 @@ static const ClassInfos class_infos[256] = {
 	[MUSHROOM_2]  = { 3, 2,   9, false, -1, 10403303, PURPLE "%", mushroom },
 	[GOLEM_1]     = { 5, 3,   9,  true,  2, 20405404, "'",        basic_seek },
 	[GOLEM_2]     = { 7, 3,   9,  true,  2, 20607407, BLACK "'",  basic_seek },
-	[ARMADILLO_1] = { 1, 0, 225, false,  2, 10201102, "q",        armadillo },
-	[ARMADILLO_2] = { 2, 0, 225, false,  2, 10302105, YELLOW "q", armadillo },
+	[ARMADILLO_1] = { 1, 0, 999, false,  2, 10201102, "q",        armadillo },
+	[ARMADILLO_2] = { 2, 0, 999, false,  2, 10302105, YELLOW "q", armadillo },
 	[CLONE]       = { 1, 0,   9, false, -1, 10301102, "@",        clone },
 	[TARMONSTER]  = { 1, 0,   9, false, -1, 10304103, "t",        mimic },
 	[MOLE]        = { 1, 0,   9,  true, -1,  1020113, "r",        mole },
@@ -561,8 +561,8 @@ static const ClassInfos class_infos[256] = {
 	[BOMBSHROOM]  = { 1, 0,   0, false, -1,      ~2u, YELLOW "%", nop },
 	[BOMBSHROOM_] = { 1, 0,   9, false, -1,      ~2u, RED "%",    bomb_detonate },
 
-	[FIRE_SLIME]  = { 1, 0, 225, false,  2, 10301101, RED "P",    fire_slime },
-	[ICE_SLIME]   = { 1, 0, 225, false,  2, 10301101, CYAN "P",   ice_slime },
+	[FIRE_SLIME]  = { 1, 0, 999, false,  2, 10301101, RED "P",    slime },
+	[ICE_SLIME]   = { 1, 0, 999, false,  2, 10301101, CYAN "P",   slime },
 	[RIDER_1]     = { 1, 0,  49,  true, -1, 10201102, "&",        basic_seek },
 	[RIDER_2]     = { 2, 0,  49,  true, -1, 10402104, YELLOW "&", basic_seek },
 	[RIDER_3]     = { 3, 0,  49,  true, -1, 10603106, BLACK "&",  basic_seek },
@@ -586,7 +586,7 @@ static const ClassInfos class_infos[256] = {
 	[BOMBER]      = { 1, 1,   0, false, -1, 99999998, RED "G",    diagonal_seek },
 	[DIGGER]      = { 1, 1,   9, false,  2, 10101201, "G",        digger },
 	[BLACK_BAT]   = { 1, 0,   9,  true, -1, 10401120, BLACK "B",  black_bat },
-	[ARMADILDO]   = { 3, 0, 225, false,  2, 10303104, ORANGE "q", armadillo },
+	[ARMADILDO]   = { 3, 0, 999, false,  2, 10303104, ORANGE "q", armadillo },
 	[BLADENOVICE] = { 1, 1,   9, false, -1, 99999995, "b",        blademaster },
 	[BLADEMASTER] = { 2, 1,   9, false, -1, 99999996, "b",        blademaster },
 	[GHOUL]       = { 1, 0,   9,  true, -1, 10301102, "W",        moore_seek },
@@ -612,7 +612,7 @@ static const ClassInfos class_infos[256] = {
 	[MINE_STATUE] = { 1, 0,   0, false, -1,        0, RED "g",    NULL },
 	[CRATE_1]     = { 1, 0,   0, false, -1,        0, "(",        NULL },
 	[CRATE_2]     = { 1, 0,   0, false, -1,        0, "(",        NULL },
-	[BARREL]      = { 1, 0, 225, false,  1,       80, YELLOW "(", charge },
+	[BARREL]      = { 1, 0, 999, false,  1,       80, YELLOW "(", charge },
 	[TEH_URN]     = { 3, 0,   0, false, -1,        0, PURPLE "(", NULL },
 	[FIREPIG]     = { 1, 0,   0, false, -1,        1, RED "q",    firepig },
 

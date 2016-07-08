@@ -64,6 +64,8 @@ static void xml_process_node(xmlTextReader *xml)
 
 	else if (!strcmp(name, "enemy")) {
 		monster_init(++last_monster, type, pos);
+		if (type == RED_DRAGON || type == BLUE_DRAGON)
+			last_monster->exhausted = 4;
 		if ((type >= SARCO_1 && type <= SARCO_3) || type == MOMMY)
 			(++last_monster)->class = type;
 	}

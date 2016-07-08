@@ -2,10 +2,12 @@ TESTS:
 * Edge cases of bomb/nightmare/revealed aggro
 
 FEATURES:
+* chests!!!
 * metal doors (type=111)
 * green bats (R, L, D, U, UR, DR, UL, DL)
 * lord enemies
 * requeue enemies when close to enemies of the same priority
+* recursive requeueing
 
 BUGFIXES:
 * when monkeyed while untrapped in tar, the player should stay untrapped
@@ -14,13 +16,13 @@ BUGFIXES:
 * monkey should tank explosions/fireballs for the player
 * clonking should hit both player and monkey
 * the `knocked` flag should be reset during the player’s turn
-* requeueing should be recursive and in normal priority order
 * bombs shouldn’t damage unaggroed enemies
 * pixie explosions shouldn’t change terrain or destroy phasing enemies (but still destroy traps/walls)
 * non-player damage on Goolem shouldn’t spawn ooze
 
 REFACTORS:
 * Refactor harpy AI
+* Don’t rely on qsort being stable
 
 Metal doors try to close themselves before and after each player turn, except
 on the first two turns they are open. This explains both the weird priority
