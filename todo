@@ -24,7 +24,6 @@ BUGFIXES:
 REFACTORS:
 * Refactor harpy AI
 * Don’t rely on qsort being stable
-* Avoid dynallocs in solve.c
 
 Metal doors try to close themselves before and after each player turn, except
 on the first two turns they are open. This explains both the weird priority
