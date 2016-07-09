@@ -353,6 +353,10 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 		}
 		knockback(m, dir, 0);
 		return false;
+	case CHEST:
+		if (type == DMG_WEAPON)
+			break;
+		return false;
 	}
 
 	if (dmg == 0 || m->hp <= 0)

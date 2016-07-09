@@ -90,7 +90,7 @@ typedef enum __attribute__((__packed__)) {
 	WARLOCK_1, WARLOCK_2,
 	MUMMY,
 	WIND_STATUE, SEEK_STATUE, BOMB_STATUE, MINE_STATUE,
-	CRATE_1, CRATE_2, BARREL, TEH_URN,
+	CRATE_1, CRATE_2, BARREL, TEH_URN, CHEST,
 	FREE_SPIDER, // a spider that isn’t inside a wall
 	FIREPIG, // a fire trap (they’re treated as monsters, not traps)
 

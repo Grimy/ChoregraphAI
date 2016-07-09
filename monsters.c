@@ -634,6 +634,7 @@ static const ClassInfos class_infos[256] = {
 	[CRATE_2]     = { 1, 0,   0, false, -1,        0, "(",        NULL },
 	[BARREL]      = { 1, 0, 999, false,  1,       80, YELLOW "(", charge },
 	[TEH_URN]     = { 3, 0,   0, false, -1,        0, PURPLE "(", NULL },
+	[CHEST]       = { 1, 0,   0, false, -1,        0, BLACK "(",  NULL },
 	[FIREPIG]     = { 1, 0,   0, false, -1,        1, RED "q",    firepig },
 
 	[DIREBAT_1]   = { 2, 1,   9,  true, -1, 30302210, YELLOW "B", bat },

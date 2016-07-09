@@ -70,6 +70,10 @@ static void xml_process_node(xmlTextReader *xml)
 			(++last_monster)->class = type;
 	}
 
+	else if (!strcmp(name, "chest")) {
+		monster_init(++last_monster, CHEST, pos);
+	}
+
 	else if (!strcmp(name, "crate")) {
 		monster_init(++last_monster, CRATE_2 + type, pos);
 	}
