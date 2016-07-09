@@ -6,8 +6,8 @@
 #include "main.c"
 
 #define MAX_LENGTH    32
-#define MAX_BACKTRACK 6
-#define BUF_SIZE      (1 << 16)
+#define MAX_BACKTRACK 8
+#define BUF_SIZE      (1 << 17)
 
 typedef struct route {
 	GameState state;
@@ -62,7 +62,6 @@ static void add_to_queue(Route *route, i32 score)
 			--score_cutoff;
 			printf(YELLOW "cutoff\n" WHITE);
 		}
-
 	} while (new->length && new->score < score_cutoff);
 	pthread_mutex_unlock(&mutex);
 
@@ -103,8 +102,9 @@ static i32 fitness_function() {
 	if (player.hp <= 0)
 		return 255;
 	return g.current_beat
-		- 2 * g.miniboss_killed
+		- 3 * g.miniboss_killed
 		- 2 * g.sarcophagus_killed
+		- (g.player_damage - 1)
 		+ L1(player.pos - stairs) * 2 / 5;
 }
 

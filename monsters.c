@@ -194,9 +194,9 @@ static bool has_moved(Monster *this)
 {
 	if (L1(this->pos - this->prev_pos) == 0)
 		return false;
-	bool result = this->state;
-	this->state = 1;
-	return result;
+	// bool result = this->state;
+	// this->state = 1;
+	return true;
 }
 
 // Chase the player, then attack in a 3x3 zone.

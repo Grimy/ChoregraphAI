@@ -304,18 +304,36 @@ static void monster_kill(Monster *m, DamageType type)
 	m->hp = 0;
 	TILE(m->pos).monster = 0;
 
-	if (type == DMG_WEAPON && (m->class == WARLOCK_1 || m->class == WARLOCK_2))
-		move(&player, m->pos);
-	else if (m->class == ICE_SLIME || m->class == YETI)
+	switch (m->class) {
+	case WARLOCK_1:
+	case WARLOCK_2:
+		if (type == DMG_WEAPON)
+			move(&player, m->pos);
+		break;
+	case ICE_SLIME:
+	case YETI:
+	case ICE_POT:
+	case ICE_MIMIC:
 		tile_change(&TILE(m->pos), ICE);
-	else if (m->class == FIRE_SLIME || m->class == HELLHOUND)
+		break;
+	case FIRE_SLIME:
+	case HELLHOUND:
+	case FIRE_POT:
+	case FIRE_MIMIC:
 		tile_change(&TILE(m->pos), FIRE);
-	else if (m->class == BOMBER)
+		break;
+	case BOMBER:
 		bomb_plant(m->pos, 3);
-	else if (m->class >= DIREBAT_1 && m->class <= OGRE)
+		break;
+	case DIREBAT_1 ... OGRE:
 		g.miniboss_killed = true;
-	else if (m->class >= SARCO_1 && m->class <= SARCO_3)
+		break;
+	case SARCO_1:
+	case SARCO_2:
+	case SARCO_3:
 		g.sarcophagus_killed = true;
+		break;
+	}
 }
 
 // Deals damage to the given monster. Handles on-damage effects.
@@ -473,7 +491,7 @@ static void player_move(i8 x, i8 y)
 {
 	player.prev_pos = player.pos;
 	Coords dir = {x, y};
-	i32 dmg = TILE(player.pos).class == OOZE ? 0 : 5;
+	i32 dmg = TILE(player.pos).class == OOZE ? 0 : g.player_damage;
 
 	if (player.confusion || (g.monkey && g.monkey->class == CONF_MONKEY))
 		dir = -dir;
@@ -537,11 +555,19 @@ static bool player_won() {
 		&& (TILE(player.pos).zone != 4 || g.sarcophagus_killed);
 }
 
+static void pickup_item(ItemClass item)
+{
+	switch (item) {
+	case JEWELED:
+		g.player_damage = 5;
+		break;
+	}
+}
+
 static void player_turn(u8 input)
 {
 	player.confusion -= SIGN(player.confusion);
 	player.freeze -= SIGN(player.freeze);
-	g.player_moved = false;
 
 	// While frozen or ice-sliding, directional inputs are ignored
 	if ((g.sliding_on_ice || player.freeze) && input < 4)
@@ -549,6 +575,11 @@ static void player_turn(u8 input)
 
 	if (g.monkey)
 		player.untrapped = false;
+
+	if (TILE(player.pos).item) {
+		pickup_item(TILE(player.pos).item);
+		TILE(player.pos).item = 0;
+	}
 
 	switch (input) {
 	case 0:
@@ -572,6 +603,7 @@ static void player_turn(u8 input)
 		break;
 	}
 
+	// Handle ice and fire
 	if (g.sliding_on_ice)
 		g.player_moved = forced_move(&player, DIRECTION(player.pos - player.prev_pos));
 	else if (!g.player_moved && TILE(player.pos).class == FIRE)
@@ -579,6 +611,7 @@ static void player_turn(u8 input)
 
 	g.sliding_on_ice = g.player_moved && TILE(player.pos).class == ICE
 		&& can_move(&player, DIRECTION(player.pos - player.prev_pos));
+	g.player_moved = false;
 }
 
 static void enemy_turn(Monster *m)

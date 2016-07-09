@@ -108,6 +108,14 @@ typedef enum __attribute__((__packed__)) {
 	BOMB,
 } MonsterClass;
 
+// Items
+typedef enum __attribute__((__packed__)) {
+	NO_ITEM,
+	LUNGING,
+	MEMERS_CAP,
+	JEWELED,
+} ItemClass;
+
 // Tile types.
 typedef enum __attribute__((__packed__)) {
 	WALL = 0,   // actually includes level edges and doors
@@ -174,13 +182,13 @@ typedef struct {
 typedef struct {
 	TileClass class;
 	i8 hp;
-	i8 zone;
 	u8 monster;
+	ItemClass item;
 	i16 light;
 	bool revealed;
 	bool torch: 1;
 	bool traps_destroyed: 1;
-	bool: 6;
+	i8 zone: 6;
 } Tile;
 
 typedef struct {
@@ -224,12 +232,15 @@ typedef struct {
 	u8: 8;
 	u64 seed;
 	i32 player_bombs;
+	i32 player_damage;
 	i32 current_beat;
+	i32: 32;
 } GameState;
 
 __extension__ static __thread GameState g = {
 	.board = {[0 ... 36] = {[0 ... 36] = {.class = WALL, .hp = 5}}},
 	.player_bombs = 3,
+	.player_damage = 1,
 	.boots_on = true,
 	.seed = 42,
 };

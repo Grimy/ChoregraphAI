@@ -36,6 +36,8 @@ typedef int64_t  i64;
 
 #define abs(x) ({ __typeof(x) _abs = (x); _abs < 0 ? -_abs : _abs; })
 
+#define streq(a, b) (!strcmp((a), (b)))
+
 #define SIGN(x) (((x) > 0) - ((x) < 0))
 
 // Terminal ANSI codes

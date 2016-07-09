@@ -22,6 +22,17 @@ static void xml_first_pass(xmlTextReader *xml)
 	spawn.y = max(spawn.y, 2 - xml_attr(xml, "y"));
 }
 
+static ItemClass xml_parse_item(char* item_name)
+{
+	if (streq(item_name, "feet_boots_lunging"))
+		return LUNGING;
+	if (streq(item_name, "head_miners_cap"))
+		return MEMERS_CAP;
+	if (streq(item_name, "weapon_dagger_jeweled"))
+		return JEWELED;
+	return 0;
+}
+
 // Converts a single XML node into an appropriate object (Trap, Tile or Monster).
 static void xml_process_node(xmlTextReader *xml)
 {
@@ -39,7 +50,7 @@ static void xml_process_node(xmlTextReader *xml)
 	assert(max(pos.x, pos.y) <= ARRAY_SIZE(g.board) - 2);
 	type = type == 255 ? GREEN_BAT : type;
 
-	if (!strcmp(name, "trap")) {
+	if (streq(name, "trap")) {
 		if (type == 10) {
 			last_monster->state = !subtype;
 			monster_init(++last_monster, FIREPIG, pos);
@@ -51,7 +62,7 @@ static void xml_process_node(xmlTextReader *xml)
 		++last_trap;
 	}
 
-	else if (!strcmp(name, "tile")) {
+	else if (streq(name, "tile")) {
 		TILE(pos).class = type >= 100 ? WALL : type < 2 ? FLOOR : type,
 		TILE(pos).hp = type >= 100 ? wall_hp[type - 100] : 0;
 		TILE(pos).torch = (u8) xml_attr(xml, "torch");
@@ -62,7 +73,7 @@ static void xml_process_node(xmlTextReader *xml)
 			adjust_lights(pos, +1);
 	}
 
-	else if (!strcmp(name, "enemy")) {
+	else if (streq(name, "enemy")) {
 		monster_init(++last_monster, type, pos);
 		if (type == RED_DRAGON || type == BLUE_DRAGON)
 			last_monster->exhausted = 4;
@@ -70,11 +81,22 @@ static void xml_process_node(xmlTextReader *xml)
 			(++last_monster)->class = type;
 	}
 
-	else if (!strcmp(name, "chest")) {
+	else if (streq(name, "chest")) {
 		monster_init(++last_monster, CHEST, pos);
+		char* item_name = (char*) xmlTextReaderGetAttribute(xml, (xmlChar*) ("contents"));
+		TILE(pos).item = xml_parse_item(item_name);
+		free(item_name);
 	}
 
-	else if (!strcmp(name, "crate")) {
+	else if (streq(name, "item")) {
+		char* item_name = (char*) xmlTextReaderGetAttribute(xml, (xmlChar*) ("type"));
+		TILE(pos).item = xml_parse_item(item_name);
+		if (pos.x == 0 && pos.y == 0)
+			pickup_item(TILE(pos).item);
+		free(item_name);
+	}
+
+	else if (streq(name, "crate")) {
 		monster_init(++last_monster, CRATE_2 + type, pos);
 	}
 }
@@ -93,7 +115,7 @@ static void xml_process_file(char *file, i64 level, void callback(xmlTextReader 
 	while (xmlTextReaderRead(xml) == 1) {
 		if (xmlTextReaderNodeType(xml) != 1)
 			continue;
-		level -= !strcmp((const char*) xmlTextReaderConstName(xml), "level");
+		level -= streq((const char*) xmlTextReaderConstName(xml), "level");
 		if (!level)
 			callback(xml);
 	}
