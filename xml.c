@@ -37,7 +37,7 @@ static void xml_process_node(xmlTextReader *xml)
 
 	pos += spawn;
 	assert(max(pos.x, pos.y) <= ARRAY_SIZE(g.board) - 2);
-	type = type == 255 ? CONF_MONKEY : type;
+	type = type == 255 ? GREEN_BAT : type;
 
 	if (!strcmp(name, "trap")) {
 		if (type == 10) {

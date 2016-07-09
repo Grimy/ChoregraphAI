@@ -116,6 +116,26 @@ static void bat(Monster *this, Coords d)
 			return;
 }
 
+static void green_bat(Monster *this, Coords d)
+{
+	static const Coords moves[] = {
+		{1, 0}, {-1, 0}, {0, 1}, {0, -1},
+		{1, -1}, {1, 1}, {-1, -1}, {-1, 1},
+	};
+	if (this->confusion) {
+		basic_seek(this, d);
+		return;
+	}
+	if (!g.seed) {
+		monster_kill(this, DMG_NORMAL);
+		return;
+	}
+	i64 rng = RNG() * 2 + RNG();
+	for (i64 i = 0; i < 8; ++i)
+		if (enemy_move(this, moves[(rng + i) & 7]))
+			return;
+}
+
 // Attack the player if possible, otherwise move randomly.
 static void black_bat(Monster *this, Coords d)
 {
@@ -530,7 +550,7 @@ static const ClassInfos class_infos[256] = {
 	[SKELETON_3]  = { 3, 1,   9, false, -1, 10403204, BLACK "Z",  basic_seek },
 	[BLUE_BAT]    = { 1, 1,   9,  true, -1, 10101202, BLUE "B",   bat },
 	[RED_BAT]     = { 1, 0,   9,  true, -1, 10201103, RED "B",    bat },
-	[GREEN_BAT]   = { 1, 0,   9,  true, -1, 10301120, GREEN "B",  bat },
+	[GREEN_BAT]   = { 1, 0,   9,  true, -1, 10301120, GREEN "B",  green_bat },
 	[MONKEY_1]    = { 1, 0,   9, false, -1, 10004101, PURPLE "Y", basic_seek },
 	[MONKEY_2]    = { 2, 0,   9, false, -1, 10006103, "Y",        basic_seek },
 	[GHOST]       = { 1, 0,   9,  true, -1, 10201102, "8",        ghost },

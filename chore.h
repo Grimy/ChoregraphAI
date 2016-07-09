@@ -231,6 +231,7 @@ __extension__ static __thread GameState g = {
 	.board = {[0 ... 36] = {[0 ... 36] = {.class = WALL, .hp = 5}}},
 	.player_bombs = 3,
 	.boots_on = true,
+	.seed = 42,
 };
 
 static Coords spawn;

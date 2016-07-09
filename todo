@@ -4,7 +4,6 @@ TESTS:
 FEATURES:
 * chests!!!
 * metal doors (type=111)
-* green bats (R, L, D, U, UR, DR, UL, DL)
 * lord enemies
 * requeue enemies when close to enemies of the same priority
 * recursive requeueing
