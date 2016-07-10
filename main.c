@@ -305,10 +305,8 @@ static void monster_kill(Monster *m, DamageType type)
 	TILE(m->pos).monster = 0;
 
 	switch (m->class) {
-	case WARLOCK_1:
-	case WARLOCK_2:
-		if (type == DMG_WEAPON)
-			move(&player, m->pos);
+	case LIGHTSHROOM:
+		adjust_lights(m->pos, -1);
 		break;
 	case ICE_SLIME:
 	case YETI:
@@ -322,16 +320,21 @@ static void monster_kill(Monster *m, DamageType type)
 	case FIRE_MIMIC:
 		tile_change(&TILE(m->pos), FIRE);
 		break;
+	case WARLOCK_1:
+	case WARLOCK_2:
+		if (type == DMG_WEAPON)
+			move(&player, m->pos);
+		break;
 	case BOMBER:
 		bomb_plant(m->pos, 3);
-		break;
-	case DIREBAT_1 ... OGRE:
-		g.miniboss_killed = true;
 		break;
 	case SARCO_1:
 	case SARCO_2:
 	case SARCO_3:
 		g.sarcophagus_killed = true;
+		break;
+	case DIREBAT_1 ... OGRE:
+		g.miniboss_killed = true;
 		break;
 	}
 }

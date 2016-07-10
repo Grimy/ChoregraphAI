@@ -79,6 +79,8 @@ static void xml_process_node(xmlTextReader *xml)
 			last_monster->exhausted = 4;
 		if ((type >= SARCO_1 && type <= SARCO_3) || type == MOMMY)
 			(++last_monster)->class = type;
+		if (type == LIGHTSHROOM)
+			adjust_lights(pos, +1);
 	}
 
 	else if (streq(name, "chest")) {
