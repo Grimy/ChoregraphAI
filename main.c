@@ -12,8 +12,6 @@ static void monster_init(Monster *new, MonsterClass type, Coords pos) {
 	new->class = type;
 	new->pos = new->prev_pos = pos;
 	new->hp = CLASS(new).max_hp;
-	new->delay = ((type >= WINDMAGE_1 && type <= WINDMAGE_3) ||
-		(type >= LICH_1 && type <= LICH_3) || type == HARPY);
 }
 
 // Moves the given monster to a specific position.
@@ -40,16 +38,16 @@ static bool can_move(Monster *m, Coords dir)
 	return dest.class != WALL;
 }
 
-static void adjust_lights(Coords pos, i8 diff) {
+static void adjust_lights(Coords pos, i8 diff, i8 brightness) {
 	static const i16 lights[33] = {
-		102, 102, 102, -1, 102, 102, -1, -1, 102,
-		94, 83, -1, -1, 53, -1, -1, 19, 10, 2,
+		102, 102, 102, 102, 102, 102, 102, 102, 102,
+		94, 83, -1, -1, 53, 43, 33, 19, 10, 2,
 	};
 	Coords d = {0, 0};
 	assert(ARRAY_SIZE(g.board) == 37);
 	for (d.x = -min(pos.x, 4); d.x <= min(4, 36 - pos.x); ++d.x)
 		for (d.y = -min(pos.y, 4); d.y <= min(4, 36 - pos.y); ++d.y)
-			TILE(pos + d).light += diff * lights[L2(d)];
+			TILE(pos + d).light += diff * lights[max(0, L2(d) - brightness)];
 }
 
 static void destroy_wall(Coords pos) {
@@ -65,7 +63,7 @@ static void destroy_wall(Coords pos) {
 		MONSTER(pos).delay = 1;
 	}
 	if (wall->torch)
-		adjust_lights(pos, -1);
+		adjust_lights(pos, -1, 0);
 }
 
 // Tries to dig away the given wall, replacing it with floor.
@@ -192,40 +190,6 @@ static MoveResult enemy_move(Monster *m, Coords dir)
 	return MOVE_FAIL;
 }
 
-// Moves something by force (as caused by bounce traps, wind mages and knockback).
-// Unlike enemy_move, ignores confusion, delay, and digging.
-static bool forced_move(Monster *m, Coords dir)
-{
-	assert(m != &player || L1(dir));
-	if (m->freeze || is_bogged(m) || (m == &player && g.monkey))
-		return false;
-	if (&MONSTER(m->pos + dir) == &player) {
-		enemy_attack(m);
-		return true;
-	} else if (IS_EMPTY(m->pos + dir)) {
-		m->prev_pos = m->pos;
-		move(m, m->pos + dir);
-		return true;
-	}
-	return false;
-}
-
-// Tests whether the player can see the tile at the given position.
-// This is true if there’s an unblocked line from the center of the player’s
-// tile to any corner or the center of the destination tile.
-static bool can_see(Coords dest)
-{
-	Coords pos = player.pos;
-	if (dest.x < pos.x - 10 || dest.x > pos.x + 9 || dest.y < pos.y - 6 || dest.y > pos.y + 5)
-		return false;
-
-	// Miner’s Cap
-	if (L2(dest - pos) < 6)
-		return true;
-
-	return TILE(dest).light >= 102 && TILE(dest).revealed;
-}
-
 static void cast_light(Tile *tile, i64 x, i64 y)
 {
 	tile += y;
@@ -306,7 +270,7 @@ static void monster_kill(Monster *m, DamageType type)
 
 	switch (m->class) {
 	case LIGHTSHROOM:
-		adjust_lights(m->pos, -1);
+		adjust_lights(m->pos, -1, 3);
 		break;
 	case ICE_SLIME:
 	case YETI:
@@ -488,6 +452,39 @@ static void lunge(Coords dir) {
 		knockback(&MONSTER(player.pos + dir), dir, 1);
 }
 
+static void after_move(Coords dir)
+{
+	if (g.boots_on)
+		lunge(dir);
+
+	// Miner’s cap
+	i32 digging_power = TILE(player.pos).class == OOZE ? 0 : 2;
+	for (i64 i = 0; i < 4; ++i)
+		dig(player.pos + plus_shape[i], digging_power, false);
+}
+
+// Moves something by force (as caused by bounce traps, wind mages and knockback).
+// Unlike enemy_move, ignores confusion, delay, and digging.
+static bool forced_move(Monster *m, Coords dir)
+{
+	assert(m != &player || L1(dir));
+	if (m->freeze || is_bogged(m) || (m == &player && g.monkey))
+		return false;
+
+	if (&MONSTER(m->pos + dir) == &player) {
+		enemy_attack(m);
+		return true;
+	} else if (IS_EMPTY(m->pos + dir)) {
+		m->prev_pos = m->pos;
+		move(m, m->pos + dir);
+		if (m == &player)
+			after_move(dir);
+		return true;
+	}
+
+	return false;
+}
+
 // Attempts to move the player in the given direction
 // Will trigger attacking/digging if the destination contains an enemy/a wall.
 static void player_move(i8 x, i8 y)
@@ -522,13 +519,7 @@ static void player_move(i8 x, i8 y)
 	} else {
 		g.player_moved = true;
 		move(&player, player.pos + dir);
-		if (g.boots_on)
-			lunge(dir);
-
-		// Miner’s cap
-		i32 digging_power = TILE(player.pos).class == OOZE ? 0 : 2;
-		for (i64 i = 0; i < 4; ++i)
-			dig(player.pos + plus_shape[i], digging_power, false);
+		after_move(dir);
 	}
 }
 
@@ -624,17 +615,21 @@ static void enemy_turn(Monster *m)
 	m->freeze -= SIGN(m->freeze);
 	m->knocked = false;
 
-	// The bomb-aggro bug
-	if (!m->aggro && (g.bomb_exploded || (nightmare && L2(m->pos - nightmare->pos) < 9)))
-		m->aggro = can_see(m->pos);
-
 	if (!m->aggro) {
-		m->aggro = can_see(m->pos);
-		if (!(m->aggro && (m->delay || m->class == BLUE_DRAGON)) && L2(d) > CLASS(m).radius)
+		bool shadowed = nightmare && L2(m->pos - nightmare->pos) < 9;
+		m->aggro = TILE(m->pos).revealed
+			&& (TILE(m->pos).light >= 102
+				|| L2(player.pos - m->pos) < 9
+				|| shadowed)
+			&& (d.y >= -5 && d.y <= 6)
+			&& (d.x >= -10 && d.x <= 9);
+		if (L2(d) > CLASS(m).radius && !(m->aggro
+		    && (m->class == BLUE_DRAGON || g.bomb_exploded || shadowed)))
 			return;
-	} else if (m->class >= SARCO_1 && m->class <= SARCO_3) {
-		g.sarco_on = true;
 	}
+
+	if (m->class >= SARCO_1 && m->class <= SARCO_3)
+		g.sarco_on = true;
 
 	if (m->delay)
 		--m->delay;

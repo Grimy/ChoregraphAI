@@ -242,7 +242,6 @@ __extension__ static __thread GameState g = {
 	.player_bombs = 3,
 	.player_damage = 1,
 	.boots_on = true,
-	.seed = 42,
 };
 
 static Coords spawn;

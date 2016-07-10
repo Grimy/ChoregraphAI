@@ -324,7 +324,7 @@ static void dragon(Monster *this, Coords d)
 		this->state = 1;
 		break;
 	}
-	if (!this->exhausted && can_breath(this) && can_see(this->pos))
+	if (!this->exhausted && can_breath(this))
 		this->state = 2;
 }
 
@@ -560,24 +560,24 @@ static const ClassInfos class_infos[256] = {
 	[MIMIC_2]     = { 1, 0,   0, false, -1, 10301100, BLUE "m",   mimic },
 	[HEADLESS]    = { 1, 0,   0, false, -1, 10302203, "∠",        charge },
 
-	[SKELETANK_1] = { 1, 1,   9, false, -1, 10101202, "Z",        basic_seek },
-	[SKELETANK_2] = { 2, 1,   9, false, -1, 10302204, YELLOW "Z", basic_seek },
-	[SKELETANK_3] = { 3, 1,   9, false, -1, 10503206, BLACK "Z",  basic_seek },
+	[SKELETANK_1] = { 1, 1,  25, false, -1, 10101202, "Z",        basic_seek },
+	[SKELETANK_2] = { 2, 1,  25, false, -1, 10302204, YELLOW "Z", basic_seek },
+	[SKELETANK_3] = { 3, 1,  25, false, -1, 10503206, BLACK "Z",  basic_seek },
 	[WINDMAGE_1]  = { 1, 1,   0, false, -1, 10201202, BLUE "@",   mage },
 	[WINDMAGE_2]  = { 2, 1,   0, false, -1, 10402204, YELLOW "@", mage },
 	[WINDMAGE_3]  = { 3, 1,   0, false, -1, 10503206, BLACK "@",  mage },
-	[MUSHROOM_1]  = { 1, 3,   9, false, -1, 10201402, BLUE "%",   mushroom },
-	[MUSHROOM_2]  = { 3, 2,   9, false, -1, 10403303, PURPLE "%", mushroom },
-	[GOLEM_1]     = { 5, 3,   9,  true,  2, 20405404, "'",        basic_seek },
-	[GOLEM_2]     = { 7, 3,   9,  true,  2, 20607407, BLACK "'",  basic_seek },
+	[MUSHROOM_1]  = { 1, 3,  25, false, -1, 10201402, BLUE "%",   mushroom },
+	[MUSHROOM_2]  = { 3, 2,  25, false, -1, 10403303, PURPLE "%", mushroom },
+	[GOLEM_1]     = { 5, 3,  25,  true,  2, 20405404, "'",        basic_seek },
+	[GOLEM_2]     = { 7, 3,  25,  true,  2, 20607407, BLACK "'",  basic_seek },
 	[ARMADILLO_1] = { 1, 0, 999, false,  2, 10201102, "q",        armadillo },
 	[ARMADILLO_2] = { 2, 0, 999, false,  2, 10302105, YELLOW "q", armadillo },
-	[CLONE]       = { 1, 0,   9, false, -1, 10301102, "@",        clone },
-	[TARMONSTER]  = { 1, 0,   9, false, -1, 10304103, "t",        mimic },
-	[MOLE]        = { 1, 0,   9,  true, -1,  1020113, "r",        mole },
+	[CLONE]       = { 1, 0,  25, false, -1, 10301102, "@",        clone },
+	[TARMONSTER]  = { 1, 0,   0, false, -1, 10304103, "t",        mimic },
+	[MOLE]        = { 1, 0,  25,  true, -1,  1020113, "r",        mole },
 	[WIGHT]       = { 1, 0,   9,  true, -1, 10201103, GREEN "W",  basic_seek },
 	[WALL_MIMIC]  = { 1, 0,   0, false, -1, 10201103, GREEN "m",  mimic },
-	[LIGHTSHROOM] = { 1, 9,   9, false, -1,        0, "%",        NULL },
+	[LIGHTSHROOM] = { 1, 9,   0, false, -1,        0, "%",        NULL },
 	[BOMBSHROOM]  = { 1, 0,   0, false, -1,      ~2u, YELLOW "%", nop },
 	[BOMBSHROOM_] = { 1, 0,   9, false, -1,      ~2u, RED "%",    bomb_detonate },
 
@@ -642,8 +642,8 @@ static const ClassInfos class_infos[256] = {
 	[DRAGON]      = { 4, 1,  49,  true,  4, 30404210, GREEN "D",  basic_seek },
 	[RED_DRAGON]  = { 6, 1, 100,  true,  4, 99999999, RED "D",    dragon },
 	[BLUE_DRAGON] = { 6, 1,   0,  true,  4, 99999997, BLUE "D",   dragon },
-	[BANSHEE_1]   = { 3, 0,  49,  true, -1, 30403110, BLUE "8",   basic_seek },
-	[BANSHEE_2]   = { 4, 0,  49,  true, -1, 30604115, GREEN "8",  basic_seek },
+	[BANSHEE_1]   = { 3, 0,  25,  true, -1, 30403110, BLUE "8",   basic_seek },
+	[BANSHEE_2]   = { 4, 0,   9,  true, -1, 30604115, GREEN "8",  basic_seek },
 	[MINOTAUR_1]  = { 3, 0,  49,  true,  2, 30403110, "H",        minotaur },
 	[MINOTAUR_2]  = { 5, 0,  49,  true,  2, 30505115, BLACK "H",  minotaur },
 	[NIGHTMARE_1] = { 3, 1,  81,  true,  4, 30403210, BLACK "u",  basic_seek },

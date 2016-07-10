@@ -28,6 +28,8 @@ static u64 los(double x, double y)
 
 static void codegen(i8 x, i8 y)
 {
+	if (INDEX(x, y) < 4)
+		goto memes;
 	printf("if (0");
 	u64 masks[] = {
 		los(x - .51, y - .51),
@@ -47,6 +49,7 @@ static void codegen(i8 x, i8 y)
 			printf(" || !(walls & %#018lx)", masks[i]);
 	printf(")\n");
 
+memes:
 	printf("tile->revealed = true;\n");
 	printf("walls |= (u64) (tile->class == WALL) << %d;\n", INDEX(x, y));
 	printf("tile += x;\n");

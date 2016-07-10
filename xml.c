@@ -48,7 +48,7 @@ static void xml_process_node(xmlTextReader *xml)
 
 	pos += spawn;
 	assert(max(pos.x, pos.y) <= ARRAY_SIZE(g.board) - 2);
-	type = type == 255 ? GREEN_BAT : type;
+	type = type == 255 ? SKELETON_1 : type;
 
 	if (streq(name, "trap")) {
 		if (type == 10) {
@@ -70,7 +70,7 @@ static void xml_process_node(xmlTextReader *xml)
 		if (type == STAIRS)
 			stairs = pos;
 		if (TILE(pos).torch)
-			adjust_lights(pos, +1);
+			adjust_lights(pos, +1, 0);
 	}
 
 	else if (streq(name, "enemy")) {
@@ -80,7 +80,7 @@ static void xml_process_node(xmlTextReader *xml)
 		if ((type >= SARCO_1 && type <= SARCO_3) || type == MOMMY)
 			(++last_monster)->class = type;
 		if (type == LIGHTSHROOM)
-			adjust_lights(pos, +1);
+			adjust_lights(pos, +1, 3);
 	}
 
 	else if (streq(name, "chest")) {

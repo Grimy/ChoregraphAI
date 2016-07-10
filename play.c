@@ -47,7 +47,7 @@ static void display_tile(Coords pos)
 		printf("\033[%um", floor_colors[tile->class]);
 	if (tile->monster)
 		printf("%s", CLASS(&MONSTER(pos)).glyph);
-	else if (!can_see(pos))
+	else if (!TILE(pos).revealed)
 		putchar(' ');
 	else if (tile->class == WALL)
 		display_wall(pos);
@@ -85,6 +85,7 @@ int main(i32 argc, char **argv)
 	xml_parse(argc, argv);
 	printf(TERM_CLEAR);
 	system("stty -echo -icanon eol \1");
+	// g.seed = 1;
 
 	while (player.hp > 0 && !player_won()) {
 		display_board();

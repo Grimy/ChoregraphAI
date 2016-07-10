@@ -167,7 +167,6 @@ int main(i32 argc, char **argv)
 {
 	xml_parse(argc, argv);
 	do_beat(6);
-	g.seed = 0;
 
 	initial_state = g;
 	routes[0].state = g;

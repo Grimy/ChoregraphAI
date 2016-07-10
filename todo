@@ -10,6 +10,7 @@ FEATURES:
 
 BUGFIXES:
 * beetle shedding isn’t quite right
+* banshees have different activation radii depending on the zone
 * shovemonsters pushing the player on ice shoud trigger a slide
 * when monkeyed while untrapped in tar, the player should stay untrapped
 * charged breath attacks should have extreme priority
