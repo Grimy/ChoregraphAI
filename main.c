@@ -611,8 +611,7 @@ static void player_turn(u8 input)
 static void enemy_turn(Monster *m)
 {
 	Coords d = player.pos - m->pos;
-	m->confusion -= SIGN(m->confusion);
-	m->freeze -= SIGN(m->freeze);
+
 	m->knocked = false;
 
 	if (!m->aggro) {
@@ -631,9 +630,14 @@ static void enemy_turn(Monster *m)
 	if (m->class >= SARCO_1 && m->class <= SARCO_3)
 		g.sarco_on = true;
 
-	if (m->delay)
+	if (m->confusion)
+		--m->confusion;
+
+	if (m->freeze)
+		--m->freeze;
+	else if (m->delay)
 		--m->delay;
-	else if (!m->freeze)
+	else
 		CLASS(m).act(m, d);
 }
 
@@ -643,7 +647,7 @@ static void trap_turn(Trap *this)
 		return;
 
 	Monster *m = &MONSTER(this->pos);
-	if (m == NULL || m->untrapped || CLASS(m).flying)
+	if (m->untrapped || CLASS(m).flying)
 		return;
 	m->untrapped = true;
 
