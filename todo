@@ -12,7 +12,7 @@ BUGFIXES:
 * beetle shedding isn’t quite right
 * banshees have different activation radii depending on the zone
 * shovemonsters pushing the player on ice shoud trigger a slide
-* when monkeyed while untrapped in tar, the player should stay untrapped
+* when monkeyed while trapped in tar, the player should stay trapped
 * charged breath attacks should have extreme priority
 * skeleton knights should take two stacks of damage from fire traps
 * monkey should tank explosions/fireballs for the player

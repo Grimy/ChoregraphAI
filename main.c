@@ -443,19 +443,12 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	return true;
 }
 
-static void lunge(Coords dir) {
-	i64 steps = 4;
-	while (--steps && can_move(&player, dir))
-		move(&player, player.pos + dir);
-	Tile *next = &TILE(player.pos + dir);
-	if (steps && next->monster && damage(&MONSTER(player.pos + dir), 4, dir, DMG_NORMAL))
-		knockback(&MONSTER(player.pos + dir), dir, 1);
-}
-
 static void after_move(Coords dir)
 {
-	if (g.boots_on)
-		lunge(dir);
+	// Lunging
+	if (g.boots_on && L1(player.pos - player.prev_pos) < 4)
+		if (damage(&MONSTER(player.pos + dir), 4, dir, DMG_NORMAL))
+			knockback(&MONSTER(player.pos + dir), dir, 1);
 
 	// Miner’s cap
 	i32 digging_power = TILE(player.pos).class == OOZE ? 0 : 2;
@@ -519,6 +512,14 @@ static void player_move(i8 x, i8 y)
 	} else {
 		g.player_moved = true;
 		move(&player, player.pos + dir);
+
+		// Lunging
+		if (g.boots_on) {
+			i64 steps = 4;
+			while (--steps && can_move(&player, dir))
+				move(&player, player.pos + dir);
+		}
+
 		after_move(dir);
 	}
 }
@@ -567,8 +568,8 @@ static void player_turn(u8 input)
 	if ((g.sliding_on_ice || player.freeze) && input < 4)
 		input = 6;
 
-	if (g.monkey)
-		player.untrapped = false;
+	// if (g.monkey)
+		// player.untrapped = false;
 
 	if (TILE(player.pos).item) {
 		pickup_item(TILE(player.pos).item);
@@ -653,7 +654,8 @@ static void trap_turn(Trap *this)
 
 	switch (this->class) {
 	case OMNIBOUNCE:
-		forced_move(m, DIRECTION(m->pos - m->prev_pos));
+		if (L1(m->pos - m->prev_pos))
+			forced_move(m, DIRECTION(m->pos - m->prev_pos));
 		break;
 	case BOUNCE:
 		forced_move(m, this->dir);
