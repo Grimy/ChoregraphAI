@@ -615,6 +615,9 @@ static void enemy_turn(Monster *m)
 
 	m->knocked = false;
 
+	if (m->confusion)
+		--m->confusion;
+
 	if (!m->aggro) {
 		bool shadowed = nightmare && L2(m->pos - nightmare->pos) < 9;
 		m->aggro = TILE(m->pos).revealed
@@ -623,16 +626,15 @@ static void enemy_turn(Monster *m)
 				|| shadowed)
 			&& (d.y >= -5 && d.y <= 6)
 			&& (d.x >= -10 && d.x <= 9);
-		if (L2(d) > CLASS(m).radius && !(m->aggro
-		    && (m->class == BLUE_DRAGON || g.bomb_exploded || shadowed)))
+		if (m->aggro && (m->class == BLUE_DRAGON || g.bomb_exploded || shadowed)) {
+			(void) 0;
+		} else if (L2(d) <= CLASS(m).radius) {
+			if (m->class >= SARCO_1 && m->class <= SARCO_3)
+				m->delay = CLASS(m).beat_delay;
+		} else {
 			return;
+		}
 	}
-
-	if (m->class >= SARCO_1 && m->class <= SARCO_3)
-		g.sarco_on = true;
-
-	if (m->confusion)
-		--m->confusion;
 
 	if (m->freeze)
 		--m->freeze;

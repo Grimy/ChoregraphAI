@@ -226,15 +226,12 @@ typedef struct {
 	bool bomb_exploded;
 	bool sliding_on_ice;
 	bool boots_on;
-	bool sarco_on;
 	bool miniboss_killed;
 	bool sarcophagus_killed;
-	u8: 8;
+	i16 player_bombs;
 	u64 seed;
-	i32 player_bombs;
 	i32 player_damage;
 	i32 current_beat;
-	i32: 32;
 } GameState;
 
 __extension__ static __thread GameState g = {

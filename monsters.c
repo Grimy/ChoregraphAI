@@ -462,7 +462,7 @@ static void sarcophagus(Monster *this, __attribute__((unused)) Coords d)
 	static const MonsterClass types[] = {SKELETON_1, SKELETANK_1, WINDMAGE_1, RIDER_1};
 	Monster *spawned = this + 1;
 	this->delay = CLASS(this).beat_delay;
-	if (!g.sarco_on || spawned->hp > 0 || !g.seed)
+	if (spawned->hp > 0 || !g.seed)
 		return;
 
 	// Make sure that at least one direction isn’t blocked

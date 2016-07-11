@@ -85,7 +85,7 @@ int main(i32 argc, char **argv)
 	xml_parse(argc, argv);
 	printf(TERM_CLEAR);
 	system("stty -echo -icanon eol \1");
-	// g.seed = 1;
+	g.seed = 1;
 
 	while (player.hp > 0 && !player_won()) {
 		display_board();

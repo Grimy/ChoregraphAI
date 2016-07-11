@@ -36,7 +36,7 @@ static u64 explored_routes;
 // Returns a human-readable representation of a route
 static char* prettify_route(const Route *route)
 {
-	static const char* symbols[] = {"←", "↓", "→", "↑", "s", "z"};
+	static const char* symbols[] = {"←", "↓", "→", "↑", "s", "z", "X"};
 	static char buf[3 * MAX_LENGTH + 1];
 
 	sprintf(buf, "%lu ", route->length);
@@ -49,18 +49,23 @@ static char* prettify_route(const Route *route)
 static void add_to_queue(Route *route, i32 score)
 {
 	static u32 i;
+	static u32 queued_routes;
 	Route *new;
 
 	// Loop over the memory pool until we find a free slot
 	pthread_mutex_lock(&mutex);
+	++queued_routes;
 	do {
 		new = &routes[i++];
 		i %= BUF_SIZE;
 
 		// Avoid looping indefinitely when the pool is full
 		if (i == 0) {
-			--score_cutoff;
-			printf(YELLOW "cutoff\n" WHITE);
+			if (queued_routes < 100000) {
+				--score_cutoff;
+				printf(YELLOW "cutoff\n" WHITE);
+			}
+			queued_routes = 0;
 		}
 	} while (new->length && new->score < score_cutoff);
 	pthread_mutex_unlock(&mutex);
@@ -101,11 +106,12 @@ static Route* pop_queue()
 static i32 fitness_function() {
 	if (player.hp <= 0)
 		return 255;
-	return g.current_beat
+	double distance = L1(player.pos - stairs);
+	return g.current_beat + 1*(g.current_beat >= 4)
 		- 3 * g.miniboss_killed
 		- 2 * g.sarcophagus_killed
 		- (g.player_damage - 1)
-		+ L1(player.pos - stairs) * 2 / 5;
+		+ (i32) (distance / 2.3);
 }
 
 static void handle_victory(Route *route)
@@ -122,6 +128,7 @@ static void handle_victory(Route *route)
 
 	if (ok < 64)
 		return;
+
 	length_cutoff = min(length_cutoff, route->length);
 	printf("%s\t(%2.1f%%)\n", prettify_route(route), ok / 2.56);
 }
