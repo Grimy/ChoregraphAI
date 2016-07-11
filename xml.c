@@ -18,8 +18,8 @@ static i8 xml_attr(xmlTextReader *xml, char* attr)
 
 static void xml_first_pass(xmlTextReader *xml)
 {
-	spawn.x = max(spawn.x, 2 - xml_attr(xml, "x"));
-	spawn.y = max(spawn.y, 2 - xml_attr(xml, "y"));
+	spawn.x = max(spawn.x, 1 - xml_attr(xml, "x"));
+	spawn.y = max(spawn.y, 1 - xml_attr(xml, "y"));
 }
 
 static ItemClass xml_parse_item(char* item_name)
@@ -47,7 +47,9 @@ static void xml_process_node(xmlTextReader *xml)
 	Coords pos = {xml_attr(xml, "x"), xml_attr(xml, "y")};
 
 	pos += spawn;
-	assert(max(pos.x, pos.y) <= ARRAY_SIZE(g.board) - 2);
+	if (pos.x >= ARRAY_SIZE(g.board) - 1 || pos.y >= ARRAY_SIZE(*g.board) - 1)
+		return;
+
 	type = type == 255 ? SKELETON_1 : type;
 
 	if (streq(name, "trap")) {

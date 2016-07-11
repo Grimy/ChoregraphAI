@@ -44,9 +44,9 @@ static void adjust_lights(Coords pos, i8 diff, i8 brightness) {
 		94, 83, -1, -1, 53, 43, 33, 19, 10, 2,
 	};
 	Coords d = {0, 0};
-	assert(ARRAY_SIZE(g.board) == 37);
-	for (d.x = -min(pos.x, 4); d.x <= min(4, 36 - pos.x); ++d.x)
-		for (d.y = -min(pos.y, 4); d.y <= min(4, 36 - pos.y); ++d.y)
+	assert(ARRAY_SIZE(g.board) == 32);
+	for (d.x = -min(pos.x, 4); d.x <= min(4, 31 - pos.x); ++d.x)
+		for (d.y = -min(pos.y, 4); d.y <= min(4, 31 - pos.y); ++d.y)
 			TILE(pos + d).light += diff * lights[max(0, L2(d) - brightness)];
 }
 
