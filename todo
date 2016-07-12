@@ -2,7 +2,6 @@ TESTS:
 * Edge cases of bomb/nightmare/revealed aggro
 
 FEATURES:
-* chests!!!
 * metal doors (type=111)
 * lord enemies
 * requeue enemies when close to enemies of the same priority
@@ -10,7 +9,7 @@ FEATURES:
 
 BUGFIXES:
 * beetle shedding isn’t quite right
-* banshees have different activation radii depending on the zone
+* banshees should have different activation radii depending on the zone
 * shovemonsters pushing the player on ice shoud trigger a slide
 * when monkeyed while trapped in tar, the player should stay trapped
 * charged breath attacks should have extreme priority

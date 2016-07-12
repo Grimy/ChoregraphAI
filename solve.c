@@ -6,7 +6,7 @@
 #include "main.c"
 
 #define MAX_LENGTH    32
-#define MAX_BACKTRACK 8
+#define MAX_BACKTRACK 10
 #define BUF_SIZE      (1 << 17)
 
 typedef struct route {
@@ -49,29 +49,16 @@ static char* prettify_route(const Route *route)
 static void add_to_queue(Route *route, i32 score)
 {
 	static u32 i;
-	static u32 queued_routes;
 	Route *new;
 
 	// Loop over the memory pool until we find a free slot
+	// To avoid infinite loops, we decrease the cutoff every other loop
 	pthread_mutex_lock(&mutex);
-	++queued_routes;
 	do {
-		new = &routes[i++];
-		i %= BUF_SIZE;
-
-		// Avoid looping indefinitely when the pool is full
-		if (i == 0) {
-			if (queued_routes < 100000) {
-				--score_cutoff;
-				printf(YELLOW "cutoff\n" WHITE);
-			}
-			queued_routes = 0;
-		}
+		new = &routes[++i % BUF_SIZE];
+		score_cutoff -= i % (2 * BUF_SIZE) == 0;
 	} while (new->length && new->score < score_cutoff);
 	pthread_mutex_unlock(&mutex);
-
-	if (score >= score_cutoff)
-		return;
 
 	new->length = route->length;
 	memcpy(new->input, route->input, MAX_LENGTH);
@@ -118,16 +105,15 @@ static void handle_victory(Route *route)
 {
 	u32 ok = 0;
 
-	for (u32 i = 1; i <= 256 && (ok + 2) * 4 >= i; ++i) {
+	for (u32 i = 1; i <= 256; ++i) {
 		g = initial_state;
 		g.seed = i;
 		for (i64 beat = 0; beat < route->length && player.hp > 0; ++beat)
 			do_beat(route->input[beat]);
 		ok += player_won();
+		if ((ok + 2) * 4 < i)
+			return;
 	}
-
-	if (ok < 64)
-		return;
 
 	length_cutoff = min(length_cutoff, route->length);
 	printf("%s\t(%2.1f%%)\n", prettify_route(route), ok / 2.56);
@@ -136,11 +122,12 @@ static void handle_victory(Route *route)
 // Starts with the given route, then tries all possible inputs
 static void explore(Route *route)
 {
+	if (route->length >= length_cutoff)
+		return;
+	assert(route->score < score_cutoff);
+
 	++route->length;
 	++explored_routes;
-
-	if (route->length > length_cutoff || route->score > score_cutoff)
-		return;
 
 	// Try adding each possible input at the end
 	for (u8 i = 0; i < 6; ++i) {

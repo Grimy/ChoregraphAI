@@ -10,7 +10,7 @@ solve-dbg:  CFLAGS += -DJOBS=4 -lpthread
 solve:      CFLAGS += -DJOBS=4 -O3 -lpthread
 solve-perf: CFLAGS += -DJOBS=1 -O3 -lpthread -fno-omit-frame-pointer -fno-inline
 
-ARGS := BARDZ4.xml 2
+ARGS := BARDZ4.xml 3
 
 .PHONY: all report stat debug
 all: play solve test
