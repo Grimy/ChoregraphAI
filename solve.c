@@ -6,7 +6,7 @@
 #include "main.c"
 
 #define MAX_LENGTH    32
-#define MAX_BACKTRACK 10
+#define MAX_BACKTRACK 8
 #define BUF_SIZE      (1 << 17)
 
 typedef struct route {
@@ -32,6 +32,7 @@ static GameState initial_state;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static u64 explored_routes;
+static u64 queued_routes;
 
 // Returns a human-readable representation of a route
 static char* prettify_route(const Route *route)
@@ -54,6 +55,7 @@ static void add_to_queue(Route *route, i32 score)
 	// Loop over the memory pool until we find a free slot
 	// To avoid infinite loops, we decrease the cutoff every other loop
 	pthread_mutex_lock(&mutex);
+	++queued_routes;
 	do {
 		new = &routes[++i % BUF_SIZE];
 		score_cutoff -= i % (2 * BUF_SIZE) == 0;
@@ -171,5 +173,5 @@ int main(i32 argc, char **argv)
 		pthread_create(&child, NULL, run, NULL);
 	run();
 
-	printf("%lu\n", explored_routes);
+	fprintf(stderr, "%lu/%lu\n", explored_routes, queued_routes);
 }

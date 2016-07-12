@@ -6,7 +6,6 @@ core.*
 perf.data*
 los.c
 play
-solve
-solve-perf
+solve*
 debug
 test
