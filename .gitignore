@@ -2,12 +2,11 @@
 *.expand
 *.png
 *.svg
-*.gen
 core.*
 perf.data*
+los.c
 play
 solve
 solve-perf
 debug
 test
-los

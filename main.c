@@ -194,7 +194,7 @@ static void cast_light(Tile *tile, i64 x, i64 y)
 {
 	tile += y;
 	u64 walls = 0;
-#include "los.gen"
+#include "los.c"
 }
 
 static void update_fov()

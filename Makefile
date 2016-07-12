@@ -15,13 +15,13 @@ ARGS := BARDZ4.xml 2
 .PHONY: all report stat debug
 all: play solve test
 
-%: %.c main.c monsters.c xml.c los.gen *.h Makefile
+%: %.c main.c monsters.c xml.c los.c *.h Makefile
 	clang $(CFLAGS) -o $@ $<
 
-solve-%: solve.c main.c monsters.c xml.c los.gen *.h Makefile
+solve-%: solve.c main.c monsters.c xml.c los.c *.h Makefile
 	clang $(CFLAGS) -o $@ $<
 
-los.gen: los
+los.c: los.pl
 	./$< >$@
 
 debug: solve-dbg
