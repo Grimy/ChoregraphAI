@@ -13,7 +13,10 @@ solve-perf: CFLAGS += -DJOBS=1 -O3 -lpthread -fno-omit-frame-pointer -fno-inline
 ARGS := BARDZ4.xml 3
 
 .PHONY: all report stat debug
-all: play solve test
+all: cscope.out
+
+cscope.out: play solve test
+	cscope -b
 
 %: %.c main.c monsters.c xml.c los.c *.h Makefile
 	clang $(CFLAGS) -o $@ $<
