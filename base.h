@@ -52,8 +52,8 @@ typedef int64_t  i64;
 #define CYAN   "\033[94m"
 #define PURPLE "\033[95m"
 
-#define TERM_HOME     "\x1b[H"
-#define TERM_CLEAR    TERM_HOME "\x1b[2J"
+#define TERM_HOME  "\x1b[H"
+#define TERM_CLEAR TERM_HOME "\x1b[2J"
 
 // Die verbosely
 #define FATAL(message, ...) do { \

@@ -5,7 +5,7 @@ CFLAGS += -fstrict-aliasing -fstrict-overflow -fno-asynchronous-unwind-tables
 CFLAGS += -Wno-c++-compat -Wno-switch -Wno-switch-enum -Wno-gnu-statement-expression -Wno-gnu-case-range
 CFLAGS += -I/usr/include/libxml2 -lxml2 -Wno-unknown-warning-option
 CFLAGS += -Wno-documentation -Wno-documentation-unknown-command -Wno-reserved-id-macro
-play test solve-dbg: CFLAGS += -g -fsanitize=address,leak,undefined
+play test solve-dbg: CFLAGS += -g -fsanitize=undefined,thread
 solve-dbg:  CFLAGS += -DJOBS=4 -lpthread
 solve:      CFLAGS += -DJOBS=4 -O3 -lpthread
 solve-perf: CFLAGS += -DJOBS=1 -O3 -lpthread -fno-omit-frame-pointer -fno-inline

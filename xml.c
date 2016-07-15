@@ -157,7 +157,7 @@ static void xml_parse(i32 argc, char **argv)
 	for (Monster *m = last_monster; m >= g.monsters; --m) {
 		TILE(m->pos).monster = (u8) (m - g.monsters);
 		if (m->class == NIGHTMARE_1 || m->class == NIGHTMARE_2)
-			nightmare = m;
+			g.nightmare = (u16) (m - g.monsters);
 	}
 
 	update_fov();

@@ -15,7 +15,6 @@ static void monster_init(Monster *new, MonsterClass type, Coords pos) {
 }
 
 // Moves the given monster to a specific position.
-// Keeps track of the monster’s previous position.
 static void move(Monster *m, Coords dest)
 {
 	TILE(m->pos).monster = 0;
@@ -214,8 +213,6 @@ static MoveResult enemy_move(Monster *m, Coords dir)
 
 static void cast_light(Tile *tile, i64 x, i64 y)
 {
-	tile += y;
-	u64 walls = 0;
 #include "los.c"
 }
 
@@ -573,6 +570,7 @@ static void player_turn(u8 input)
 	player.confusion -= SIGN(player.confusion);
 	player.freeze -= SIGN(player.freeze);
 	g.iframes -= SIGN(g.iframes);
+	g.player_moved = false;
 
 	// While frozen or ice-sliding, directional inputs are ignored
 	if ((g.sliding_on_ice || player.freeze) && input < 4)
@@ -616,7 +614,6 @@ static void player_turn(u8 input)
 
 	g.sliding_on_ice = g.player_moved && TILE(player.pos).class == ICE
 		&& can_move(&player, DIRECTION(player.pos - player.prev_pos));
-	g.player_moved = false;
 }
 
 static void enemy_turn(Monster *m)
@@ -629,7 +626,7 @@ static void enemy_turn(Monster *m)
 		--m->confusion;
 
 	if (!m->aggro) {
-		bool shadowed = nightmare && L2(m->pos - nightmare->pos) < 9;
+		bool shadowed = g.nightmare && L2(m->pos - g.monsters[g.nightmare].pos) < 9;
 		m->aggro = TILE(m->pos).revealed
 			&& (TILE(m->pos).light >= 102
 				|| L2(player.pos - m->pos) < 9

@@ -291,13 +291,12 @@ static bool can_breath(Monster *this)
 {
 	i64 dx = abs(player.pos.x - this->pos.x);
 	i64 dy = abs(player.pos.y - this->pos.y);
-	return this->class == RED_DRAGON ? !dy : dx < 4 && dy < dx && !player.freeze;
-}
-
-static void breath_attack(Monster *this)
-{
-	i8 direction = SIGN(player.pos.x - this->pos.x);
-	(this->class == RED_DRAGON ? fireball : cone_of_cold)(this->pos, direction);
+	if (this->class == RED_DRAGON ? dy : dx > 3 || dy >= dx || player.freeze)
+		return false;
+	for (i8 i = 0; i < dx; ++i)
+		if (IS_WALL(this->pos + i * DIRECTION(player.pos - this->pos)))
+			return false;
+	return true;
 }
 
 // Dragons normally chase the player cardinally every two beats (see basic_seek).
@@ -309,6 +308,8 @@ static void dragon(Monster *this, Coords d)
 	if (this->aggro && this->exhausted)
 		--this->exhausted;
 
+	i8 direction = 1;
+
 	switch (this->state) {
 	case 0:
 		basic_seek(this, d);
@@ -319,13 +320,16 @@ static void dragon(Monster *this, Coords d)
 		this->state = 0;
 		break;
 	case 2:
-		breath_attack(this);
+		direction = -1;
+		// FALLTHROUGH
+	case 3:
+		(this->class == RED_DRAGON ? fireball : cone_of_cold)(this->pos, direction);
 		this->exhausted = 3;
 		this->state = 1;
 		break;
 	}
 	if (!this->exhausted && can_breath(this))
-		this->state = 2;
+		this->state = 2 + (d.x > 0);
 }
 
 static void elemental(Monster *this, Coords d)
@@ -541,7 +545,7 @@ static void firepig(Monster *this, Coords d)
 static void nop() {}
 
 static const ClassInfos class_infos[256] = {
-	// [Name] = { max_hp, beat_delay, radius, flying, dig, priority, glyph, act }
+	// [Name] = { damage, max_hp, beat_delay, radius, flying, dig, priority, glyph, act }
 	[GREEN_SLIME] = { 99, 1, 0, 999, false, -1,        0, GREEN "P",  NULL },
 	[BLUE_SLIME]  = {  2, 2, 1, 999, false, -1, 10202202, BLUE "P",   slime },
 	[YOLO_SLIME]  = {  1, 1, 0, 999, false, -1, 10101102, YELLOW "P", slime },

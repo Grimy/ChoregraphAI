@@ -229,7 +229,7 @@ typedef struct {
 	bool boots_on;
 	bool miniboss_killed;
 	bool sarcophagus_killed;
-	u16: 16;
+	u16 nightmare;
 
 	Monster *monkey;
 	i32 player_bombs;
@@ -247,7 +247,6 @@ __extension__ static __thread GameState g = {
 
 static Coords spawn;
 static Coords stairs;
-static Monster *nightmare;
 
 // Some pre-declarations
 static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type);
