@@ -92,6 +92,25 @@ static void damage_tile(Coords pos, Coords origin, i64 dmg, DamageType type) {
 	damage(&MONSTER(pos), dmg, CARDINAL(pos - origin), type);
 }
 
+static void bomb_detonate(Monster *this, __attribute__((unused)) Coords d)
+{
+	static const Coords square_shape[] = {
+		{-1, -1}, {-1, 0}, {-1, 1},
+		{0, -1}, {0, 0}, {0, 1},
+		{1, -1}, {1, 0}, {1, 1},
+	};
+	if (&MONSTER(this->pos) == this)
+		TILE(this->pos).monster = 0;
+	for (i64 i = 0; i < 9; ++i) {
+		Tile *tile = &TILE(this->pos + square_shape[i]);
+		tile->traps_destroyed = true;
+		tile->class = tile->class == WATER ? FLOOR : tile->class == ICE ? WATER : tile->class;
+		damage_tile(this->pos + square_shape[i], this->pos, 4, DMG_BOMB);
+	}
+	this->hp = 0;
+	g.bomb_exploded = true;
+}
+
 // Handles an enemy attacking the player.
 // Usually boils down to damaging the player, but some enemies are special-cased.
 static void enemy_attack(Monster *attacker)
@@ -119,8 +138,11 @@ static void enemy_attack(Monster *attacker)
 		else
 			damage(&player, 1, d, DMG_NORMAL);
 		break;
+	case BOMBER:
+		bomb_detonate(attacker, NO_DIR);
+		break;
 	default:
-		damage(&player, 1, d, DMG_NORMAL);
+		damage(&player, CLASS(attacker).damage, d, DMG_NORMAL);
 	}
 }
 
@@ -229,25 +251,6 @@ static void bomb_plant(Coords pos, u8 delay)
 	bomb->hp = 1;
 	bomb->pos = pos;
 	bomb->delay = delay;
-}
-
-static void bomb_detonate(Monster *this, __attribute__((unused)) Coords d)
-{
-	static const Coords square_shape[] = {
-		{-1, -1}, {-1, 0}, {-1, 1},
-		{0, -1}, {0, 0}, {0, 1},
-		{1, -1}, {1, 0}, {1, 1},
-	};
-	if (&MONSTER(this->pos) == this)
-		TILE(this->pos).monster = 0;
-	for (i64 i = 0; i < 9; ++i) {
-		Tile *tile = &TILE(this->pos + square_shape[i]);
-		tile->traps_destroyed = true;
-		tile->class = tile->class == WATER ? FLOOR : tile->class == ICE ? WATER : tile->class;
-		damage_tile(this->pos + square_shape[i], this->pos, 4, DMG_BOMB);
-	}
-	this->hp = 0;
-	g.bomb_exploded = true;
 }
 
 // Overrides a tile with a given floor hazard. Also destroys traps on the tile.
@@ -409,6 +412,10 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	case GOOLEM:
 		tile_change(&TILE(player.pos), OOZE);
 		break;
+	case PLAYER:
+		if (g.iframes)
+			return false;
+		break;
 	}
 
 	// Finally, deal the damage!
@@ -438,6 +445,8 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	case BANSHEE_2:
 		knockback(m, dir, 1);
 		return false;
+	case PLAYER:
+		g.iframes = 2;
 	}
 
 	return true;
@@ -563,6 +572,7 @@ static void player_turn(u8 input)
 {
 	player.confusion -= SIGN(player.confusion);
 	player.freeze -= SIGN(player.freeze);
+	g.iframes -= SIGN(g.iframes);
 
 	// While frozen or ice-sliding, directional inputs are ignored
 	if ((g.sliding_on_ice || player.freeze) && input < 4)

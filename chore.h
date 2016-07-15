@@ -200,12 +200,13 @@ typedef struct {
 // Properties that are common to all monsters of a type.
 // This avoids duplicating information between all monsters of the same type.
 typedef struct {
+	i8 damage;
 	i8 max_hp;
 	u8 beat_delay;
+	u8: 8;
 	u16 radius;
 	bool flying;
 	i8 digging_power;
-	u16: 16;
 	u64 priority;
 	char *glyph;
 	void (*act) (Monster*, Coords);
@@ -220,18 +221,21 @@ typedef struct {
 	Tile board[32][32];
 	Monster monsters[80];
 	Trap traps[64];
+	u64 seed;
 
-	Monster *monkey;
 	bool player_moved;
 	bool bomb_exploded;
 	bool sliding_on_ice;
 	bool boots_on;
 	bool miniboss_killed;
 	bool sarcophagus_killed;
-	i16 player_bombs;
-	u64 seed;
+	u16: 16;
+
+	Monster *monkey;
+	i32 player_bombs;
 	i32 player_damage;
 	i32 current_beat;
+	i32 iframes;
 } GameState;
 
 __extension__ static __thread GameState g = {
