@@ -16,8 +16,8 @@ typedef struct route {
 } Route;
 
 // Don’t explore routes that exceed those thresholds
-static i64 _Atomic length_cutoff = MAX_LENGTH;
-static i32 score_cutoff = MAX_LENGTH;
+static i64 _Atomic length_cutoff = MAX_LENGTH - 1;
+static i32 _Atomic score_cutoff = MAX_LENGTH;
 static Route pool[6];
 
 static GameState initial_state;
@@ -30,8 +30,8 @@ static void pretty_print(const Route *route)
 {
 	static const char* symbols[] = {"←", "↓", "→", "↑", "s", "z", "X"};
 
-	printf("%ld ", route->length);
-	for (i64 i = 0; i < route->length; ++i)
+	printf("%ld/%d/%d ", route->length + 1, 3 - player.hp, 3 - g.player_bombs);
+	for (i64 i = 0; i <= route->length; ++i)
 		printf("%s", symbols[route->input[i]]);
 }
 
@@ -40,11 +40,13 @@ static i32 fitness_function() {
 	if (player.hp <= 0)
 		return 255;
 	double distance = L1(player.pos - stairs);
-	return g.current_beat + 1*(g.current_beat >= 4)
+	return 8 + g.current_beat
+		+ (i32) (distance / 2.3)
 		- 3 * g.miniboss_killed
 		- 2 * g.sarcophagus_killed
-		- (g.player_damage - 1)
-		+ (i32) (distance / 2.3);
+		- g.player_damage
+		- player.hp
+		- g.player_bombs;
 }
 
 static void handle_victory(Route *route)
@@ -61,8 +63,11 @@ static void handle_victory(Route *route)
 			return;
 	}
 
-	if (route->length - (ok == 256) < length_cutoff)
-		length_cutoff = route->length - (ok == 256);
+	if (route->length < length_cutoff)
+		length_cutoff = route->length;
+	if (fitness_function() + MAX_BACKTRACK < score_cutoff)
+		score_cutoff = fitness_function() + MAX_BACKTRACK;
+
 	pretty_print(route);
 	printf("\t(%2.1f%%)\n", ok / 2.56);
 }
@@ -101,6 +106,7 @@ static void* explore(void *arg)
 	// Try adding each possible input at the end
 	for (u8 i = 0; i < 6; ++i) {
 		route->input[route->length] = i;
+
 		g = route->state;
 		do_beat(i);
 		i32 score = fitness_function();
