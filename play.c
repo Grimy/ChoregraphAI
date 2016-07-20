@@ -1,9 +1,9 @@
 // play.c - manages terminal input/output
 // All output code assumes an ANSI-compatible UTF-8 terminal.
 
-#include <time.h>
+#include "chore.h"
 
-#include "main.c"
+#include <time.h>
 
 static const u8 floor_colors[] = {
 	[STAIRS] = 105, [SHOP] = 43,

@@ -1,5 +1,7 @@
 // xml.c - deals with custom dungeon XML files
 
+#include "chore.h"
+
 #include <libxml/xmlreader.h>
 
 // Pointer to the end of the monsters array
@@ -132,7 +134,7 @@ static void xml_process_file(char *file, i64 level, void callback(xmlTextReader 
 // Initializes the game’s state based on the given custom dungeon file.
 // Aborts if the file doesn’t exist or isn’t valid XML.
 // Valid, non-dungeon XML yields undefined results (most likely, an empty dungeon).
-static void xml_parse(i32 argc, char **argv)
+void xml_parse(i32 argc, char **argv)
 {
 	if (argc < 2)
 		FATAL("Usage: %s dungeon_file.xml [level]", argv[0]);

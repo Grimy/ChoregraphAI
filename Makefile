@@ -1,38 +1,41 @@
 MAKEFLAGS += --no-builtin-rules -j4
+CC = clang
+OBJECTS = main.o monsters.o xml.o los.o
+ARGS := BARDZ4.xml 3
 
 CFLAGS += -std=c99 -Weverything -Werror -march=native -mtune=native
 CFLAGS += -fstrict-aliasing -fstrict-overflow -fno-asynchronous-unwind-tables
 CFLAGS += -Wno-c++-compat -Wno-switch -Wno-switch-enum -Wno-gnu-statement-expression -Wno-gnu-case-range
-CFLAGS += -I/usr/include/libxml2 -lxml2 -Wno-unknown-warning-option
-CFLAGS += -Wno-documentation -Wno-documentation-unknown-command -Wno-reserved-id-macro
-play test solve-dbg: CFLAGS += -g -fsanitize=undefined,thread
-solve-dbg:  CFLAGS += -DJOBS=4 -lpthread
-solve:      CFLAGS += -DJOBS=4 -O3 -lpthread
-solve-perf: CFLAGS += -DJOBS=1 -O3 -lpthread -fno-omit-frame-pointer -fno-inline
+CFLAGS += -I/usr/include/libxml2 -Wno-unknown-warning-option -Wno-documentation -Wno-documentation-unknown-command -Wno-reserved-id-macro
+LDFLAGS += -lxml2
+%/solve: LDFLAGS += -lpthread
 
-ARGS := BARDZ4.xml 3
-
-.PHONY: all report stat debug
-all: cscope.out
-
-cscope.out: play solve test
+cscope.out: dbin/play bin/solve
 	cscope -b
-
-%: %.c main.c monsters.c xml.c los.c *.h Makefile
-	clang $(CFLAGS) -o $@ $<
-
-solve-%: solve.c main.c monsters.c xml.c los.c *.h Makefile
-	clang $(CFLAGS) -o $@ $<
 
 los.c: los.pl
 	./$< >$@
 
+bin/%: CFLAGS += -O3 -fno-omit-frame-pointer -fno-inline
+bin/%.o: %.c chore.h base.h Makefile
+	$(CC) $(CFLAGS) $< -c -o $@
+bin/%: bin/%.o $(addprefix bin/, $(OBJECTS))
+	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@
+
+dbin/%: CFLAGS += -g -fsanitize=undefined,thread
+dbin/%.o: %.c chore.h base.h Makefile
+	$(CC) $(CFLAGS) $< -c -o $@
+dbin/%: dbin/%.o $(addprefix dbin/, $(OBJECTS))
+	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@
+
+.PHONY: debug report stat
+
 debug: solve-dbg
 	lldb ./$< $(ARGS)
-
-stat: solve-perf
-	perf stat ./$< $(ARGS)
 
 report: solve-perf
 	perf record -g ./$< $(ARGS)
 	perf report --no-children
+
+stat: solve-perf
+	perf stat ./$< $(ARGS)

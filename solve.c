@@ -1,9 +1,9 @@
 // solve.c - finds the optimal route for a level
 
+#include "chore.h"
+
 #include <sys/time.h>
 #include <pthread.h>
-
-#include "main.c"
 
 #define MAX_LENGTH    24
 #define MAX_BACKTRACK 8

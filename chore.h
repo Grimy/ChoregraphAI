@@ -1,5 +1,7 @@
 // chore.h - global types and vars definitions
 
+#include "base.h"
+
 #define player (g.monsters[1])
 #define TILE(pos) (g.board[(pos).x][(pos).y])
 #define MONSTER(pos) (g.monsters[TILE(pos).monster])
@@ -7,6 +9,11 @@
 #define IS_WALL(pos) (TILE(pos).class == WALL && TILE(pos).hp < 5)
 #define IS_EMPTY(pos) (TILE(pos).class != WALL && !TILE(pos).monster)
 #define RNG() ((g.seed = g.seed >> 2 ^ g.seed << 3 ^ g.seed >> 14) & 3)
+#define STUCK(m) (!CLASS(m).flying && (TILE((m)->pos).class == WATER \
+			|| (TILE((m)->pos).class == TAR && !(m)->untrapped)))
+
+// Gets the ClassInfos entry of the given monster’s class
+#define CLASS(m) (class_infos[(m)->class])
 
 // A pair of cartesian coordinates. Each variable of this type is either:
 // * A point, representing an absolute position within the grid (usually named `pos`)
@@ -212,11 +219,6 @@ typedef struct {
 	void (*act) (Monster*, Coords);
 } ClassInfos;
 
-static const ClassInfos class_infos[256];
-
-// Gets the ClassInfos entry of the given monster’s class
-#define CLASS(m) (class_infos[(m)->class])
-
 typedef struct {
 	Tile board[32][32];
 	Monster monsters[80];
@@ -238,16 +240,28 @@ typedef struct {
 	i32 iframes;
 } GameState;
 
-__extension__ static __thread GameState g = {
-	.board = {[0 ... 31] = {[0 ... 31] = {.class = WALL, .hp = 5}}},
-	.player_bombs = 3,
-	.player_damage = 1,
-	.boots_on = true,
-};
+extern const ClassInfos class_infos[256];
+extern Coords spawn;
+extern Coords stairs;
+extern const Coords plus_shape[];
+extern __thread GameState g;
 
-static Coords spawn;
-static Coords stairs;
+void xml_parse(i32 argc, char **argv);
+void do_beat(u8 input);
+bool player_won(void);
 
-// Some pre-declarations
-static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type);
-static bool forced_move(Monster *m, Coords offset);
+void cast_light(Tile *tile, i64 x, i64 y);
+void update_fov(void);
+void pickup_item(ItemClass item);
+void adjust_lights(Coords pos, i8 diff, i8 brightness);
+void monster_init(Monster *new, MonsterClass type, Coords pos);
+void bomb_detonate(Monster *this, Coords d);
+void fireball(Coords pos, i8 dir);
+void cone_of_cold(Coords pos, i8 dir);
+void damage_tile(Coords pos, Coords origin, i64 dmg, DamageType type);
+bool can_move(Monster *m, Coords dir);
+MoveResult enemy_move(Monster *m, Coords dir);
+void monster_kill(Monster *m, DamageType type);
+bool forced_move(Monster *m, Coords offset);
+void enemy_attack(Monster *attacker);
+void tile_change(Tile *tile, TileClass new_class);

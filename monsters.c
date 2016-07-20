@@ -1,5 +1,7 @@
 // monsters.c - defines all monsters in the game and their AIs
 
+#include "chore.h"
+
 #define MOVE(x, y) (enemy_move(this, (Coords) {(x), (y)}))
 
 // Many things in the game follow the so-called “bomb order”:
@@ -544,7 +546,7 @@ static void firepig(Monster *this, Coords d)
 
 static void nop() {}
 
-static const ClassInfos class_infos[256] = {
+const ClassInfos class_infos[256] = {
 	// [Name] = { damage, max_hp, beat_delay, radius, flying, dig, priority, glyph, act }
 	[GREEN_SLIME] = { 99, 1, 0, 999, false, -1,        0, GREEN "P",  NULL },
 	[BLUE_SLIME]  = {  2, 2, 1, 999, false, -1, 10202202, BLUE "P",   slime },

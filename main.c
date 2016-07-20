@@ -1,14 +1,22 @@
 // main.c - core game logic
 
-#include "base.h"
 #include "chore.h"
 
-#define STUCK(m) (!CLASS(m).flying && (TILE((m)->pos).class == WATER \
-		|| (TILE((m)->pos).class == TAR && !(m)->untrapped)))
+const Coords plus_shape[] = {{-1, 0}, {0, -1}, {0, 1}, {1, 0}, {0, 0}};
+Coords spawn;
+Coords stairs;
 
-static const Coords plus_shape[] = {{-1, 0}, {0, -1}, {0, 1}, {1, 0}, {0, 0}};
+__extension__ __thread GameState g = {
+	.board = {[0 ... 31] = {[0 ... 31] = {.class = WALL, .hp = 5}}},
+	.player_bombs = 3,
+	.player_damage = 1,
+	.boots_on = true,
+};
 
-static void monster_init(Monster *new, MonsterClass type, Coords pos) {
+// Some pre-declarations
+static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type);
+
+void monster_init(Monster *new, MonsterClass type, Coords pos) {
 	new->class = type;
 	new->pos = new->prev_pos = pos;
 	new->hp = CLASS(new).max_hp;
@@ -24,7 +32,7 @@ static void move(Monster *m, Coords dest)
 }
 
 // Tests whether the given monster can move in the given direction.
-static bool can_move(Monster *m, Coords dir)
+bool can_move(Monster *m, Coords dir)
 {
 	assert(m != &player || L1(dir));
 	Tile dest = TILE(m->pos + dir);
@@ -37,7 +45,7 @@ static bool can_move(Monster *m, Coords dir)
 	return dest.class != WALL;
 }
 
-static void adjust_lights(Coords pos, i8 diff, i8 brightness) {
+void adjust_lights(Coords pos, i8 diff, i8 brightness) {
 	static const i16 lights[33] = {
 		102, 102, 102, 102, 102, 102, 102, 102, 102,
 		94, 83, -1, -1, 53, 43, 33, 19, 10, 2,
@@ -85,13 +93,14 @@ static bool dig(Coords pos, i32 digging_power, bool z4)
 	return true;
 }
 
-static void damage_tile(Coords pos, Coords origin, i64 dmg, DamageType type) {
+void damage_tile(Coords pos, Coords origin, i64 dmg, DamageType type)
+{
 	if (IS_WALL(pos))
 		destroy_wall(pos);
 	damage(&MONSTER(pos), dmg, CARDINAL(pos - origin), type);
 }
 
-static void bomb_detonate(Monster *this, __attribute__((unused)) Coords d)
+void bomb_detonate(Monster *this, __attribute__((unused)) Coords d)
 {
 	static const Coords square_shape[] = {
 		{-1, -1}, {-1, 0}, {-1, 1},
@@ -112,7 +121,7 @@ static void bomb_detonate(Monster *this, __attribute__((unused)) Coords d)
 
 // Handles an enemy attacking the player.
 // Usually boils down to damaging the player, but some enemies are special-cased.
-static void enemy_attack(Monster *attacker)
+void enemy_attack(Monster *attacker)
 {
 	Coords d = player.pos - attacker->pos;
 	switch (attacker->class) {
@@ -163,7 +172,7 @@ static bool is_bogged(Monster *m)
 // Updates the enemy’s delay as appropriate.
 // Can trigger attacking/digging if the destination contains the player/a wall.
 // The return code indicates what action actually took place.
-static MoveResult enemy_move(Monster *m, Coords dir)
+MoveResult enemy_move(Monster *m, Coords dir)
 {
 	m->prev_pos = m->pos;
 	m->delay = CLASS(m).beat_delay;
@@ -211,12 +220,7 @@ static MoveResult enemy_move(Monster *m, Coords dir)
 	return MOVE_FAIL;
 }
 
-static void cast_light(Tile *tile, i64 x, i64 y)
-{
-#include "los.c"
-}
-
-static void update_fov()
+void update_fov(void)
 {
 	Tile *tile = &TILE(player.pos);
 	tile->revealed = true;
@@ -252,7 +256,7 @@ static void bomb_plant(Coords pos, u8 delay)
 
 // Overrides a tile with a given floor hazard. Also destroys traps on the tile.
 // Special cases: stairs are immune, fire+ice => water, fire+water => nothing.
-static void tile_change(Tile *tile, TileClass new_class)
+void tile_change(Tile *tile, TileClass new_class)
 {
 	tile->class =
 		tile->class == STAIRS ? STAIRS :
@@ -263,7 +267,7 @@ static void tile_change(Tile *tile, TileClass new_class)
 }
 
 // Kills the given monster, handling on-death effects.
-static void monster_kill(Monster *m, DamageType type)
+void monster_kill(Monster *m, DamageType type)
 {
 	m->hp = 0;
 	TILE(m->pos).monster = 0;
@@ -464,7 +468,7 @@ static void after_move(Coords dir)
 
 // Moves something by force (as caused by bounce traps, wind mages and knockback).
 // Unlike enemy_move, ignores confusion, delay, and digging.
-static bool forced_move(Monster *m, Coords dir)
+bool forced_move(Monster *m, Coords dir)
 {
 	assert(m != &player || L1(dir));
 	if (m->freeze || is_bogged(m) || (m == &player && g.monkey))
@@ -531,7 +535,7 @@ static void player_move(i8 x, i8 y)
 }
 
 // Deals bomb-like damage to all monsters on a horizontal line).
-static void fireball(Coords pos, i8 dir)
+void fireball(Coords pos, i8 dir)
 {
 	assert(dir != 0);
 	for (pos.x += dir; !BLOCKS_LOS(pos); pos.x += dir)
@@ -539,7 +543,7 @@ static void fireball(Coords pos, i8 dir)
 }
 
 // Freezes all monsters in a 3x5 cone.
-static void cone_of_cold(Coords pos, i8 dir)
+void cone_of_cold(Coords pos, i8 dir)
 {
 	static const Coords cone_shape[] = {
 		{1, 0},
@@ -550,13 +554,13 @@ static void cone_of_cold(Coords pos, i8 dir)
 		MONSTER(pos + dir * cone_shape[i]).freeze = 5;
 }
 
-static bool player_won() {
+bool player_won() {
 	return TILE(player.pos).class == STAIRS
 		&& g.miniboss_killed
 		&& (TILE(player.pos).zone != 4 || g.sarcophagus_killed);
 }
 
-static void pickup_item(ItemClass item)
+void pickup_item(ItemClass item)
 {
 	switch (item) {
 	case JEWELED:
@@ -693,7 +697,7 @@ static void trap_turn(Trap *this)
 // Runs one full beat of the game.
 // During each beat, the player acts first, enemies second and traps last.
 // Enemies act in decreasing priority order. Traps have an arbitrary order.
-static void do_beat(u8 input)
+void do_beat(u8 input)
 {
 	++g.current_beat;
 	g.bomb_exploded = false;
@@ -719,6 +723,3 @@ static void do_beat(u8 input)
 	for (Trap *t = g.traps; t->pos.x; ++t)
 		trap_turn(t);
 }
-
-#include "xml.c"
-#include "monsters.c"

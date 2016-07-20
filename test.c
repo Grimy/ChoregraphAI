@@ -1,6 +1,6 @@
 // test.c - unit testing
 
-#include "main.c"
+#include "chore.h"
 
 static Monster *skeleton;
 
