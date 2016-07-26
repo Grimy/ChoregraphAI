@@ -3,6 +3,7 @@
 *.expand
 *.png
 *.svg
+tags
 core.*
 perf.data*
 los.c

@@ -10,8 +10,8 @@ CFLAGS += -I/usr/include/libxml2 -Wno-unknown-warning-option -Wno-documentation 
 LDFLAGS += -lxml2
 %/solve: LDFLAGS += -lpthread
 
-cscope.out: dbin/play bin/solve
-	cscope -b
+.PHONY: all debug report stat
+all: dbin/play bin/solve
 
 los.c: los.pl
 	./$< >$@
@@ -27,8 +27,6 @@ dbin/%.o: %.c chore.h base.h Makefile
 	$(CC) $(CFLAGS) $< -c -o $@
 dbin/%: dbin/%.o $(addprefix dbin/, $(OBJECTS))
 	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@
-
-.PHONY: debug report stat
 
 debug: solve-dbg
 	lldb ./$< $(ARGS)
