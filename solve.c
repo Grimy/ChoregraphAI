@@ -2,15 +2,13 @@
 
 #include "chore.h"
 
-#include <sys/time.h>
 #include <pthread.h>
 
 #define MAX_LENGTH    24
-#define MAX_BACKTRACK 8
+#define MAX_BACKTRACK 6
 
 typedef struct route {
 	GameState state;
-	struct route *next;    // Next element, if ny
 	i64 length;            // Number of inputs
 	u8 input[MAX_LENGTH];  // Inputs composing the route
 } Route;
@@ -18,12 +16,10 @@ typedef struct route {
 // Don’t explore routes that exceed those thresholds
 static i64 _Atomic length_cutoff = MAX_LENGTH - 1;
 static i32 _Atomic score_cutoff = MAX_LENGTH;
-static Route pool[6];
 
 static GameState initial_state;
 
 static _Atomic u64 explored_routes;
-static _Atomic u64 spawned_threads;
 
 // Returns a human-readable representation of a route
 static void pretty_print(const Route *route)
@@ -65,42 +61,39 @@ static void handle_victory(Route *route)
 
 	if (route->length < length_cutoff)
 		length_cutoff = route->length;
-	if (fitness_function() + MAX_BACKTRACK < score_cutoff)
-		score_cutoff = fitness_function() + MAX_BACKTRACK;
 
 	pretty_print(route);
 	printf("\t(%2.1f%%)\n", ok / 2.56);
 }
 
-static void* explore(void *);
+static void explore(Route *);
 
-static void maybe_start_thread(Route *route, u8 input)
+static void* run_thread(void *arg)
 {
-	if (spawned_threads < ARRAY_SIZE(pool)) {
-		Route *new = &pool[spawned_threads++];
-		new->state = g;
-		new->length = route->length + 1;
-		memcpy(new->input, route->input, (u64) route->length);
-		new->input[route->length] = input;
+	Route *route = (Route*) arg;
+	explore(route);
+	free(route);
+	return NULL;
+}
 
-		pthread_t child;
-		pthread_create(&child, NULL, explore, new);
-		return;
-	}
-	Route new = {.state = g, .length = route->length + 1};
-	memcpy(new.input, route->input, (u64) route->length);
-	new.input[route->length] = input;
-	explore(&new);
+static void maybe_start_thread(Route *route)
+{
+	pthread_t child;
+	Route *new = malloc(sizeof(*new));
+
+	new->state = g;
+	new->length = route->length + 1;
+	memcpy(new->input, route->input, (u64) new->length);
+
+	if (route->length == 4)
+		pthread_create(&child, NULL, run_thread, new);
+	else
+		run_thread(new);
 }
 
 // Starts with the given route, then tries all possible inputs
-static void* explore(void *arg)
+static void explore(Route *route)
 {
-	Route *route = (Route*) arg;
-
-	if (route->length > length_cutoff)
-		return NULL;
-
 	++explored_routes;
 
 	// Try adding each possible input at the end
@@ -114,11 +107,14 @@ static void* explore(void *arg)
 
 		if (player_won())
 			handle_victory(route);
-		else if (score < score_cutoff)
-			maybe_start_thread(route, i);
+		else if (score < score_cutoff && route->length < length_cutoff)
+			maybe_start_thread(route);
 	}
+}
 
-	return NULL;
+static void exit_hook(void)
+{
+	fprintf(stderr, "%lu\n", explored_routes);
 }
 
 // `solve` entry point: solves the dungeon
@@ -127,10 +123,10 @@ int main(i32 argc, char **argv)
 	xml_parse(argc, argv);
 	do_beat(6);
 	score_cutoff = fitness_function() + MAX_BACKTRACK;
+	atexit(exit_hook);
 
 	initial_state = g;
 	Route route = {.state = g};
 	explore(&route);
-
-	fprintf(stderr, "%lu\n", explored_routes);
+	pthread_exit(NULL);
 }
