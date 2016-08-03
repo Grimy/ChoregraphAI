@@ -28,12 +28,12 @@ dbin/%.o: %.c chore.h base.h Makefile
 dbin/%: dbin/%.o $(addprefix dbin/, $(OBJECTS))
 	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@
 
-debug: solve-dbg
+debug: dbin/solve
 	lldb ./$< $(ARGS)
 
-report: solve-perf
+report: bin/solve
 	perf record -g ./$< $(ARGS)
 	perf report --no-children
 
-stat: solve-perf
+stat: bin/solve
 	perf stat ./$< $(ARGS)

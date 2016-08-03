@@ -699,6 +699,7 @@ static void trap_turn(Trap *this)
 // Enemies act in decreasing priority order. Traps have an arbitrary order.
 void do_beat(u8 input)
 {
+	g.input[g.length++] = input;
 	++g.current_beat;
 	g.bomb_exploded = false;
 

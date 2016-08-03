@@ -225,6 +225,9 @@ typedef struct {
 	Trap traps[64];
 	u64 seed;
 
+	u8 input[32];
+	i64 length;
+
 	bool player_moved;
 	bool bomb_exploded;
 	bool sliding_on_ice;

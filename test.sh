@@ -1,12 +1,16 @@
 #!/bin/sh
 
-make solve
-./solve BARDZ2.xml 1 | grep -q →↑↑↑→→→↑↑         || echo '2-1 fail'
-./solve BARDZ2.xml 2 | grep -Pq '↑←↑↑←←←←↑↑↑↑→←|↓←←←←↓↑↑←←↑↑↑↓' || echo '2-2 fail'
-./solve BARDZ2.xml 3 | grep -q ↓↓←←→→→←↓↓↓       || echo '2-3 fail'
-./solve BARDZ3.xml 1 | grep -q →→→↑↑↑z↑↑↑        || echo '3-1 fail'
-./solve BARDZ3.xml 2 | grep -Pq '↑→↑→↓→↓↓→[→↓]→[←→]↑↓↓←←' || echo '3-2 fail'
-./solve BARDZ3.xml 3 | grep -q ↓↓←→→↓↓↓↓         || echo '3-3 fail'
-./solve BARDZ4.xml 1 | grep -q ←↓↓↓↓←→↑→→↓→↑↑    || echo '4-1 fail'
-./solve BARDZ4.xml 2 | grep -q ←←←↓↓↓←←↓↓→↓←↑↑   || echo '4-2 fail'
-./solve BARDZ4.xml 3 | grep -q ↑↑→↓↑↑↑←←←←→→↑←   || echo '4-3 fail'
+set -euo pipefail
+
+make
+{
+	bin/solve BARDZ2.xml 1 | grep -q →↑↑↑→→→↑↑                        || echo '2-1 fail' >&2
+	bin/solve BARDZ2.xml 2 | grep -Pq '↑←↑↑←←←←↑↑↑↑→←|↓←←←←↓↑↑←←↑↑↑↓' || echo '2-2 fail' >&2
+	bin/solve BARDZ2.xml 3 | grep -q ↓↓←←→→→←↓↓↓                      || echo '2-3 fail' >&2
+	bin/solve BARDZ3.xml 1 | grep -q →→→↑↑↑z↑↑↑                       || echo '3-1 fail' >&2
+	bin/solve BARDZ3.xml 2 | grep -Pq '↑→↑→↓→↓↓→[→↓]→[←→]↑↓↓←←'       || echo '3-2 fail' >&2
+	bin/solve BARDZ3.xml 3 | grep -q ↓↓←→→↓↓↓↓                        || echo '3-3 fail' >&2
+	bin/solve BARDZ4.xml 1 | grep -q ←↓↓↓↓←→↑→→↓→↑↑                   || echo '4-1 fail' >&2
+	bin/solve BARDZ4.xml 2 | grep -q ←←←↓↓↓←←↓↓→↓←↑↑                  || echo '4-2 fail' >&2
+	bin/solve BARDZ4.xml 3 | grep -q ↑↑→↓↑↑↑←←←←→→↑←                  || echo '4-3 fail' >&2
+} | perl -ple 'END{$\/=time-$^T;print "routes/s: "}$\+=$_'

@@ -5,12 +5,6 @@
 #define MAX_LENGTH    24
 #define MAX_BACKTRACK 6
 
-typedef struct route {
-	GameState state;
-	i64 length;            // Number of inputs
-	u8 input[MAX_LENGTH];  // Inputs composing the route
-} Route;
-
 // Don’t explore routes that exceed those thresholds
 static i32 _Atomic length_cutoff = MAX_LENGTH - 1;
 static i32 score_cutoff = MAX_LENGTH;
@@ -19,17 +13,7 @@ static GameState initial_state;
 
 static _Atomic u64 explored_routes;
 
-// Returns a human-readable representation of a route
-static void pretty_print(const Route *route)
-{
-	static const char* symbols[] = {"←", "↓", "→", "↑", "s", "z", "X"};
-
-	printf("%ld/%d/%d ", route->length + 1, 3 - player.hp, 3 - g.player_bombs);
-	for (i64 i = 0; i <= route->length; ++i)
-		printf("%s", symbols[route->input[i]]);
-}
-
-// Computes the score of a route, based on the current game state
+// Computes the score of the current game state
 static i32 fitness_function() {
 	if (player.hp <= 0)
 		return 255;
@@ -43,48 +27,51 @@ static i32 fitness_function() {
 		- g.player_bombs;
 }
 
-static void handle_victory(Route *route)
+static void handle_victory()
 {
 	u32 ok = 0;
+	GameState copy = g;
 
 	for (u32 i = 1; i <= 256; ++i) {
 		g = initial_state;
 		g.seed = i;
-		for (i64 beat = 0; beat <= route->length && player.hp > 0; ++beat)
-			do_beat(route->input[beat]);
+		for (i64 beat = 0; beat < copy.length && player.hp > 0; ++beat)
+			do_beat(copy.input[beat]);
 		ok += player_won();
 		if ((ok + 2) * 4 < i)
 			return;
 	}
 
-	if (route->length < length_cutoff)
-		length_cutoff = route->length;
+	if (copy.length < length_cutoff)
+		length_cutoff = copy.length;
 
-	pretty_print(route);
+	// display the winning route
+	static const char* symbols[] = {"←", "↓", "→", "↑", "s", "z", "X"};
+	printf("%ld/%d/%d ", copy.length - 1,
+			initial_state.monsters[1].hp - copy.monsters[1].hp,
+			initial_state.player_bombs - copy.player_bombs);
+	for (i64 i = 1; i < copy.length; ++i)
+		printf("%s", symbols[copy.input[i]]);
 	printf("\t(%2.1f%%)\n", ok / 2.56);
 }
 
 // Starts with the given route, then tries all possible inputs
-static void explore(Route *route)
+static void explore(GameState *route)
 {
 	++explored_routes;
 
-	// Try adding each possible input at the end
 	for (u8 i = 0; i < 6; ++i) {
-		route->input[route->length] = i;
-
-		g = route->state;
+		g = *route;
 		do_beat(i);
 		i32 score = fitness_function();
 		assert(score >= 0);
 
 		if (player_won()) {
-			handle_victory(route);
-		} else if (score < score_cutoff && route->length < length_cutoff) {
-			Route new = { .state = g, .length = route->length + 1 };
-			memcpy(new.input, route->input, (u64) new.length);
-			#pragma omp task firstprivate(new)
-			explore(&new);
+			handle_victory();
+		} else if (score < score_cutoff && g.length < length_cutoff) {
+			GameState copy = g;
+			#pragma omp task
+			explore(&copy);
 		}
 	}
 }
@@ -95,11 +82,11 @@ int main(i32 argc, char **argv)
 	xml_parse(argc, argv);
 	do_beat(6);
 	score_cutoff = fitness_function() + MAX_BACKTRACK;
-
 	initial_state = g;
-	Route route = {.state = g};
+
 	#pragma omp parallel
 	#pragma omp single
-	explore(&route);
+	explore(&initial_state);
+
 	fprintf(stderr, "%lu\n", explored_routes);
 }
