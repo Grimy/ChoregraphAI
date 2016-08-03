@@ -270,6 +270,7 @@ void tile_change(Tile *tile, TileClass new_class)
 void monster_kill(Monster *m, DamageType type)
 {
 	m->hp = 0;
+	m->requeued = false;
 	TILE(m->pos).monster = 0;
 
 	switch (m->class) {
@@ -374,8 +375,10 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	case BLADEMASTER:
 		if (type != DMG_WEAPON || m->state == 2)
 			break;
-		knockback(m, dir, 1);
-		m->state = 1;
+		if (L1(m->pos - player.pos) == 1) {
+			knockback(m, dir, 1);
+			m->state = 1;
+		}
 		return false;
 	case RIDER_1:
 	case RIDER_2:
@@ -547,7 +550,7 @@ void cone_of_cold(Coords pos, i8 dir)
 {
 	static const Coords cone_shape[] = {
 		{1, 0},
-		{2, -1}, {2, 1}, {2, 2},
+		{2, -1}, {2, 0}, {2, 1},
 		{3, -2}, {3, -1}, {3, 0}, {3, 1}, {3, 2},
 	};
 	for (u64 i = 0; i < ARRAY_SIZE(cone_shape); ++i)
