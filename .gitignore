@@ -7,7 +7,3 @@ tags
 core.*
 perf.data*
 los.c
-play
-solve*
-debug
-test

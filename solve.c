@@ -2,8 +2,6 @@
 
 #include "chore.h"
 
-#include <pthread.h>
-
 #define MAX_LENGTH    24
 #define MAX_BACKTRACK 6
 
@@ -14,8 +12,8 @@ typedef struct route {
 } Route;
 
 // Don’t explore routes that exceed those thresholds
-static i64 _Atomic length_cutoff = MAX_LENGTH - 1;
-static i32 _Atomic score_cutoff = MAX_LENGTH;
+static i32 _Atomic length_cutoff = MAX_LENGTH - 1;
+static i32 score_cutoff = MAX_LENGTH;
 
 static GameState initial_state;
 
@@ -66,31 +64,6 @@ static void handle_victory(Route *route)
 	printf("\t(%2.1f%%)\n", ok / 2.56);
 }
 
-static void explore(Route *);
-
-static void* run_thread(void *arg)
-{
-	Route *route = (Route*) arg;
-	explore(route);
-	free(route);
-	return NULL;
-}
-
-static void maybe_start_thread(Route *route)
-{
-	pthread_t child;
-	Route *new = malloc(sizeof(*new));
-
-	new->state = g;
-	new->length = route->length + 1;
-	memcpy(new->input, route->input, (u64) new->length);
-
-	if (route->length == 4)
-		pthread_create(&child, NULL, run_thread, new);
-	else
-		run_thread(new);
-}
-
 // Starts with the given route, then tries all possible inputs
 static void explore(Route *route)
 {
@@ -105,16 +78,15 @@ static void explore(Route *route)
 		i32 score = fitness_function();
 		assert(score >= 0);
 
-		if (player_won())
+		if (player_won()) {
 			handle_victory(route);
-		else if (score < score_cutoff && route->length < length_cutoff)
-			maybe_start_thread(route);
+		} else if (score < score_cutoff && route->length < length_cutoff) {
+			Route new = { .state = g, .length = route->length + 1 };
+			memcpy(new.input, route->input, (u64) new.length);
+			#pragma omp task firstprivate(new)
+			explore(&new);
+		}
 	}
-}
-
-static void exit_hook(void)
-{
-	fprintf(stderr, "%lu\n", explored_routes);
 }
 
 // `solve` entry point: solves the dungeon
@@ -123,10 +95,11 @@ int main(i32 argc, char **argv)
 	xml_parse(argc, argv);
 	do_beat(6);
 	score_cutoff = fitness_function() + MAX_BACKTRACK;
-	atexit(exit_hook);
 
 	initial_state = g;
 	Route route = {.state = g};
+	#pragma omp parallel
+	#pragma omp single
 	explore(&route);
-	pthread_exit(NULL);
+	fprintf(stderr, "%lu\n", explored_routes);
 }

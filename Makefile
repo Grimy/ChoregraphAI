@@ -8,7 +8,7 @@ CFLAGS += -fstrict-aliasing -fstrict-overflow -fno-asynchronous-unwind-tables
 CFLAGS += -Wno-c++-compat -Wno-switch -Wno-switch-enum -Wno-gnu-statement-expression -Wno-gnu-case-range
 CFLAGS += -I/usr/include/libxml2 -Wno-unknown-warning-option -Wno-documentation -Wno-documentation-unknown-command -Wno-reserved-id-macro
 LDFLAGS += -lxml2
-%/solve: LDFLAGS += -lpthread
+%/solve: CFLAGS += -fopenmp=libomp
 
 .PHONY: all debug report stat
 all: dbin/play bin/solve
