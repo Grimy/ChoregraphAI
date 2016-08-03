@@ -1,4 +1,4 @@
-MAKEFLAGS += --no-builtin-rules -j4
+MAKEFLAGS += --no-builtin-rules --no-builtin-variables --quiet --jobs=4
 CC = clang
 OBJECTS = main.o monsters.o xml.o los.o
 ARGS := BARDZ4.xml 3
@@ -11,22 +11,25 @@ LDFLAGS += -lxml2
 %/solve: CFLAGS += -fopenmp=libomp
 
 .PHONY: all debug report stat
+.SECONDARY:
+
 all: dbin/play bin/solve
 
 los.c: los.pl
 	./$< >$@
 
-bin/%: CFLAGS += -O3 -fno-omit-frame-pointer -fno-inline
-bin/%.o: %.c chore.h base.h Makefile
-	$(CC) $(CFLAGS) $< -c -o $@
-bin/%: bin/%.o $(addprefix bin/, $(OBJECTS))
-	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@
+define BUILDTYPE
+$(1)/%: CFLAGS += $(2)
+$(1)/%.o: %.c chore.h base.h Makefile
+	echo CC $$@
+	$(CC) $$(CFLAGS) $$< -c -o $$@
+$(1)/%: $(1)/%.o $(addprefix $(1)/, $(OBJECTS))
+	echo LD $$@
+	$(CC) $$(CFLAGS) $(LDFLAGS) $$^ -o $$@
+endef
 
-dbin/%: CFLAGS += -g -fsanitize=undefined,thread
-dbin/%.o: %.c chore.h base.h Makefile
-	$(CC) $(CFLAGS) $< -c -o $@
-dbin/%: dbin/%.o $(addprefix dbin/, $(OBJECTS))
-	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@
+$(eval $(call BUILDTYPE, bin, -O3 -fno-omit-frame-pointer -fno-inline))
+$(eval $(call BUILDTYPE, dbin, -g -fsanitize=undefined,thread))
 
 debug: dbin/solve
 	lldb ./$< $(ARGS)

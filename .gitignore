@@ -7,3 +7,5 @@ tags
 core.*
 perf.data*
 los.c
+bin
+dbin
