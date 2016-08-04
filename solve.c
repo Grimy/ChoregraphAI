@@ -3,7 +3,7 @@
 #include "chore.h"
 
 #define MAX_LENGTH    24
-#define MAX_BACKTRACK 8
+#define MAX_BACKTRACK 7
 
 // Don’t explore routes that exceed those thresholds
 static i32 _Atomic length_cutoff = MAX_LENGTH;
@@ -14,16 +14,17 @@ static GameState initial_state;
 static _Atomic u64 explored_routes;
 
 // Computes the score of the current game state
-static i32 fitness_function() {
+static i32 fitness_function()
+{
 	if (player.hp <= 0)
 		return 255;
 	double distance = L1(player.pos - stairs);
 	return 8 + g.current_beat
-		+ (i32) (distance / 2.5)
+		+ (i32) (distance / 3)
 		- 3 * g.miniboss_killed
 		- 2 * g.sarcophagus_killed
 		- player.hp
-		- 4 * g.inventory[JEWELED]
+		- 6 * g.inventory[JEWELED]
 		- g.inventory[BOMBS];
 }
 
@@ -42,6 +43,8 @@ static void handle_victory()
 			return;
 	}
 
+	i32 damage = initial_state.monsters[1].hp - copy.monsters[1].hp;
+	i32 bombs_spent = initial_state.inventory[BOMBS] - copy.inventory[BOMBS];
 	if (copy.length < length_cutoff)
 		length_cutoff = copy.length;
 
@@ -49,9 +52,7 @@ static void handle_victory()
 	static const char* symbols[] = {"←", "↓", "→", "↑", "s", "z", "X"};
 	#pragma omp critical
 	{
-	printf("%ld/%d/%d ", copy.length - 1,
-			initial_state.monsters[1].hp - copy.monsters[1].hp,
-			initial_state.inventory[BOMBS] - copy.inventory[BOMBS]);
+	printf("%ld/%d/%d ", copy.length - 1, damage, bombs_spent);
 	for (i64 i = 1; i < copy.length; ++i)
 		printf("%s", symbols[copy.input[i]]);
 	printf("\t(%2.1f%%)\n", ok / 2.56);
@@ -62,7 +63,7 @@ static void handle_victory()
 static void explore(GameState *route)
 {
 	u64 r = ++explored_routes;
-	if (r == 1 << 16 || r == 1 << 18 || r == 1 << 20)
+	if (r == 1 << 17)
 		--score_cutoff;
 
 	for (u8 i = 0; i < 6; ++i) {

@@ -223,10 +223,10 @@ typedef struct {
 
 typedef struct {
 	Tile board[32][32];
-	Monster monsters[80];
-	Trap traps[64];
-	u64 seed;
+	Monster monsters[72];
+	Trap traps[32];
 
+	u64 seed;
 	u8 input[32];
 	i64 length;
 

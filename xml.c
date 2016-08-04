@@ -120,7 +120,8 @@ static i32 compare_priorities(const void *a, const void *b)
 	return (pb > pa) - (pb < pa);
 }
 
-static void xml_process_file(char *file, i64 level, void callback(xmlTextReader *xml)) {
+static void xml_process_file(char *file, i64 level, void callback(xmlTextReader *xml))
+{
 	xmlTextReader *xml = xmlReaderForFile(file, NULL, 0);
 
 	while (xmlTextReaderRead(xml) == 1) {

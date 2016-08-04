@@ -15,7 +15,8 @@ __extension__ __thread GameState g = {
 // Some pre-declarations
 static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type);
 
-void monster_init(Monster *new, MonsterClass type, Coords pos) {
+void monster_init(Monster *new, MonsterClass type, Coords pos)
+{
 	new->class = type;
 	new->pos = new->prev_pos = pos;
 	new->hp = CLASS(new).max_hp;
@@ -44,7 +45,8 @@ bool can_move(Monster *m, Coords dir)
 	return dest.class != WALL;
 }
 
-void adjust_lights(Coords pos, i8 diff, i8 brightness) {
+void adjust_lights(Coords pos, i8 diff, i8 brightness)
+{
 	static const i16 lights[33] = {
 		102, 102, 102, 102, 102, 102, 102, 102, 102,
 		94, 83, -1, -1, 53, 43, 33, 19, 10, 2,
@@ -56,7 +58,8 @@ void adjust_lights(Coords pos, i8 diff, i8 brightness) {
 			TILE(pos + d).light += diff * lights[max(0, L2(d) - brightness)];
 }
 
-static void destroy_wall(Coords pos) {
+static void destroy_wall(Coords pos)
+{
 	assert(IS_WALL(pos));
 	Tile *wall = &TILE(pos);
 
@@ -553,7 +556,8 @@ void cone_of_cold(Coords pos, i8 dir)
 		MONSTER(pos + dir * cone_shape[i]).freeze = 5;
 }
 
-bool player_won() {
+bool player_won()
+{
 	return TILE(player.pos).class == STAIRS
 		&& g.miniboss_killed
 		&& (TILE(player.pos).zone != 4 || g.sarcophagus_killed);
