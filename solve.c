@@ -3,11 +3,11 @@
 #include "chore.h"
 
 #define MAX_LENGTH    24
-#define MAX_BACKTRACK 6
+#define MAX_BACKTRACK 10
 
 // Don’t explore routes that exceed those thresholds
 static i32 _Atomic length_cutoff = MAX_LENGTH - 1;
-static i32 score_cutoff = MAX_LENGTH;
+static i32 _Atomic score_cutoff = MAX_LENGTH;
 
 static GameState initial_state;
 
@@ -35,7 +35,7 @@ static void handle_victory()
 	for (u32 i = 1; i <= 256; ++i) {
 		g = initial_state;
 		g.seed = i;
-		for (i64 beat = 0; beat < copy.length && player.hp > 0; ++beat)
+		for (i64 beat = 1; beat < copy.length && player.hp > 0; ++beat)
 			do_beat(copy.input[beat]);
 		ok += player_won();
 		if ((ok + 2) * 4 < i)
@@ -47,18 +47,23 @@ static void handle_victory()
 
 	// display the winning route
 	static const char* symbols[] = {"←", "↓", "→", "↑", "s", "z", "X"};
+	#pragma omp critical
+	{
 	printf("%ld/%d/%d ", copy.length - 1,
 			initial_state.monsters[1].hp - copy.monsters[1].hp,
 			initial_state.player_bombs - copy.player_bombs);
 	for (i64 i = 1; i < copy.length; ++i)
 		printf("%s", symbols[copy.input[i]]);
 	printf("\t(%2.1f%%)\n", ok / 2.56);
+	}
 }
 
 // Starts with the given route, then tries all possible inputs
 static void explore(GameState *route)
 {
-	++explored_routes;
+	u64 r = ++explored_routes;
+	if (r == 0x1000 || r == 0x10000 || (r & 0xFFFFF) == 0)
+		--score_cutoff;
 
 	for (u8 i = 0; i < 6; ++i) {
 		g = *route;

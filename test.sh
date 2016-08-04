@@ -2,15 +2,20 @@
 
 set -euo pipefail
 
+solve() {
+	bin/solve "BARDZ$1.xml" "$2" |
+	grep -Pq " $3\t" || echo "$1-$2" fail
+}
+
 make
 {
-	bin/solve BARDZ2.xml 1 | grep -q →↑↑↑→→→↑↑                        || echo '2-1 fail' >&2
-	bin/solve BARDZ2.xml 2 | grep -Pq '↑←↑↑←←←←↑↑↑↑→←|↓←←←←↓↑↑←←↑↑↑↓' || echo '2-2 fail' >&2
-	bin/solve BARDZ2.xml 3 | grep -q ↓↓←←→→→←↓↓↓                      || echo '2-3 fail' >&2
-	bin/solve BARDZ3.xml 1 | grep -q →→→↑↑↑z↑↑↑                       || echo '3-1 fail' >&2
-	bin/solve BARDZ3.xml 2 | grep -Pq '↑→↑→↓→↓↓→[→↓]→[←→]↑↓↓←←'       || echo '3-2 fail' >&2
-	bin/solve BARDZ3.xml 3 | grep -q ↓↓←→→↓↓↓↓                        || echo '3-3 fail' >&2
-	bin/solve BARDZ4.xml 1 | grep -q ←↓↓↓↓←→↑→→↓→↑↑                   || echo '4-1 fail' >&2
-	bin/solve BARDZ4.xml 2 | grep -q ←←←↓↓↓←←↓↓→↓←↑↑                  || echo '4-2 fail' >&2
-	bin/solve BARDZ4.xml 3 | grep -q ↑↑→↓↑↑↑←←←←→→↑←                  || echo '4-3 fail' >&2
-} | perl -ple 'END{$\/=time-$^T;print "routes/s: "}$\+=$_'
+	solve 2 1 '→↑↑↑→→→↑↑'
+	solve 2 2 '(↑←↑↑←←←←↑↑↑↑→←|↓←←←←↓↑↑←←↑↑↑↓)'
+	solve 2 3 '↓↓←←→→→←↓↓↓'
+	solve 3 1 '→→→↑↑↑z↑↑↑'
+	solve 3 2 '↑→↑→↓→↓↓→[→↓]→[←→]↑↓↓←←'
+	solve 3 3 '↓↓←→→↓↓↓↓'
+	solve 4 1 '←↓↓↓↓←→↑→→↓→↑↑'
+	solve 4 2 '←←←↓↓↓←←↓↓→↓←↑↑'
+	solve 4 3 '↑↑→↓↑↑↑←←←←→→↑←'
+} 2>&1 | perl -pe '$|=1;END{$t/=time-$^T;print"routes/s: $t"}$t+=$_'
