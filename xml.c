@@ -24,15 +24,26 @@ static void xml_first_pass(xmlTextReader *xml)
 	spawn.y = max(spawn.y, 1 - xml_attr(xml, "y"));
 }
 
-static ItemClass xml_parse_item(char* item_name)
+static void xml_place_item(xmlTextReader *xml, Coords pos, char* attr)
 {
-	if (streq(item_name, "feet_boots_lunging"))
-		return LUNGING;
-	if (streq(item_name, "head_miners_cap"))
-		return MEMERS_CAP;
-	if (streq(item_name, "weapon_dagger_jeweled"))
-		return JEWELED;
-	return 0;
+	static const char* item_names[ITEM_LAST] = {
+		[BOMBS]      = "bomb",
+		[LUNGING]    = "feet_boots_lunging",
+		[MEMERS_CAP] = "head_miners_cap",
+		[JEWELED]    = "weapon_dagger_jeweled",
+	};
+
+	char* item_name = (char*) xmlTextReaderGetAttribute(xml, (xmlChar*) attr);
+
+	ItemClass class = ITEM_LAST;
+	while (--class && !streq(item_name, item_names[class]));
+
+	if (L1(pos - spawn))
+		TILE(pos).item = class;
+	else
+		pickup_item(class);
+
+	free(item_name);
 }
 
 // Converts a single XML node into an appropriate object (Trap, Tile or Monster).
@@ -89,17 +100,11 @@ static void xml_process_node(xmlTextReader *xml)
 
 	else if (streq(name, "chest")) {
 		monster_init(++last_monster, CHEST, pos);
-		char* item_name = (char*) xmlTextReaderGetAttribute(xml, (xmlChar*) ("contents"));
-		TILE(pos).item = xml_parse_item(item_name);
-		free(item_name);
+		xml_place_item(xml, pos, "contents");
 	}
 
 	else if (streq(name, "item")) {
-		char* item_name = (char*) xmlTextReaderGetAttribute(xml, (xmlChar*) ("type"));
-		TILE(pos).item = xml_parse_item(item_name);
-		if (pos.x == 0 && pos.y == 0)
-			pickup_item(TILE(pos).item);
-		free(item_name);
+		xml_place_item(xml, pos, "type");
 	}
 
 	else if (streq(name, "crate")) {
@@ -159,7 +164,7 @@ void xml_parse(i32 argc, char **argv)
 	for (Monster *m = last_monster; m >= g.monsters; --m) {
 		TILE(m->pos).monster = (u8) (m - g.monsters);
 		if (m->class == NIGHTMARE_1 || m->class == NIGHTMARE_2)
-			g.nightmare = (u16) (m - g.monsters);
+			g.nightmare = (u8) (m - g.monsters);
 	}
 
 	update_fov();

@@ -3,10 +3,10 @@
 #include "chore.h"
 
 #define MAX_LENGTH    24
-#define MAX_BACKTRACK 10
+#define MAX_BACKTRACK 8
 
 // Don’t explore routes that exceed those thresholds
-static i32 _Atomic length_cutoff = MAX_LENGTH - 1;
+static i32 _Atomic length_cutoff = MAX_LENGTH;
 static i32 _Atomic score_cutoff = MAX_LENGTH;
 
 static GameState initial_state;
@@ -19,12 +19,12 @@ static i32 fitness_function() {
 		return 255;
 	double distance = L1(player.pos - stairs);
 	return 8 + g.current_beat
-		+ (i32) (distance / 2.3)
+		+ (i32) (distance / 2.5)
 		- 3 * g.miniboss_killed
 		- 2 * g.sarcophagus_killed
-		- g.player_damage
 		- player.hp
-		- g.player_bombs;
+		- 4 * g.inventory[JEWELED]
+		- g.inventory[BOMBS];
 }
 
 static void handle_victory()
@@ -51,7 +51,7 @@ static void handle_victory()
 	{
 	printf("%ld/%d/%d ", copy.length - 1,
 			initial_state.monsters[1].hp - copy.monsters[1].hp,
-			initial_state.player_bombs - copy.player_bombs);
+			initial_state.inventory[BOMBS] - copy.inventory[BOMBS]);
 	for (i64 i = 1; i < copy.length; ++i)
 		printf("%s", symbols[copy.input[i]]);
 	printf("\t(%2.1f%%)\n", ok / 2.56);
@@ -62,7 +62,7 @@ static void handle_victory()
 static void explore(GameState *route)
 {
 	u64 r = ++explored_routes;
-	if (r == 0x1000 || r == 0x10000 || (r & 0xFFFFF) == 0)
+	if (r == 1 << 16 || r == 1 << 18 || r == 1 << 20)
 		--score_cutoff;
 
 	for (u8 i = 0; i < 6; ++i) {

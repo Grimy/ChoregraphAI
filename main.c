@@ -8,8 +8,7 @@ Coords stairs;
 
 __extension__ __thread GameState g = {
 	.board = {[0 ... 31] = {[0 ... 31] = {.class = WALL, .hp = 5}}},
-	.player_bombs = 3,
-	.player_damage = 1,
+	.inventory = {[BOMBS] = 3},
 	.boots_on = true,
 };
 
@@ -458,15 +457,19 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 
 static void after_move(Coords dir)
 {
-	// Lunging
-	if (g.boots_on && L1(player.pos - player.prev_pos) < 4)
-		if (damage(&MONSTER(player.pos + dir), 4, dir, DMG_NORMAL))
+	if (g.inventory[LUNGING] && g.boots_on) {
+		i64 steps = 4;
+		while (--steps && can_move(&player, dir))
+			move(&player, player.pos + dir);
+		if (steps && damage(&MONSTER(player.pos + dir), 4, dir, DMG_NORMAL))
 			knockback(&MONSTER(player.pos + dir), dir, 1);
+	}
 
-	// Miner’s cap
-	i32 digging_power = TILE(player.pos).class == OOZE ? 0 : 2;
-	for (i64 i = 0; i < 4; ++i)
-		dig(player.pos + plus_shape[i], digging_power, false);
+	if (g.inventory[MEMERS_CAP]) {
+		i32 digging_power = TILE(player.pos).class == OOZE ? 0 : 2;
+		for (i64 i = 0; i < 4; ++i)
+			dig(player.pos + plus_shape[i], digging_power, false);
+	}
 }
 
 // Moves something by force (as caused by bounce traps, wind mages and knockback).
@@ -497,7 +500,8 @@ static void player_move(i8 x, i8 y)
 {
 	player.prev_pos = player.pos;
 	Coords dir = {x, y};
-	i32 dmg = TILE(player.pos).class == OOZE ? 0 : g.player_damage;
+	i32 dmg = TILE(player.pos).class == OOZE ? 0 :
+		g.inventory[JEWELED] ? 5 : 1;
 
 	if (player.confusion || (g.monkey && g.monkey->class == CONF_MONKEY))
 		dir = -dir;
@@ -525,14 +529,6 @@ static void player_move(i8 x, i8 y)
 	} else {
 		g.player_moved = true;
 		move(&player, player.pos + dir);
-
-		// Lunging
-		if (g.boots_on) {
-			i64 steps = 4;
-			while (--steps && can_move(&player, dir))
-				move(&player, player.pos + dir);
-		}
-
 		after_move(dir);
 	}
 }
@@ -565,11 +561,7 @@ bool player_won() {
 
 void pickup_item(ItemClass item)
 {
-	switch (item) {
-	case JEWELED:
-		g.player_damage = 5;
-		break;
-	}
+	++g.inventory[item];
 }
 
 static void player_turn(u8 input)
@@ -582,9 +574,6 @@ static void player_turn(u8 input)
 	// While frozen or ice-sliding, directional inputs are ignored
 	if ((g.sliding_on_ice || player.freeze) && input < 4)
 		input = 6;
-
-	// if (g.monkey)
-		// player.untrapped = false;
 
 	if (TILE(player.pos).item) {
 		pickup_item(TILE(player.pos).item);
@@ -605,8 +594,10 @@ static void player_turn(u8 input)
 		player_move( 0, -1);
 		break;
 	case 4:
-		if (--g.player_bombs >= 0)
+		if (g.inventory[BOMBS]) {
+			--g.inventory[BOMBS];
 			bomb_plant(player.pos, 3);
+		}
 		break;
 	case 5:
 		g.boots_on ^= 1;

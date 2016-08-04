@@ -118,9 +118,11 @@ typedef enum __attribute__((__packed__)) {
 // Items
 typedef enum __attribute__((__packed__)) {
 	NO_ITEM,
+	BOMBS,
 	LUNGING,
 	MEMERS_CAP,
 	JEWELED,
+	ITEM_LAST,
 } ItemClass;
 
 // Tile types.
@@ -234,11 +236,11 @@ typedef struct {
 	bool boots_on;
 	bool miniboss_killed;
 	bool sarcophagus_killed;
-	u16 nightmare;
+	u8 nightmare;
+	u8 inventory[ITEM_LAST];
 
+	i32: 32;
 	Monster *monkey;
-	i32 player_bombs;
-	i32 player_damage;
 	i32 current_beat;
 	i32 iframes;
 } GameState;
