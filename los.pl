@@ -29,10 +29,11 @@ print <<'END';
 void cast_light(Tile *tile, i64 x, i64 y) {
 Tile *row = tile;
 u64 walls = 0;
+u64 torch = g.inventory[MEMERS_CAP] ? 5 : 2;
 END
 
 for my $y (1..10) {
-	print "tile = (row += y);\n";
+	print "tile = (row += y);";
 	for my $x (0..$y) {
 		my @masks = uniq map {$_ & (1 << id($x, $y)) - 1} (
 			los($x - .51, $y - .51),
@@ -46,14 +47,18 @@ for my $y (1..10) {
 		}
 		@masks = map {sprintf "!(walls & $_)"} grep {~$_} @masks;
 
-		print "if (@masks) " x (id($x, $y) >= 4), "tile->revealed = true;\n";
-		printf "if (tile->hp == 5) { walls |= %#x; goto label$y; }\n",
-			(1 << id($y + 1, $y)) - (1 << id($x, $y));
-		print("label10: (void) 0;\n}\n"), exit if $x == 10;
+		my $l2 = $x * $x + $y * $y;
+		print 'if (tile->hp == 5) ', $x == 0 || $y == 10 ? 'return;' :
+			sprintf "{ walls |= %#x; goto label$y; }",
+				(1 << id($y + 1, $y)) - (1 << id($x, $y));
+		print "if (torch >= $l2 || @masks) " if $l2 > 2;
+		print 'tile->revealed = true;';
+		print('}'), exit if $x == 10;
 		printf "walls |= (u64) (tile->class == WALL) << %d;\n", id($x, $y);
-		print "tile += x;\n";
+		print "tile += x;";
 	}
 	print "label$y:";
-	printf "if (walls >= %#x) return;\n", (1 << id($y + 1, $y)) - (1 << id(0, $y));
+	printf "if (torch < %d && walls >= %#x) return;\n", ($y + 1) * ($y + 1),
+		(1 << id($y + 1, $y)) - (1 << id(0, $y));
 	printf "if (!(walls & %#x))\ntile->revealed = true;\n", los($y + 1 - .51, $y + .51);
 }

@@ -1,5 +1,6 @@
 TESTS:
 * Edge cases of bomb/nightmare/revealed aggro
+* Is light from held torches added to wall torches?
 
 FEATURES:
 * metal doors (type=111)
@@ -8,7 +9,6 @@ FEATURES:
 * recursive requeueing
 
 BUGFIXES:
-* disable the miner’s cap torch effect
 * beetle shedding isn’t quite right
 * banshees should have different activation radii depending on the zone
 * shovemonsters pushing the player on ice shoud trigger a slide
