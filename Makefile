@@ -28,15 +28,15 @@ $(1)/%: $(1)/%.o $(addprefix $(1)/, $(OBJECTS))
 	$(CC) $$(CFLAGS) $(LDFLAGS) $$^ -o $$@
 endef
 
-$(eval $(call BUILDTYPE, bin, -O3 -fno-omit-frame-pointer -fno-inline))
+$(eval $(call BUILDTYPE, bin, -O3 -flto -fno-omit-frame-pointer))
 $(eval $(call BUILDTYPE, dbin, -g -fsanitize=undefined,thread))
 
 debug: dbin/solve
 	lldb ./$< $(ARGS)
 
 report: bin/solve
-	perf record -g ./$< $(ARGS)
+	perf record -e $${EVENT-cycles} -g ./test.sh
 	perf report --no-children
 
 stat: bin/solve
-	perf stat ./$< $(ARGS)
+	perf stat -d -e{task-clock,page-faults,cycles,instructions,branch,branch-misses} ./test.sh

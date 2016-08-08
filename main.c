@@ -629,12 +629,12 @@ static void enemy_turn(Monster *m)
 
 	if (!m->aggro) {
 		bool shadowed = g.nightmare && L2(m->pos - g.monsters[g.nightmare].pos) < 9;
-		m->aggro = TILE(m->pos).revealed
+		m->aggro = (d.y >= -5 && d.y <= 6)
+			&& (d.x >= -10 && d.x <= 9)
+			&& TILE(m->pos).revealed
 			&& (TILE(m->pos).light >= 102
 				|| L2(player.pos - m->pos) < 9
-				|| shadowed)
-			&& (d.y >= -5 && d.y <= 6)
-			&& (d.x >= -10 && d.x <= 9);
+				|| shadowed);
 		if (m->aggro && (m->class == BLUE_DRAGON || g.bomb_exploded || shadowed)) {
 			(void) 0;
 		} else if (L2(d) <= CLASS(m).radius) {

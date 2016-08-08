@@ -3,15 +3,15 @@
 #include "chore.h"
 
 #define MAX_LENGTH    24
-#define MAX_BACKTRACK 7
+#define MAX_BACKTRACK 8
 
 // Don’t explore routes that exceed those thresholds
 static i32 _Atomic length_cutoff = MAX_LENGTH;
-static i32 _Atomic score_cutoff = MAX_LENGTH;
 
+static i32 initial_score;
 static GameState initial_state;
 
-static _Atomic u64 explored_routes;
+static _Atomic i32 simulated_beats;
 
 // Computes the score of the current game state
 static i32 fitness_function()
@@ -34,6 +34,7 @@ static void handle_victory()
 	GameState copy = g;
 
 	for (u32 i = 1; i <= 256; ++i) {
+		simulated_beats += copy.length;
 		g = initial_state;
 		g.seed = i;
 		for (i64 beat = 1; beat < copy.length && player.hp > 0; ++beat)
@@ -45,8 +46,9 @@ static void handle_victory()
 
 	i32 damage = initial_state.monsters[1].hp - copy.monsters[1].hp;
 	i32 bombs_spent = initial_state.inventory[BOMBS] - copy.inventory[BOMBS];
-	if (copy.length < length_cutoff)
-		length_cutoff = copy.length;
+	i64 length = copy.length - (ok == 256 && damage == 0 && bombs_spent == 0);
+	if (length < length_cutoff)
+		length_cutoff = length;
 
 	// display the winning route
 	static const char* symbols[] = {"←", "↓", "→", "↑", "s", "z", "X"};
@@ -62,9 +64,8 @@ static void handle_victory()
 // Starts with the given route, then tries all possible inputs
 static void explore(GameState *route)
 {
-	u64 r = ++explored_routes;
-	if (r == 1 << 17)
-		--score_cutoff;
+	simulated_beats += 6;
+	i32 score_cutoff = initial_score + MAX_BACKTRACK - (simulated_beats >> 20);
 
 	for (u8 i = 0; i < 6; ++i) {
 		g = *route;
@@ -87,12 +88,12 @@ int main(i32 argc, char **argv)
 {
 	xml_parse(argc, argv);
 	do_beat(6);
-	score_cutoff = fitness_function() + MAX_BACKTRACK;
+	initial_score = fitness_function();
 	initial_state = g;
 
 	#pragma omp parallel
 	#pragma omp single
 	explore(&initial_state);
 
-	fprintf(stderr, "%lu\n", explored_routes);
+	fprintf(stderr, "%d\n", simulated_beats);
 }
