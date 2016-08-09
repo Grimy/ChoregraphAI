@@ -458,11 +458,11 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	return true;
 }
 
-static void after_move(Coords dir)
+static void after_move(Coords dir, bool forced)
 {
 	if (g.inventory[LUNGING] && g.boots_on) {
 		i64 steps = 4;
-		while (--steps && can_move(&player, dir))
+		while (--steps && !forced && can_move(&player, dir))
 			move(&player, player.pos + dir);
 		if (steps && damage(&MONSTER(player.pos + dir), 4, dir, DMG_NORMAL))
 			knockback(&MONSTER(player.pos + dir), dir, 1);
@@ -490,7 +490,7 @@ bool forced_move(Monster *m, Coords dir)
 		m->prev_pos = m->pos;
 		move(m, m->pos + dir);
 		if (m == &player)
-			after_move(dir);
+			after_move(dir, true);
 		return true;
 	}
 
@@ -532,7 +532,7 @@ static void player_move(i8 x, i8 y)
 	} else {
 		g.player_moved = true;
 		move(&player, player.pos + dir);
-		after_move(dir);
+		after_move(dir, false);
 	}
 }
 
