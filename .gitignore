@@ -1,5 +1,5 @@
 *.o
-*.out
+*.out*
 *.expand
 *.png
 *.svg

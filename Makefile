@@ -21,14 +21,14 @@ los.c: los.pl
 define BUILDTYPE
 $(1)/%: CFLAGS += $(2)
 $(1)/%.o: %.c chore.h base.h Makefile
-	echo CC $$@
+	+echo CC $$@
 	$(CC) $$(CFLAGS) $$< -c -o $$@
 $(1)/%: $(1)/%.o $(addprefix $(1)/, $(OBJECTS))
-	echo LD $$@
+	+echo LD $$@
 	$(CC) $$(CFLAGS) $(LDFLAGS) $$^ -o $$@
 endef
 
-$(eval $(call BUILDTYPE, bin, -O3 -flto -fno-omit-frame-pointer))
+$(eval $(call BUILDTYPE, bin, -g -O3 -flto -fno-omit-frame-pointer))
 $(eval $(call BUILDTYPE, dbin, -g -fsanitize=undefined,thread))
 
 debug: dbin/solve

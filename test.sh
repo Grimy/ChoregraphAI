@@ -10,7 +10,7 @@ solve() {
 		time=$(echo "$time + $2" | bc)
 		beats=$(echo "$beats + $1" | bc)
 	else
-		echo "[31m$1-$2 fail[m"
+		echo "[31mfail[m"
 	fi
 }
 
