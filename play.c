@@ -79,9 +79,6 @@ static void display_board(void)
 // `play` entry point: alternatively updates the interface and prompts the user for a command.
 int main(i32 argc, char **argv)
 {
-	static const char *inputs = "efij< z";
-	char *p;
-
 	xml_parse(argc, argv);
 	printf(TERM_CLEAR);
 	system("stty -echo -icanon eol \1");
@@ -89,10 +86,10 @@ int main(i32 argc, char **argv)
 
 	while (player.hp > 0 && !player_won()) {
 		display_board();
-		p = strchr(inputs, getchar());
-		if (p == NULL)
+		int c = getchar();
+		if (c == EOF)
 			break;
-		do_beat((u8) (p - inputs));
+		do_beat((u8) c);
 	}
 
 	fprintf(stderr, player_won() ? "You won!" : "See you soon!");

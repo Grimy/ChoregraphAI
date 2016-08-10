@@ -502,6 +502,10 @@ bool forced_move(Monster *m, Coords dir)
 // Will trigger attacking/digging if the destination contains an enemy/a wall.
 static void player_move(i8 x, i8 y)
 {
+	// While frozen or ice-sliding, the player can’t move on their own
+	if (g.sliding_on_ice || player.freeze > g.current_beat)
+		return;
+
 	player.prev_pos = player.pos;
 	Coords dir = {x, y};
 	i32 dmg = TILE(player.pos).class == OOZE ? 0 :
@@ -573,35 +577,31 @@ static void player_turn(u8 input)
 {
 	g.player_moved = false;
 
-	// While frozen or ice-sliding, directional inputs are ignored
-	if ((g.sliding_on_ice || player.freeze > g.current_beat) && input < 4)
-		input = 6;
-
 	if (TILE(player.pos).item) {
 		pickup_item(TILE(player.pos).item);
 		TILE(player.pos).item = 0;
 	}
 
 	switch (input) {
-	case 0:
+	case 'e':
 		player_move(-1,  0);
 		break;
-	case 1:
+	case 'f':
 		player_move( 0,  1);
 		break;
-	case 2:
+	case 'i':
 		player_move( 1,  0);
 		break;
-	case 3:
+	case 'j':
 		player_move( 0, -1);
 		break;
-	case 4:
+	case '<':
 		if (g.inventory[BOMBS]) {
 			--g.inventory[BOMBS];
 			bomb_plant(player.pos, 3);
 		}
 		break;
-	case 5:
+	case ' ':
 		g.boots_on ^= 1;
 		break;
 	}

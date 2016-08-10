@@ -2,14 +2,11 @@
 
 #include "chore.h"
 
-#define MAX_LENGTH    24
-#define MAX_BACKTRACK 8
-
 // Don’t explore routes that exceed those thresholds
-static i32 _Atomic cost_cutoff = MAX_LENGTH;
+static i32 _Atomic best_cost;
 
-static i32 initial_score;
 static GameState initial_state;
+static i32 initial_distance;
 
 static _Atomic i32 simulated_beats;
 
@@ -20,17 +17,15 @@ static i32 cost_function()
 	return g.current_beat
 		+ (initial_state.monsters[1].hp - g.monsters[1].hp)
 		+ (initial_state.inventory[BOMBS] - g.inventory[BOMBS])
-		+ 6 * !g.inventory[JEWELED];
+		+ 6 * (initial_state.inventory[JEWELED] - g.inventory[JEWELED]);
 }
 
 // Estimates the number of beats it will take to clear the level.
 static i32 distance_function()
 {
-	if (player.hp <= 0)
-		return 9001;
-	return (i32) (L1(player.pos - stairs) / 3)
-		+ 3 * !g.miniboss_killed
-		+ 2 * !g.sarcophagus_killed;
+	return (i32) ((L1(player.pos - stairs) + 2) / 3)
+		+ 2 * !g.miniboss_killed
+		+ 1 * (!g.sarcophagus_killed && TILE(stairs).zone == 4);
 }
 
 // When a winning route is found with RNG disabled, estimate its probability
@@ -41,8 +36,8 @@ static void handle_victory()
 	u32 ok = 0;
 	i32 cost = cost_function();
 	i32 length = g.current_beat;
-	u8 input[MAX_LENGTH];
-	memcpy(input, g.input, MAX_LENGTH);
+	u8 input[ARRAY_SIZE(g.input)];
+	memcpy(input, g.input, sizeof(g.input));
 
 	for (u32 i = 1; i <= 256; ++i) {
 		simulated_beats += length;
@@ -56,42 +51,42 @@ static void handle_victory()
 	}
 
 	cost -= ok == 256;
-	cost_cutoff = min(cost, cost_cutoff);
-
-	static const char* symbols[] = {"←", "↓", "→", "↑", "s", "z", "X"};
-	#pragma omp critical
-	{
-	printf("%d/%d ", cost, length - 1);
-	for (i64 i = 1; i < length; ++i)
-		printf("%s", symbols[input[i]]);
-	printf("\t(%2.1f%%)\n", ok / 2.56);
-	}
+	best_cost = min(cost, best_cost);
+	printf("%2d/%-2d%4.0f%%  %s\n", cost, length - 1, ok / 2.56, input + 1);
 }
 
 // Recursively try all possible inputs, starting at the given point
 static void explore(GameState const *route, bool omp)
 {
-	simulated_beats += 6;
-	i32 score_cutoff = initial_score + MAX_BACKTRACK - (simulated_beats >> 20);
+	static const u8 symbols[6] = "efij< ";
 
-	for (u8 i = 0; i < 6; ++i) {
+	simulated_beats += ARRAY_SIZE(symbols);
+
+	for (u8 i = 0; i < ARRAY_SIZE(symbols); ++i) {
 		if (i || omp)
 			g = *route;
-		do_beat(i);
-
-		i32 cost = cost_function();
-		i32 score = cost + distance_function();
-		assert(cost >= 0 && score >= 0);
+		do_beat(symbols[i]);
 
 		if (player_won()) {
 			handle_victory();
-		} else if (score < score_cutoff && cost < cost_cutoff) {
+			continue;
+		}
+
+		i32 cost = cost_function();
+		if (cost >= best_cost || player.hp <= 0)
+			continue;
+
+		i32 distance = 3 + initial_distance - distance_function();
+		double best_speed = initial_distance / (double) best_cost;
+		double speed = distance / (double) cost;
+
+		if (speed > best_speed + .5) {
 			GameState copy = g;
-			if (score > score_cutoff - 4)
-				explore(&copy, false);
-			else
-				#pragma omp task
-				explore(&copy, true);
+			#pragma omp task
+			explore(&copy, true);
+		} else if (speed >= best_speed) {
+			GameState copy = g;
+			explore(&copy, false);
 		}
 	}
 }
@@ -100,9 +95,11 @@ static void explore(GameState const *route, bool omp)
 int main(i32 argc, char **argv)
 {
 	xml_parse(argc, argv);
-	do_beat(6);
+	do_beat('X');
 	initial_state = g;
-	initial_score = cost_function() + distance_function();
+
+	initial_distance = distance_function();
+	best_cost = initial_distance + 6;
 
 	#pragma omp parallel
 	#pragma omp single nowait
