@@ -104,7 +104,7 @@ static void charge(Monster *this, __attribute__((unused)) Coords d)
 static void bat(Monster *this, Coords d)
 {
 	static const Coords moves[] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
-	if (this->confusion) {
+	if (this->confused) {
 		basic_seek(this, d);
 		return;
 	}
@@ -124,7 +124,7 @@ static void green_bat(Monster *this, Coords d)
 		{1, 0}, {-1, 0}, {0, 1}, {0, -1},
 		{1, -1}, {1, 1}, {-1, -1}, {-1, 1},
 	};
-	if (this->confusion) {
+	if (this->confused) {
 		basic_seek(this, d);
 		return;
 	}
@@ -168,9 +168,9 @@ static void mage(Monster *this, Coords d)
 	bool is_lich = this->class >= LICH_1 && this->class <= LICH_3;
 	bool can_cast = L2(d) == 4
 		&& can_move(this, DIRECTION(d))
-		&& !this->confusion
+		&& !(this->confused)
 		&& !STUCK(this)
-		&& !(player.confusion && is_lich);
+		&& !(player.confused && is_lich);
 
 	if (!can_cast) {
 		basic_seek(this, d);
@@ -179,7 +179,7 @@ static void mage(Monster *this, Coords d)
 
 	this->delay = 1;
 	if (is_lich)
-		player.confusion = 5;
+		player.confusion = g.current_beat + 5;
 	else
 		forced_move(&player, -DIRECTION(d));
 }
@@ -293,7 +293,7 @@ static bool can_breath(Monster *this)
 {
 	i64 dx = abs(player.pos.x - this->pos.x);
 	i64 dy = abs(player.pos.y - this->pos.y);
-	if (this->class == RED_DRAGON ? dy : dx > 3 || dy >= dx || player.freeze)
+	if (this->class == RED_DRAGON ? dy : dx > 3 || dy >= dx || player.freeze > g.current_beat)
 		return false;
 	for (i8 i = 0; i < dx; ++i)
 		if (IS_WALL(this->pos + i * DIRECTION(player.pos - this->pos)))
@@ -336,9 +336,9 @@ static void dragon(Monster *this, Coords d)
 
 static void elemental(Monster *this, Coords d)
 {
-	tile_change(&TILE(this->pos), this->class == EFREET ? FIRE : ICE);
+	tile_change(this->pos, this->class == EFREET ? FIRE : ICE);
 	basic_seek(this, d);
-	tile_change(&TILE(this->pos), this->class == EFREET ? FIRE : ICE);
+	tile_change(this->pos, this->class == EFREET ? FIRE : ICE);
 }
 
 static void mole(Monster *this, Coords d)
@@ -352,7 +352,7 @@ static void mole(Monster *this, Coords d)
 
 static void beetle_shed(Monster *this)
 {
-	tile_change(&TILE(this->pos), this->class == FIRE_BEETLE ? FIRE : ICE);
+	tile_change(this->pos, this->class == FIRE_BEETLE ? FIRE : ICE);
 	this->class = BEETLE;
 }
 

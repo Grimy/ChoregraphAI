@@ -133,7 +133,7 @@ void enemy_attack(Monster *attacker)
 	case TELE_MONKEY:
 		if (g.monkey)
 			break;
-		g.monkey = attacker;
+		g.monkey = (u8) (attacker - g.monsters);
 		TILE(attacker->pos).monster = 0;
 		attacker->hp *= attacker->class == MONKEY_2 ? 3 : 4;
 		break;
@@ -180,7 +180,7 @@ MoveResult enemy_move(Monster *m, Coords dir)
 	m->delay = CLASS(m).beat_delay;
 	if (is_bogged(m))
 		return MOVE_SPECIAL;
-	if (m->confusion && m->class != BARREL)
+	if (m->confused && m->class != BARREL)
 		dir = -dir;
 
 	// Attack
@@ -205,7 +205,7 @@ MoveResult enemy_move(Monster *m, Coords dir)
 	m->requeued = false;
 
 	// Trampling
-	i32 digging_power = m->confusion ? -1 : CLASS(m).digging_power;
+	i32 digging_power = m->confused ? -1 : CLASS(m).digging_power;
 	if (!m->aggro && digging_power == 4) {
 		for (i64 i = 0; i < 4; ++i)
 			damage_tile(m->pos + plus_shape[i], m->pos, 4, DMG_NORMAL);
@@ -258,8 +258,9 @@ static void bomb_plant(Coords pos, u8 delay)
 
 // Overrides a tile with a given floor hazard. Also destroys traps on the tile.
 // Special cases: stairs are immune, fire+ice => water, fire+water => nothing.
-void tile_change(Tile *tile, TileClass new_class)
+void tile_change(Coords pos, TileClass new_class)
 {
+	Tile *tile = &TILE(pos);
 	tile->class =
 		tile->class == STAIRS ? STAIRS :
 		tile->class * new_class == FIRE * ICE ? WATER :
@@ -283,13 +284,13 @@ void monster_kill(Monster *m, DamageType type)
 	case YETI:
 	case ICE_POT:
 	case ICE_MIMIC:
-		tile_change(&TILE(m->pos), ICE);
+		tile_change(m->pos, ICE);
 		break;
 	case FIRE_SLIME:
 	case HELLHOUND:
 	case FIRE_POT:
 	case FIRE_MIMIC:
-		tile_change(&TILE(m->pos), FIRE);
+		tile_change(m->pos, FIRE);
 		break;
 	case WARLOCK_1:
 	case WARLOCK_2:
@@ -409,17 +410,17 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 		knockback(m, dir, 1);
 		TileClass hazard = m->class == FIRE_BEETLE ? FIRE : ICE;
 		for (i64 i = 0; i < 5; ++i)
-			tile_change(&TILE(m->pos + plus_shape[i]), hazard);
+			tile_change(m->pos + plus_shape[i], hazard);
 		return false;
 	case PIXIE:
 	case BOMBSHROOM_:
 		bomb_detonate(m, NO_DIR);
 		return false;
 	case GOOLEM:
-		tile_change(&TILE(player.pos), OOZE);
+		tile_change(player.pos, OOZE);
 		break;
 	case PLAYER:
-		if (g.iframes)
+		if (g.iframes > g.current_beat)
 			return false;
 		break;
 	}
@@ -452,7 +453,7 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 		knockback(m, dir, 1);
 		return false;
 	case PLAYER:
-		g.iframes = 2;
+		g.iframes = g.current_beat + 2;
 	}
 
 	return true;
@@ -480,7 +481,7 @@ static void after_move(Coords dir, bool forced)
 bool forced_move(Monster *m, Coords dir)
 {
 	assert(m != &player || L1(dir));
-	if (m->freeze || is_bogged(m) || (m == &player && g.monkey))
+	if (m->freeze > g.current_beat || is_bogged(m) || (m == &player && g.monkey))
 		return false;
 
 	if (&MONSTER(m->pos + dir) == &player) {
@@ -506,14 +507,14 @@ static void player_move(i8 x, i8 y)
 	i32 dmg = TILE(player.pos).class == OOZE ? 0 :
 		g.inventory[JEWELED] ? 5 : 1;
 
-	if (player.confusion || (g.monkey && g.monkey->class == CONF_MONKEY))
+	if (player.confused || (g.monkey && g.monsters[g.monkey].class == CONF_MONKEY))
 		dir = -dir;
 
 	if (g.monkey) {
-		Monster *m = g.monkey;
+		Monster *m = &g.monsters[g.monkey];
 		m->hp -= max(1, dmg);
 		if (m->hp <= 0)
-			g.monkey = NULL;
+			g.monkey = 0;
 		if (m->class == TELE_MONKEY)
 			monster_kill(&player, DMG_NORMAL);
 		else if (m->class != CONF_MONKEY)
@@ -553,7 +554,7 @@ void cone_of_cold(Coords pos, i8 dir)
 		{3, -2}, {3, -1}, {3, 0}, {3, 1}, {3, 2},
 	};
 	for (u64 i = 0; i < ARRAY_SIZE(cone_shape); ++i)
-		MONSTER(pos + dir * cone_shape[i]).freeze = 5;
+		MONSTER(pos + dir * cone_shape[i]).freeze = g.current_beat + 5;
 }
 
 bool player_won()
@@ -570,13 +571,10 @@ void pickup_item(ItemClass item)
 
 static void player_turn(u8 input)
 {
-	player.confusion -= SIGN(player.confusion);
-	player.freeze -= SIGN(player.freeze);
-	g.iframes -= SIGN(g.iframes);
 	g.player_moved = false;
 
 	// While frozen or ice-sliding, directional inputs are ignored
-	if ((g.sliding_on_ice || player.freeze) && input < 4)
+	if ((g.sliding_on_ice || player.freeze > g.current_beat) && input < 4)
 		input = 6;
 
 	if (TILE(player.pos).item) {
@@ -624,9 +622,6 @@ static void enemy_turn(Monster *m)
 
 	m->knocked = false;
 
-	if (m->confusion)
-		--m->confusion;
-
 	if (!m->aggro) {
 		bool shadowed = g.nightmare && L2(m->pos - g.monsters[g.nightmare].pos) < 9;
 		m->aggro = (d.y >= -5 && d.y <= 6)
@@ -645,9 +640,10 @@ static void enemy_turn(Monster *m)
 		}
 	}
 
-	if (m->freeze)
-		--m->freeze;
-	else if (m->delay)
+	if (m->freeze > g.current_beat)
+		return;
+
+	if (m->delay)
 		--m->delay;
 	else
 		CLASS(m).act(m, d);
@@ -679,8 +675,8 @@ static void trap_turn(Trap *this)
 		monster_kill(m, DMG_NORMAL);
 		break;
 	case CONFUSE:
-		if (!m->confusion)
-			m->confusion = 10;
+		if (!(m->confused))
+			m->confusion = g.current_beat + 10;
 		break;
 	case BOMBTRAP:
 		if (m == &player)
@@ -697,8 +693,7 @@ static void trap_turn(Trap *this)
 // Enemies act in decreasing priority order. Traps have an arbitrary order.
 void do_beat(u8 input)
 {
-	g.input[g.length++] = input;
-	++g.current_beat;
+	g.input[g.current_beat++] = input;
 	g.bomb_exploded = false;
 
 	player_turn(input);

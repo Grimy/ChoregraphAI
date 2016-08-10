@@ -22,6 +22,8 @@ typedef int64_t  i64;
 // Some basic math macros
 #define ARRAY_SIZE(arr) ((i64) (sizeof(arr) / sizeof((arr)[0])))
 
+#define SIGN(x) (((x) > 0) - ((x) < 0))
+
 #define min(x, y) ({ \
 	__typeof(x) _min1 = (x), _min2 = (y); \
 	(__typeof(x)) (_min1 < _min2 ? _min1 : _min2); })
@@ -30,15 +32,9 @@ typedef int64_t  i64;
 	__typeof(x) _max1 = (x), _max2 = (y); \
 	(__typeof(x)) (_max1 > _max2 ? _max1 : _max2); })
 
-#define clamp(val, lo, hi) min((__typeof(val)) max(val, lo), hi)
-
 #define swap(a, b) do { __typeof(a) _swap = (a); (a) = (b); (b) = _swap; } while (0)
 
-#define abs(x) ({ __typeof(x) _abs = (x); _abs < 0 ? -_abs : _abs; })
-
 #define streq(a, b) (!strcmp((a), (b)))
-
-#define SIGN(x) (((x) > 0) - ((x) < 0))
 
 // Terminal ANSI codes
 #define WHITE  "\033[m"

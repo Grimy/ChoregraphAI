@@ -1,4 +1,5 @@
 TESTS:
+* Check all confusion/freeze/iframe mechanics again
 * Edge cases of bomb/nightmare/revealed aggro
 * Is light from held torches added to wall torches?
 

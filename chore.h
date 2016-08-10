@@ -3,11 +3,14 @@
 #include "base.h"
 
 #define player (g.monsters[1])
+#define confused confusion > g.current_beat
 #define TILE(pos) (g.board[(pos).x][(pos).y])
+
 #define MONSTER(pos) (g.monsters[TILE(pos).monster])
 #define BLOCKS_LOS(pos) (TILE(pos).class == WALL)
 #define IS_WALL(pos) (TILE(pos).class == WALL && TILE(pos).hp < 5)
 #define IS_EMPTY(pos) (TILE(pos).class != WALL && !TILE(pos).monster)
+
 #define RNG() ((g.seed = g.seed >> 2 ^ g.seed << 3 ^ g.seed >> 14) & 3)
 #define STUCK(m) (!CLASS(m).flying && (TILE((m)->pos).class == WATER \
 			|| (TILE((m)->pos).class == TAR && !(m)->untrapped)))
@@ -222,27 +225,29 @@ typedef struct {
 } ClassInfos;
 
 typedef struct {
+	// Contents of the level
 	Tile board[32][32];
 	Monster monsters[72];
 	Trap traps[32];
 
+	// Global properties
 	u64 seed;
 	u8 input[32];
-	i64 length;
-
-	bool player_moved;
+	u8 current_beat;
 	bool bomb_exploded;
-	bool sliding_on_ice;
-	bool boots_on;
 	bool miniboss_killed;
 	bool sarcophagus_killed;
 	u8 nightmare;
-	u8 inventory[ITEM_LAST];
 
-	i32: 32;
-	Monster *monkey;
-	i32 current_beat;
-	i32 iframes;
+	// Attributes specific to the player
+	u8 inventory[ITEM_LAST];
+	bool player_moved;
+	bool sliding_on_ice;
+	bool boots_on;
+	u8 iframes;
+	u8 monkey;
+
+	u32: 8;
 } GameState;
 
 extern const ClassInfos class_infos[256];
@@ -269,4 +274,4 @@ MoveResult enemy_move(Monster *m, Coords dir);
 void monster_kill(Monster *m, DamageType type);
 bool forced_move(Monster *m, Coords offset);
 void enemy_attack(Monster *attacker);
-void tile_change(Tile *tile, TileClass new_class);
+void tile_change(Coords pos, TileClass new_class);

@@ -13,31 +13,34 @@ static GameState initial_state;
 
 static _Atomic i32 simulated_beats;
 
+// Returns the cost (in beats) of the current route.
+// This is the number of beats it takes, plus the value of spent resources.
 static i32 cost_function()
 {
-	i32 damage = initial_state.monsters[1].hp - g.monsters[1].hp;
-	i32 bombs_spent = initial_state.inventory[BOMBS] - g.inventory[BOMBS];
-	return g.current_beat + damage + bombs_spent;
-}
-
-// Computes the score of the current game state
-static i32 fitness_function()
-{
-	if (player.hp <= 0)
-		return 255;
-	double distance = L1(player.pos - stairs);
-	return cost_function()
-		+ (i32) (distance / 3)
-		+ 3 * !g.miniboss_killed
-		+ 2 * !g.sarcophagus_killed
+	return g.current_beat
+		+ (initial_state.monsters[1].hp - g.monsters[1].hp)
+		+ (initial_state.inventory[BOMBS] - g.inventory[BOMBS])
 		+ 6 * !g.inventory[JEWELED];
 }
 
+// Estimates the number of beats it will take to clear the level.
+static i32 distance_function()
+{
+	if (player.hp <= 0)
+		return 9001;
+	return (i32) (L1(player.pos - stairs) / 3)
+		+ 3 * !g.miniboss_killed
+		+ 2 * !g.sarcophagus_killed;
+}
+
+// When a winning route is found with RNG disabled, estimate its probability
+// of success by running it on a battery of different RNGs.
+// If it’s consistent enough, display it, and stop exploring costlier routes.
 static void handle_victory()
 {
 	u32 ok = 0;
 	i32 cost = cost_function();
-	i64 length = g.length;
+	i32 length = g.current_beat;
 	u8 input[MAX_LENGTH];
 	memcpy(input, g.input, MAX_LENGTH);
 
@@ -53,21 +56,19 @@ static void handle_victory()
 	}
 
 	cost -= ok == 256;
-	if (cost < cost_cutoff)
-		cost_cutoff = cost;
+	cost_cutoff = min(cost, cost_cutoff);
 
-	// display the winning route
 	static const char* symbols[] = {"←", "↓", "→", "↑", "s", "z", "X"};
 	#pragma omp critical
 	{
-	printf("%d/%ld ", cost, length - 1);
+	printf("%d/%d ", cost, length - 1);
 	for (i64 i = 1; i < length; ++i)
 		printf("%s", symbols[input[i]]);
 	printf("\t(%2.1f%%)\n", ok / 2.56);
 	}
 }
 
-// Starts with the given route, then tries all possible inputs
+// Recursively try all possible inputs, starting at the given point
 static void explore(GameState const *route, bool omp)
 {
 	simulated_beats += 6;
@@ -77,9 +78,10 @@ static void explore(GameState const *route, bool omp)
 		if (i || omp)
 			g = *route;
 		do_beat(i);
-		i32 score = fitness_function();
+
 		i32 cost = cost_function();
-		assert(score >= 0);
+		i32 score = cost + distance_function();
+		assert(cost >= 0 && score >= 0);
 
 		if (player_won()) {
 			handle_victory();
@@ -100,7 +102,7 @@ int main(i32 argc, char **argv)
 	xml_parse(argc, argv);
 	do_beat(6);
 	initial_state = g;
-	initial_score = fitness_function();
+	initial_score = cost_function() + distance_function();
 
 	#pragma omp parallel
 	#pragma omp single nowait
