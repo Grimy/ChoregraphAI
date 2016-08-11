@@ -19,8 +19,8 @@ make
 time=0
 beats=0
 
-solve 2 1 '(ijjjiiijj|fiiijjjje)'
-solve 2 2 '((je|ej)jjeeeejjjj[ i]e|ee(ef|fe)eejjjjffie)'
+solve 2 1 '((ij|ji)jjiiijj|fiiijjjje)'
+solve 2 2 '((je|ej)jjeeeejjjj[ i]e|ee(eef|efe|fee)ejjjjffie)'
 solve 2 3 'ffeeiiiefff'
 solve 3 1 'iiijjj jjj'
 solve 3 2 'jijififfi(fii|iie)jffee'
@@ -30,4 +30,4 @@ solve 4 2 'eeefffeeffifejj'
 solve 4 3 'jjifjjjeeeeiije'
 
 mbps=$(echo "scale=3; $beats / $time / 1000000" | bc)
-echo "$mbps Mbps"
+echo "$beats beats in ${time}s ($mbps Mbps)"
