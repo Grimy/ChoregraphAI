@@ -1,10 +1,10 @@
 #!/usr/bin/perl
 
 use strict;
-use List::MoreUtils qw(uniq);
 $" = ' || '; #"
 $\ = $/;
 
+sub uniq(@) { my %h = map {$_ => 1} @_; keys %h }
 sub id($$) { my ($x, $y) = @_; $y * ($y + 1) / 2 + $x - 1 - ($x == 10)}
 
 sub los($$) {

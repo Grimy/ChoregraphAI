@@ -14,7 +14,7 @@ solve() {
 	fi
 }
 
-make
+make bin/solve test
 
 time=0
 beats=0

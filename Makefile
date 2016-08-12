@@ -5,7 +5,7 @@ ARGS := BARDZ4.xml 3
 
 CFLAGS += -std=c99 -Weverything -Werror -march=native -mtune=native
 CFLAGS += -fstrict-aliasing -fstrict-overflow -fno-asynchronous-unwind-tables
-CFLAGS += -Wno-c++-compat -Wno-switch -Wno-switch-enum -Wno-gnu-statement-expression -Wno-gnu-case-range
+CFLAGS += -Wno-c++-compat -Wno-switch -Wno-switch-enum -Wno-gnu-statement-expression -Wno-gnu-case-range -Wno-disabled-macro-expansion
 CFLAGS += -I/usr/include/libxml2 -Wno-unknown-warning-option -Wno-documentation -Wno-documentation-unknown-command -Wno-reserved-id-macro
 LDFLAGS += -lxml2
 %/solve: CFLAGS += -fopenmp=libomp
@@ -31,8 +31,11 @@ endef
 $(eval $(call BUILDTYPE, bin, -g -O3 -flto -fno-omit-frame-pointer))
 $(eval $(call BUILDTYPE, dbin, -g -fsanitize=undefined,thread))
 
+test: dbin/test
+	$<
+
 debug: dbin/solve
-	lldb ./$< $(ARGS)
+	lldb $< $(ARGS)
 
 report: bin/solve
 	perf record -e $${EVENT-cycles} -g ./test.sh

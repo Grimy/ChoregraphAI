@@ -1,11 +1,6 @@
-*.o
 *.out*
-*.expand
-*.png
 *.svg
 tags
 core.*
 perf.data*
 los.c
-bin
-dbin

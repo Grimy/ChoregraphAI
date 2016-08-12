@@ -7,25 +7,29 @@ static Monster *skeleton;
 static void test(Coords dir, Coords d, bool expected)
 {
 	// Setup the player
+	g.current_beat = 0;
 	player.pos = player.prev_pos = spawn;
 	if (abs(dir.y ? d.y : d.x) == 2)
 		player.prev_pos += dir;
 
 	// Setup the skeleton
-	move(skeleton, spawn - d);
+	TILE(skeleton->pos).monster = 0;
+	skeleton->pos = spawn - d;
+	TILE(skeleton->pos).monster = (u8) (skeleton - g.monsters);
 	skeleton->prev_pos = spawn - d - dir;
+	skeleton->delay = 0;
 
 	// Do the test
-	basic_seek(skeleton, d);
+	do_beat(' ');
 	assert(skeleton->vertical == expected);
 }
 
 int main(void)
 {
 	static const Coords up = {0, -1}, down = {0, 1}, right = {1, 0}, left = {-1, 0};
-	skeleton = &g.monsters[2];
 
 	xml_parse(2, (char*[]) {"", "TEST.xml"});
+	for (skeleton = g.monsters; skeleton->class != SKELETON_1; ++skeleton);
 
 	test(up, (Coords) {-3, 1}, false);
 	test(up, (Coords) {-2, 1}, false);
@@ -84,5 +88,5 @@ int main(void)
 	test(left, (Coords) {2,  2}, true);
 	test(left, (Coords) {2,  3}, true);
 
-	do_beat('\0');
+	printf("All tests OK\n");
 }
