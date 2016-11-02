@@ -122,6 +122,7 @@ typedef enum __attribute__((__packed__)) {
 typedef enum __attribute__((__packed__)) {
 	NO_ITEM,
 	BOMBS,
+	BOMBS_3,
 	LUNGING,
 	MEMERS_CAP,
 	JEWELED,
@@ -182,9 +183,9 @@ typedef struct {
 	u8 delay;
 	u8 confusion;
 	u8 freeze;
-	u8 aggro;
 	u8 state;
 	u8 exhausted;
+	bool aggro;
 	bool vertical;
 	bool untrapped;
 	bool requeued;
@@ -246,8 +247,6 @@ typedef struct {
 	bool boots_on;
 	u8 iframes;
 	u8 monkey;
-
-	u32: 8;
 } GameState;
 
 extern const ClassInfos class_infos[256];
@@ -262,7 +261,7 @@ bool player_won(void);
 
 void cast_light(Tile *tile, i64 x, i64 y);
 void update_fov(void);
-void pickup_item(ItemClass item);
+ItemClass pickup_item(ItemClass item);
 void adjust_lights(Coords pos, i8 diff, i8 brightness);
 void monster_init(Monster *new, MonsterClass type, Coords pos);
 void bomb_detonate(Monster *this, Coords d);

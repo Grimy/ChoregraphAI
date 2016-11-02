@@ -52,7 +52,7 @@ static void display_tile(Coords pos)
 	else if (tile->class == WALL)
 		display_wall(pos);
 	else
-		putchar('.');
+		putchar(tile->item ? '*' : '.');
 	printf(WHITE);
 }
 
@@ -82,7 +82,7 @@ int main(i32 argc, char **argv)
 	xml_parse(argc, argv);
 	printf(TERM_CLEAR);
 	system("stty -echo -icanon eol \1");
-	g.seed = 1;
+	g.seed = (u64) time(NULL);
 
 	while (player.hp > 0 && !player_won()) {
 		display_board();

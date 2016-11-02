@@ -28,6 +28,7 @@ static void xml_place_item(xmlTextReader *xml, Coords pos, char* attr)
 {
 	static const char* item_names[ITEM_LAST] = {
 		[BOMBS]      = "bomb",
+		[BOMBS_3]    = "bomb_3",
 		[LUNGING]    = "feet_boots_lunging",
 		[MEMERS_CAP] = "head_miners_cap",
 		[JEWELED]    = "weapon_dagger_jeweled",
@@ -89,7 +90,8 @@ static void xml_process_node(xmlTextReader *xml)
 	}
 
 	else if (streq(name, "enemy")) {
-		monster_init(++last_monster, type, pos);
+		if (type != GHAST && type != GHOUL && type != WRAITH && type != WIGHT)
+			monster_init(++last_monster, type, pos);
 		if (type == RED_DRAGON || type == BLUE_DRAGON)
 			last_monster->exhausted = 4;
 		if ((type >= SARCO_1 && type <= SARCO_3) || type == MOMMY)

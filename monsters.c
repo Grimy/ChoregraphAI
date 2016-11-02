@@ -658,6 +658,6 @@ const ClassInfos class_infos[256] = {
 	[OGRE]        = {  5, 5, 2,   9,  true,  2, 30505115, GREEN "O",  ogre },
 
 	[SHOPKEEPER]  = { 20, 9, 0,   9, false, -1, 99999997, "@",        nop },
-	[PLAYER]      = {  1, 3, 0,   0, false, -1,      ~0u, "@",        NULL },
+	[PLAYER]      = {  1, 1, 0,   0, false, -1,      ~0u, "@",        NULL },
 	[BOMB]        = {  4, 0, 0,   0, false, -1,      ~1u, "o",        bomb_detonate },
 };

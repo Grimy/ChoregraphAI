@@ -561,6 +561,7 @@ void cone_of_cold(Coords pos, i8 dir)
 		MONSTER(pos + dir * cone_shape[i]).freeze = g.current_beat + 5;
 }
 
+// Tests whether the level has been cleared
 bool player_won()
 {
 	return TILE(player.pos).class == STAIRS
@@ -568,19 +569,23 @@ bool player_won()
 		&& (TILE(player.pos).zone != 4 || g.sarcophagus_killed);
 }
 
-void pickup_item(ItemClass item)
+// Adds an item to the player’s inventory.
+// Returns the item the player had in that slot.
+ItemClass pickup_item(ItemClass item)
 {
-	++g.inventory[item];
+	if (item == BOMBS_3)
+		g.inventory[BOMBS] += 3;
+	else
+		++g.inventory[item];
+	return NO_ITEM;
 }
 
 static void player_turn(u8 input)
 {
 	g.player_moved = false;
 
-	if (TILE(player.pos).item) {
-		pickup_item(TILE(player.pos).item);
-		TILE(player.pos).item = 0;
-	}
+	if (TILE(player.pos).item)
+		TILE(player.pos).item = pickup_item(TILE(player.pos).item);
 
 	switch (input) {
 	case 'e':

@@ -32,7 +32,7 @@ typedef int64_t  i64;
 	__typeof(x) _max1 = (x), _max2 = (y); \
 	(__typeof(x)) (_max1 > _max2 ? _max1 : _max2); })
 
-#define swap(a, b) do { __typeof(a) _swap = (a); (a) = (b); (b) = _swap; } while (0)
+#define SWAP(a, b) do { __typeof(a) _swap = (a); (a) = (b); (b) = _swap; } while (0)
 
 #define streq(a, b) (!strcmp((a), (b)))
 

@@ -2,6 +2,8 @@
 
 #include "chore.h"
 
+#define WORK_FACTOR 3
+
 // Don’t explore routes that exceed those thresholds
 static i32 _Atomic best_cost;
 
@@ -43,16 +45,16 @@ static void handle_victory()
 		simulated_beats += length;
 		g = initial_state;
 		g.seed = i;
-		for (i64 beat = 1; beat < length && player.hp > 0; ++beat)
+		for (i64 beat = 0; beat < length && player.hp > 0; ++beat)
 			do_beat(input[beat]);
 		ok += player_won();
 		if ((ok + 2) * 4 < i)
 			return;
 	}
 
-	cost -= ok == 256;
+	cost += ok != 256;
 	best_cost = min(cost, best_cost);
-	printf("%2d/%-2d%4.0f%%  %s\n", cost, length - 1, ok / 2.56, input + 1);
+	printf("%2d/%-2d%4.0f%%  %s\n", cost, length, ok / 2.56, input);
 }
 
 // Recursively try all possible inputs, starting at the given point
@@ -76,17 +78,14 @@ static void explore(GameState const *route, bool omp)
 		if (cost >= best_cost || player.hp <= 0)
 			continue;
 
-		i32 distance = 3 + initial_distance - distance_function();
+		i32 distance = WORK_FACTOR + initial_distance - distance_function();
 		double best_speed = initial_distance / (double) best_cost;
 		double speed = distance / (double) cost;
 
-		if (speed > best_speed + .5) {
+		if (speed >= best_speed) {
 			GameState copy = g;
 			#pragma omp task
 			explore(&copy, true);
-		} else if (speed >= best_speed) {
-			GameState copy = g;
-			explore(&copy, false);
 		}
 	}
 }
@@ -95,11 +94,15 @@ static void explore(GameState const *route, bool omp)
 int main(i32 argc, char **argv)
 {
 	xml_parse(argc, argv);
-	do_beat('X');
+	if (true) { // character == Bard
+		do_beat('X');
+		--g.current_beat;
+	}
 	initial_state = g;
-
 	initial_distance = distance_function();
-	best_cost = initial_distance + 6;
+	best_cost = initial_distance + 2 + WORK_FACTOR;
+
+	printf("Goal: %d\n", best_cost);
 
 	#pragma omp parallel
 	#pragma omp single nowait
