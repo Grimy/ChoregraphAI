@@ -54,7 +54,7 @@ static void handle_victory()
 
 	cost += ok != 256;
 	best_cost = min(cost, best_cost);
-	printf("%2d/%-2d%4.0f%%  %s\n", cost, length, ok / 2.56, input);
+	printf("%2d/%-2d%4.0f%%\t%s\n", cost, length, ok / 2.56, input);
 }
 
 // Recursively try all possible inputs, starting at the given point

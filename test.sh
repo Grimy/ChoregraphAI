@@ -4,7 +4,7 @@ set -euo pipefail
 
 solve() {
 	printf "%d-%d: " "$1" "$2"
-	if out=$({ /bin/time -f%e bin/solve "BARDZ$1.xml" "$2" | grep -Pq " $3$"; } 2>&1); then
+	if out=$({ /bin/time -f%e bin/solve "BARDZ$1.xml" "$2" | grep -Pq "\t$3$"; } 2>&1); then
 		set -- $out
 		echo "$1 beats in $2s"
 		time=$(echo "$time + $2" | bc)
@@ -26,7 +26,7 @@ solve 3 1 'iiijjj jjj'
 solve 3 2 'jijififfi(fii|iie)jffee'
 solve 3 3 'ffei(ei|if)fff'
 solve 4 1 'effffeijiifijj'
-solve 4 2 'eeefffeeffifejj'
+solve 4 2 'feeffffefeeefej'
 solve 4 3 'jjifjjjeeeeiije'
 
 mbps=$(echo "scale=3; $beats / $time / 1000000" | bc)

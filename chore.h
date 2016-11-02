@@ -123,9 +123,10 @@ typedef enum __attribute__((__packed__)) {
 	NO_ITEM,
 	BOMBS,
 	BOMBS_3,
+	JEWELED,
 	LUNGING,
 	MEMERS_CAP,
-	JEWELED,
+	PACEMAKER,
 	ITEM_LAST,
 } ItemClass;
 
@@ -190,6 +191,8 @@ typedef struct {
 	bool untrapped;
 	bool requeued;
 	bool knocked;
+	ItemClass item;
+	u8 padding;
 } Monster;
 
 typedef struct {
@@ -247,6 +250,7 @@ typedef struct {
 	bool boots_on;
 	u8 iframes;
 	u8 monkey;
+	u64 padding: 56;
 } GameState;
 
 extern const ClassInfos class_infos[256];

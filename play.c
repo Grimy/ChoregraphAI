@@ -87,7 +87,7 @@ int main(i32 argc, char **argv)
 	while (player.hp > 0 && !player_won()) {
 		display_board();
 		int c = getchar();
-		if (c == EOF)
+		if (c == EOF || c == 't')
 			break;
 		do_beat((u8) c);
 	}

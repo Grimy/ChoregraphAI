@@ -8,7 +8,6 @@ Coords stairs;
 
 __extension__ __thread GameState g = {
 	.board = {[0 ... 31] = {[0 ... 31] = {.class = WALL, .hp = 5}}},
-	.inventory = {[BOMBS] = 3},
 	.boots_on = true,
 };
 
@@ -275,6 +274,9 @@ void monster_kill(Monster *m, DamageType type)
 	m->hp = 0;
 	m->requeued = false;
 	TILE(m->pos).monster = 0;
+
+	if (m->item)
+		TILE(m->pos).item = m->item;
 
 	switch (m->class) {
 	case LIGHTSHROOM:
