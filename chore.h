@@ -134,6 +134,7 @@ typedef enum __attribute__((__packed__)) {
 	MINOTAUR_1, MINOTAUR_2,
 	NIGHTMARE_1, NIGHTMARE_2,
 	MOMMY, OGRE,
+	METRONOME_1, METRONOME_2,
 
 	// Other
 	SHOPKEEPER,
@@ -227,7 +228,8 @@ typedef struct {
 	bool revealed;
 	bool torch: 1;
 	bool traps_destroyed: 1;
-	i8 zone: 6;
+	bool wired: 1;
+	i8 zone: 5;
 } Tile;
 
 typedef struct {

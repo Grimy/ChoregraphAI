@@ -39,6 +39,15 @@ static void display_wall(Coords pos)
 	printf("%3.3s", &"╳─│┘│┐│┤──└┴┌┬├┼"[3 * glyph]);
 }
 
+static void display_wire(Coords pos)
+{
+	i64 glyph = 0;
+	for (i64 i = 0; i < 4; ++i)
+		glyph |= (TILE(pos + plus_shape[i]).wired) << i;
+	printf(YELLOW "%3.3s", &"╳─│┘│┐│┤──└┴┌┬├┼"[3 * glyph]);
+	(void) pos;
+}
+
 // Pretty-prints the tile at the given position.
 static void display_tile(Coords pos)
 {
@@ -51,6 +60,8 @@ static void display_tile(Coords pos)
 		putchar(' ');
 	else if (tile->class == WALL)
 		display_wall(pos);
+	else if (tile->wired)
+		display_wire(pos);
 	else
 		putchar(tile->item ? '*' : '.');
 	printf(WHITE);

@@ -91,6 +91,11 @@ static bool dig(Coords pos, i32 digging_power, bool z4)
 	if (!z4 && wall->zone == 4 && (wall->hp == 1 || wall->hp == 2))
 		for (i64 i = 0; i < 4; ++i)
 			dig(pos + plus_shape[i], min(2, digging_power), true);
+
+	if (!wall->hp)
+		for (i64 i = 0; i < 4; ++i)
+			dig(pos + plus_shape[i], 0, false);
+
 	return true;
 }
 
@@ -703,7 +708,7 @@ static void trap_turn(Trap *this)
 // Enemies act in decreasing priority order. Traps have an arbitrary order.
 void do_beat(u8 input)
 {
-	g.input[g.current_beat++] = input;
+	g.input[g.current_beat++ & 31] = input;
 	g.bomb_exploded = false;
 
 	player_turn(input);

@@ -83,6 +83,13 @@ static void xml_process_node(xmlTextReader *xml)
 	}
 
 	else if (streq(name, "tile")) {
+		if (type == 20) {
+			TILE(pos).wired = true;
+			type = FLOOR;
+		} else if (type == 118) {
+			TILE(pos).wired = true;
+			type = 103;
+		}
 		TILE(pos).class = type >= 100 ? WALL : type < 2 ? FLOOR : (u8) type;
 		TILE(pos).hp = type >= 100 ? wall_hp[type - 100] : 0;
 		TILE(pos).torch = (u8) xml_attr(xml, "torch");
