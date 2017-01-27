@@ -10,18 +10,18 @@ static Trap *last_trap;
 
 // Returns the numeric value of a named attribute of the current node.
 // If the attribute is absent, it defaults to 0.
-static i8 xml_attr(xmlTextReader *xml, char* attr)
+static i32 xml_attr(xmlTextReader *xml, char* attr)
 {
 	char* value = (char*) xmlTextReaderGetAttribute(xml, (xmlChar*) (attr));
 	i32 result = value ? atoi(value) : 0;
 	free(value);
-	return (i8) result;
+	return result;
 }
 
 static void xml_first_pass(xmlTextReader *xml)
 {
-	spawn.x = max(spawn.x, 1 - xml_attr(xml, "x"));
-	spawn.y = max(spawn.y, 1 - xml_attr(xml, "y"));
+	spawn.x = max(spawn.x, 1 - (i8) xml_attr(xml, "x"));
+	spawn.y = max(spawn.y, 1 - (i8) xml_attr(xml, "y"));
 }
 
 static ItemClass xml_item(xmlTextReader *xml, char* attr)
@@ -50,17 +50,25 @@ static void xml_process_node(xmlTextReader *xml)
 		{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, 1}, {-1, -1}, {1, -1}
 	};
 	static const i8 wall_hp[] = {1, 1, 5, 0, 4, 4, 0, 2, 3, 5, 4, 0};
+	static const u8 enemy_id[] = {
+		GREEN_SLIME,   // Z1
+		SKELETANK_1,   // Z2
+		FIRE_SLIME,    // Z3
+		BOMBER,        // Z4
+		DIREBAT_1,     // Minibosses
+		SKELETON_1,    // Debug
+		SHOPKEEPER,    // Special
+		CRYSTAL_1,     // Z5
+	};
 
 	const char *name = (const char*) xmlTextReaderConstName(xml);
-	u8 type = (u8) xml_attr(xml, "type");
+	i32 type = xml_attr(xml, "type");
 	i64 subtype = xml_attr(xml, "subtype");
-	Coords pos = {xml_attr(xml, "x"), xml_attr(xml, "y")};
+	Coords pos = {(i8) xml_attr(xml, "x"), (i8) xml_attr(xml, "y")};
 
 	pos += spawn;
 	if (pos.x >= ARRAY_SIZE(g.board) - 1 || pos.y >= ARRAY_SIZE(*g.board) - 1)
 		return;
-
-	type = type == 255 ? SKELETON_1 : type;
 
 	if (streq(name, "trap")) {
 		if (type == 10) {
@@ -68,17 +76,17 @@ static void xml_process_node(xmlTextReader *xml)
 			monster_init(++last_monster, FIREPIG, pos);
 			return;
 		}
-		last_trap->class = subtype == 8 ? OMNIBOUNCE : type;
+		last_trap->class = subtype == 8 ? OMNIBOUNCE : (u8) type;
 		last_trap->pos = pos;
 		last_trap->dir = trap_dirs[subtype & 7];
 		++last_trap;
 	}
 
 	else if (streq(name, "tile")) {
-		TILE(pos).class = type >= 100 ? WALL : type < 2 ? FLOOR : type,
+		TILE(pos).class = type >= 100 ? WALL : type < 2 ? FLOOR : (u8) type;
 		TILE(pos).hp = type >= 100 ? wall_hp[type - 100] : 0;
 		TILE(pos).torch = (u8) xml_attr(xml, "torch");
-		TILE(pos).zone = xml_attr(xml, "zone");
+		TILE(pos).zone = (i8) xml_attr(xml, "zone");
 		if (type == STAIRS)
 			stairs = pos;
 		if (TILE(pos).torch)
@@ -86,13 +94,14 @@ static void xml_process_node(xmlTextReader *xml)
 	}
 
 	else if (streq(name, "enemy")) {
-		if (type != GHAST && type != GHOUL && type != WRAITH && type != WIGHT)
-			monster_init(++last_monster, type, pos);
-		if (type == RED_DRAGON || type == BLUE_DRAGON)
+		u8 id = enemy_id[type / 100] + type % 100;
+		if (id != GHAST && id != GHOUL && id != WRAITH && id != WIGHT)
+			monster_init(++last_monster, id, pos);
+		if (id == RED_DRAGON || id == BLUE_DRAGON)
 			last_monster->exhausted = 4;
-		if ((type >= SARCO_1 && type <= SARCO_3) || type == MOMMY)
-			(++last_monster)->class = type;
-		if (type == LIGHTSHROOM)
+		if ((id >= SARCO_1 && id <= SARCO_3) || id == MOMMY)
+			(++last_monster)->class = id;
+		if (id == LIGHTSHROOM)
 			adjust_lights(pos, +1, 3);
 	}
 
@@ -102,7 +111,7 @@ static void xml_process_node(xmlTextReader *xml)
 	}
 
 	else if (streq(name, "crate")) {
-		monster_init(++last_monster, CRATE_2 + type, pos);
+		monster_init(++last_monster, CRATE_2 + (u8) type, pos);
 		last_monster->item = xml_item(xml, "contents");
 	}
 

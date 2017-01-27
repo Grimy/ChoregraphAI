@@ -388,7 +388,7 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	case RIDER_1:
 	case RIDER_2:
 	case RIDER_3:
-		m->class += SKELETANK_1 - RIDER_1;
+		m->class -= RIDER_1 - SKELETANK_1;
 		knockback(m, dir, 1);
 		return false;
 	case SKELETANK_1:

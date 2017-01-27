@@ -55,7 +55,7 @@ typedef enum __attribute__((__packed__)) {
 	HEADLESS, // a decapitated skeleton
 
 	// Z2 enemies
-	SKELETANK_1 = 100, SKELETANK_2, SKELETANK_3,
+	SKELETANK_1, SKELETANK_2, SKELETANK_3,
 	WINDMAGE_1, WINDMAGE_2, WINDMAGE_3,
 	MUSHROOM_1, MUSHROOM_2,
 	GOLEM_1, GOLEM_2,
@@ -69,7 +69,7 @@ typedef enum __attribute__((__packed__)) {
 	BOMBSHROOM_, // an “activated” explosive mushroom
 
 	// Z3 enemies
-	FIRE_SLIME = 200, ICE_SLIME,
+	FIRE_SLIME, ICE_SLIME,
 	RIDER_1, RIDER_2, RIDER_3,
 	EFREET, DJINN,
 	ASSASSIN_1, ASSASSIN_2,
@@ -84,7 +84,7 @@ typedef enum __attribute__((__packed__)) {
 	BEETLE, // a fire/ice beetle that has shed its armor
 
 	// Z4 enemies
-	BOMBER = 44,
+	BOMBER,
 	DIGGER,
 	BLACK_BAT,
 	ARMADILDO,
@@ -104,8 +104,31 @@ typedef enum __attribute__((__packed__)) {
 	FREE_SPIDER, // a spider that isn’t inside a wall
 	FIREPIG, // a fire trap (they’re treated as monsters, not traps)
 
+	// Z5 enemies
+	CRYSTAL_1,
+	SKULL_1,
+	WATER_BALL,
+	CENSORED,
+	ELECTRO_1, ELECTRO_2, ELECTRO_3,
+	ORB_1, ORB_2, ORB_3,
+	GORGON_1,
+	WIRE_ZOMBIE,
+	SKULL_2, SKULL_3,
+	CRYSTAL_2, CRYSTAL_3, CRYSTAL_4,
+	EYE_1,
+	GORGON_2,
+	EYE_2,
+	ORC_1, ORC_2, ORC_3,
+	DEVIL_1, DEVIL_2,
+	Z_SLIME,
+	CURSE,
+	MIMIC_3, SHOP_MIMIC,
+	BLACK_SLIME, WHITE_SLIME,
+	MIMIC_4, MIMIC_5,
+	TAR_BALL,
+
 	// Minibosses
-	DIREBAT_1 = 144, DIREBAT_2,
+	DIREBAT_1, DIREBAT_2,
 	DRAGON, RED_DRAGON, BLUE_DRAGON,
 	BANSHEE_1, BANSHEE_2,
 	MINOTAUR_1, MINOTAUR_2,
@@ -113,7 +136,7 @@ typedef enum __attribute__((__packed__)) {
 	MOMMY, OGRE,
 
 	// Other
-	SHOPKEEPER = 88,
+	SHOPKEEPER,
 	PLAYER,
 	BOMB,
 } MonsterClass;

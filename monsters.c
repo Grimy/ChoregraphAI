@@ -265,14 +265,15 @@ static void zombie(Monster *this, __attribute__((unused)) Coords d)
 static void slime(Monster *this, __attribute__((unused)) Coords d)
 {
 	static const Coords moves[][4] = {
-		{{ 0,  0}, { 0, 0}, { 0,  0}, { 0,  0}},
-		{{ 0, -1}, { 0, 1}, { 0, -1}, { 0,  1}},
-		{{ 1,  0}, { 0, 1}, {-1,  0}, { 0, -1}},
-		{{-1,  1}, { 1, 1}, { 1, -1}, {-1, -1}},
-		{{ 1,  1}, {-1, 1}, {-1, -1}, { 1, -1}},
+		{{ 0,  0}, { 0, 0}, { 0,  0}, { 0,  0}}, // green
+		{{ 0, -1}, { 0, 1}, { 0, -1}, { 0,  1}}, // blue
+		{{ 1,  0}, { 0, 1}, {-1,  0}, { 0, -1}}, // yolo
+		{{ 0,  0}, { 0, 0}, { 0,  0}, { 0,  0}}, // unassigned
+		{{ 1,  0}, {-1, 1}, { 1,  0}, {-1, -1}}, // Z
+		{{-1,  1}, { 1, 1}, { 1, -1}, {-1, -1}}, // fire
+		{{ 1,  1}, {-1, 1}, {-1, -1}, { 1, -1}}, // ice
 	};
-	i64 index = (this->class & 3) + (this->class >> 6);
-	this->state += enemy_move(this, moves[index][this->state]) == MOVE_SUCCESS;
+	this->state += enemy_move(this, moves[this->class & 7][this->state]) == MOVE_SUCCESS;
 	this->state &= 3;
 }
 
@@ -548,7 +549,7 @@ static void nop() {}
 
 const ClassInfos class_infos[256] = {
 	// [Name] = { damage, max_hp, beat_delay, radius, flying, dig, priority, glyph, act }
-	[GREEN_SLIME] = { 99, 1, 0, 999, false, -1,        0, GREEN "P",  NULL },
+	[GREEN_SLIME] = { 99, 1, 0, 999, false, -1,        0, GREEN "P",  slime },
 	[BLUE_SLIME]  = {  2, 2, 1, 999, false, -1, 10202202, BLUE "P",   slime },
 	[YOLO_SLIME]  = {  1, 1, 0, 999, false, -1, 10101102, YELLOW "P", slime },
 	[SKELETON_1]  = {  1, 1, 1,   9, false, -1, 10101202, "Z",        basic_seek },
@@ -564,6 +565,9 @@ const ClassInfos class_infos[256] = {
 	[WRAITH]      = {  1, 1, 0,   9,  true, -1, 10101102, RED "W",    basic_seek },
 	[MIMIC_1]     = {  2, 1, 0,   0, false, -1, 10201100, YELLOW "m", mimic },
 	[MIMIC_2]     = {  3, 1, 0,   0, false, -1, 10301100, BLUE "m",   mimic },
+	[MIMIC_3]     = {  2, 1, 0,   0, false, -1, 10201100, YELLOW "m", mimic },
+	[MIMIC_4]     = {  2, 1, 0,   0, false, -1, 10201100, YELLOW "m", mimic },
+	[MIMIC_5]     = {  2, 1, 0,   0, false, -1, 10201100, YELLOW "m", mimic },
 	[HEADLESS]    = {  1, 1, 0,   0, false, -1, 10302203, "∠",        charge },
 
 	[SKELETANK_1] = {  1, 1, 1,  25, false, -1, 10101202, "Z",        basic_seek },
@@ -642,6 +646,31 @@ const ClassInfos class_infos[256] = {
 	[TEH_URN]     = {  0, 3, 0,   0, false, -1,        0, PURPLE "(", NULL },
 	[CHEST]       = {  0, 1, 0,   0, false, -1,        0, BLACK "(",  NULL },
 	[FIREPIG]     = {  5, 1, 0,   0, false, -1,        1, RED "q",    firepig },
+
+	[SKULL_1]     = {  1, 1, 2,   9, false, -1, 10101200, WHITE "z",  basic_seek },
+	[SKULL_2]     = {  2, 1, 2,   9, false, -1, 10202200, WHITE "z",  basic_seek },
+	[SKULL_3]     = {  4, 1, 2,   9, false, -1, 10403200, WHITE "z",  basic_seek },
+	[WATER_BALL]  = {  0, 1, 1,   9,  true, -1, 10001101, BLUE "e",   diagonal_seek },
+	[TAR_BALL]    = {  0, 1, 1,   9,  true, -1, 10001102, BLACK "e",  diagonal_seek },
+	[ELECTRO_1]   = {  1, 1, 2,   9, false, -1, 10101202, BLUE "L",   NULL },
+	[ELECTRO_2]   = {  3, 2, 2,   9, false, -1, 10302203, RED "L",    NULL },
+	[ELECTRO_3]   = {  4, 3, 2,   9, false, -1, 10403204, YELLOW "L", NULL },
+	[ORB_1]       = {  1, 1, 1,   0,  true,  1, 10101100, YELLOW "e", charge },
+	[ORB_2]       = {  3, 1, 1,   0,  true,  1, 10301100, YELLOW "e", charge },
+	[ORB_3]       = {  4, 1, 1,   0,  true,  1, 10401100, YELLOW "e", charge },
+	[GORGON_1]    = {  0, 1, 1,   9, false, -1, 10001102, GREEN "S",  basic_seek },
+	[GORGON_2]    = {  0, 3, 1,   9, false, -1, 10003100, YELLOW "S", basic_seek },
+	[WIRE_ZOMBIE] = {  2, 1, 1, 999, false, -1, 10201201, ORANGE "Z", NULL },
+	[EYE_1]       = {  1, 1, 1,   0,  true,  2, 10101103, GREEN "e",  NULL },
+	[EYE_2]       = {  2, 2, 1,   0,  true,  2, 10202105, GREEN "e",  NULL },
+	[ORC_1]       = {  1, 1, 1,   9, false, -1, 10101102, GREEN "o",  NULL },
+	[ORC_2]       = {  2, 2, 1,   9, false, -1, 10202103, GREEN "o",  NULL },
+	[ORC_3]       = {  3, 3, 1,   9, false, -1, 10303104, GREEN "o",  NULL },
+	[DEVIL_1]     = {  2, 1, 1,   9, false, -1, 10201303, RED "&",    diagonal_seek },
+	[DEVIL_2]     = {  4, 2, 1,   9, false, -1, 10402305, GREEN "&",  diagonal_seek },
+	[Z_SLIME]     = {  3, 1, 1, 999, false, -1, 10301102, PURPLE "P", NULL },
+	[CURSE]       = {  0, 1, 1,   9,  true, -1, 10001102, YELLOW "W", basic_seek },
+	[SHOP_MIMIC]  = {  2, 1, 1,   0, false,  0, 10201100, YELLOW "m", NULL },
 
 	[DIREBAT_1]   = {  3, 2, 1,   9,  true, -1, 30302210, YELLOW "B", bat },
 	[DIREBAT_2]   = {  4, 3, 1,   9,  true, -1, 30403215, "B",        bat },
