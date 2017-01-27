@@ -150,15 +150,16 @@ static void black_bat(Monster *this, Coords d)
 // After parrying a melee hit, lunge two tiles in the direction the hit came from.
 static void blademaster(Monster *this, Coords d)
 {
-	if (this->state == 0) {
-		basic_seek(this, d);
-	} else if (this->state == 1) {
-		enemy_move(this, DIRECTION(player.prev_pos - this->prev_pos));
-		enemy_move(this, DIRECTION(player.prev_pos - this->prev_pos));
-		this->state = 2;
-		this->delay = 0;
-	} else if (this->state == 2) {
+	if (this->state == 2) {
 		this->state = 0;
+	} else if (this->state == 1 && can_move(this, DIRECTION(player.prev_pos - this->prev_pos))) {
+		enemy_move(this, DIRECTION(player.prev_pos - this->prev_pos));
+		enemy_move(this, DIRECTION(player.prev_pos - this->prev_pos));
+		this->delay = 0;
+		this->state = 2;
+		this->requeued = false;
+	} else {
+		basic_seek(this, d);
 	}
 }
 

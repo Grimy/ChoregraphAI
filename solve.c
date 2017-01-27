@@ -63,6 +63,7 @@ static void explore(GameState const *route, bool omp)
 	static const u8 symbols[6] = "efij< ";
 
 	simulated_beats += ARRAY_SIZE(symbols);
+	// printf("%s\n", g.input);
 
 	for (u8 i = 0; i < ARRAY_SIZE(symbols); ++i) {
 		if (i || omp)

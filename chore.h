@@ -213,9 +213,9 @@ typedef struct {
 	bool vertical;
 	bool untrapped;
 	bool requeued;
+	bool was_requeued;
 	bool knocked;
 	ItemClass item;
-	u8 padding;
 } Monster;
 
 typedef struct {

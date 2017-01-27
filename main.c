@@ -125,6 +125,7 @@ void bomb_detonate(Monster *this, __attribute__((unused)) Coords d)
 void enemy_attack(Monster *attacker)
 {
 	Coords d = player.pos - attacker->pos;
+
 	switch (attacker->class) {
 	case MONKEY_1:
 	case MONKEY_2:
@@ -177,6 +178,8 @@ MoveResult enemy_move(Monster *m, Coords dir)
 {
 	m->prev_pos = m->pos;
 	m->delay = CLASS(m).beat_delay;
+	m->requeued = false;
+
 	if (is_bogged(m))
 		return MOVE_SPECIAL;
 	if (m->confused && m->class != BARREL)
@@ -185,23 +188,21 @@ MoveResult enemy_move(Monster *m, Coords dir)
 	// Attack
 	if (&MONSTER(m->pos + dir) == &player) {
 		enemy_attack(m);
-		m->requeued = false;
 		return MOVE_ATTACK;
 	}
 
 	// Actual movement
 	if (can_move(m, dir)) {
 		move(m, m->pos + dir);
-		m->requeued = false;
 		return MOVE_SUCCESS;
 	}
 
 	// Try the move again after other monsters have moved
-	if (!m->requeued) {
+	Monster *blocker = &MONSTER(m->pos + dir);
+	if (!m->was_requeued || (blocker->requeued && CLASS(blocker).priority < CLASS(m).priority)) {
 		m->requeued = true;
 		return MOVE_FAIL;
 	}
-	m->requeued = false;
 
 	// Trampling
 	i32 digging_power = m->confused ? -1 : CLASS(m).digging_power;
@@ -272,7 +273,6 @@ void tile_change(Coords pos, TileClass new_class)
 void monster_kill(Monster *m, DamageType type)
 {
 	m->hp = 0;
-	m->requeued = false;
 	TILE(m->pos).monster = 0;
 
 	if (m->item)
@@ -623,11 +623,12 @@ static void player_turn(u8 input)
 		&& can_move(&player, DIRECTION(player.pos - player.prev_pos));
 }
 
-static void enemy_turn(Monster *m)
+static bool is_active(Monster *m)
 {
-	Coords d = player.pos - m->pos;
+	if (m->hp <= 0)
+		return false;
 
-	m->knocked = false;
+	Coords d = player.pos - m->pos;
 
 	if (!m->aggro) {
 		bool shadowed = g.nightmare && L2(m->pos - g.monsters[g.nightmare].pos) < 9;
@@ -643,17 +644,19 @@ static void enemy_turn(Monster *m)
 			if (m->class >= SARCO_1 && m->class <= SARCO_3)
 				m->delay = CLASS(m).beat_delay;
 		} else {
-			return;
+			return false;
 		}
 	}
 
 	if (m->freeze > g.current_beat)
-		return;
+		return false;
 
-	if (m->delay)
+	if (m->delay) {
 		--m->delay;
-	else
-		CLASS(m).act(m, d);
+		return false;
+	}
+
+	return true;
 }
 
 static void trap_turn(Trap *this)
@@ -708,18 +711,29 @@ void do_beat(u8 input)
 		return;
 	update_fov();
 
+	Monster *queue[64] = { 0 };
+	u64 queue_length = 0;
+
 	for (Monster *m = &player + 1; CLASS(m).act; ++m) {
-		if (m->hp <= 0)
+		m->knocked = false;
+		m->requeued = false;
+		m->was_requeued = false;
+		if (!is_active(m))
 			continue;
-		u8 old_state = m->state;
-		enemy_turn(m);
-		if (m->requeued)
-			m->state = old_state;
+		queue[queue_length++] = m;
 	}
 
-	for (Monster *m = &player + 1; CLASS(m).act; ++m)
-		if (m->requeued)
-			CLASS(m).act(m, player.pos - m->pos);
+	for (u64 i = 0; i < queue_length; ++i) {
+		Monster *m = queue[i];
+		Coords d = player.pos - m->pos;
+		u8 old_state = m->state;
+		CLASS(m).act(m, d);
+		if (m->requeued) {
+			m->state = old_state;
+			m->was_requeued = true;
+			queue[queue_length++] = m;
+		}
+	}
 
 	for (Trap *t = g.traps; t->pos.x; ++t)
 		trap_turn(t);
