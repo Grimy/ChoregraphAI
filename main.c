@@ -117,8 +117,9 @@ void bomb_detonate(Monster *this, __attribute__((unused)) Coords d)
 		TILE(this->pos).monster = 0;
 	for (i64 i = 0; i < 9; ++i) {
 		Tile *tile = &TILE(this->pos + square_shape[i]);
-		tile->traps_destroyed = true;
 		tile->class = tile->class == WATER ? FLOOR : tile->class == ICE ? WATER : tile->class;
+		tile->traps_destroyed = true;
+		tile->wired = false;
 		damage_tile(this->pos + square_shape[i], this->pos, 4, DMG_BOMB);
 	}
 	this->hp = 0;
@@ -155,6 +156,16 @@ void enemy_attack(Monster *attacker)
 		break;
 	case BOMBER:
 		bomb_detonate(attacker, NO_DIR);
+		break;
+	case WATER_BALL:
+		tile_change(player.pos, WATER);
+		TILE(attacker->pos).monster = 0;
+		attacker->hp = 0;
+		break;
+	case GORGON_1:
+	case GORGON_2:
+		player.freeze = g.current_beat + 4;
+		attacker->class = CRATE_1;
 		break;
 	default:
 		damage(&player, CLASS(attacker).damage, d, DMG_NORMAL);
@@ -272,17 +283,12 @@ void tile_change(Coords pos, TileClass new_class)
 		tile->class == WATER && new_class == FIRE ? FLOOR :
 		new_class;
 	tile->traps_destroyed = true;
+	tile->wired = false;
 }
 
 // Kills the given monster, handling on-death effects.
 void monster_kill(Monster *m, DamageType type)
 {
-	m->hp = 0;
-	TILE(m->pos).monster = 0;
-
-	if (m->item)
-		TILE(m->pos).item = m->item;
-
 	switch (m->class) {
 	case LIGHTSHROOM:
 		adjust_lights(m->pos, -1, 3);
@@ -312,10 +318,22 @@ void monster_kill(Monster *m, DamageType type)
 	case SARCO_3:
 		g.sarcophagus_killed = true;
 		break;
+	case WATER_BALL:
+		tile_change(m->pos, WATER);
+		break;
+	case GORGON_1:
+	case GORGON_2:
+		m->class = CRATE_1;
+		return;
 	case DIREBAT_1 ... OGRE:
 		g.miniboss_killed = true;
 		break;
 	}
+
+	m->hp = 0;
+	TILE(m->pos).monster = 0;
+	if (m->item)
+		TILE(m->pos).item = m->item;
 }
 
 // Deals damage to the given monster. Handles on-damage effects.
@@ -719,11 +737,11 @@ void do_beat(u8 input)
 	Monster *queue[64] = { 0 };
 	u64 queue_length = 0;
 
-	for (Monster *m = &player + 1; CLASS(m).act; ++m) {
+	for (Monster *m = &player + 1; m->class; ++m) {
 		m->knocked = false;
 		m->requeued = false;
 		m->was_requeued = false;
-		if (!is_active(m))
+		if (!CLASS(m).act || !is_active(m))
 			continue;
 		queue[queue_length++] = m;
 	}
