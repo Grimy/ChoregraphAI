@@ -383,7 +383,7 @@ static void bomb_statue(Monster *this, Coords d)
 
 static bool can_charge(Monster *this, Coords d)
 {
-	if (d.x * d.y != 0 && (abs(d.x) != abs(d.y) || this->class != ARMADILDO))
+	if (d.x * d.y != 0 && !(this->class == ARMADILDO && abs(d.x) == abs(d.y)))
 		return false;
 	Coords move = DIRECTION(d);
 	Coords dest = this->pos + d;
@@ -564,6 +564,18 @@ static void metrognome(Monster *this, Coords d)
 	}
 }
 
+static void eye(Monster *this, Coords d)
+{
+	if (this->state) {
+		this->state = 0;
+		Coords dir = this->pos - this->prev_pos;
+		this->was_requeued = true;
+		enemy_move(this, dir) && enemy_move(this, dir) && enemy_move(this, dir);
+	} else if (can_charge(this, d) && L1(d) <= 3) {
+		this->state = 1;
+	}
+}
+
 static void nop() {}
 
 const ClassInfos class_infos[256] = {
@@ -680,8 +692,8 @@ const ClassInfos class_infos[256] = {
 	[GORGON_1]    = {  0, 1, 0,   9, false, -1, 10001102, GREEN "S",  basic_seek },
 	[GORGON_2]    = {  0, 3, 0,   9, false, -1, 10003100, YELLOW "S", basic_seek },
 	[WIRE_ZOMBIE] = {  2, 1, 0, 999, false, -1, 10201201, ORANGE "Z", nop },
-	[EYE_1]       = {  1, 1, 0,   0,  true,  2, 10101103, GREEN "e",  nop },
-	[EYE_2]       = {  2, 2, 0,   0,  true,  2, 10202105, PINK "e",   nop },
+	[EYE_1]       = {  1, 1, 0,   0,  true,  2, 10101103, GREEN "e",  eye },
+	[EYE_2]       = {  2, 2, 0,   0,  true,  2, 10202105, PINK "e",   eye },
 	[ORC_1]       = {  1, 1, 0,   9, false, -1, 10101102, GREEN "o",  nop },
 	[ORC_2]       = {  2, 2, 0,   9, false, -1, 10202103, PINK "o",   nop },
 	[ORC_3]       = {  3, 3, 0,   9, false, -1, 10303104, PURPLE "o", nop },
