@@ -37,10 +37,10 @@ static void basic_seek(Monster *this, Coords d)
 		this->pos.x == prev_pos.x ? 1 :
 
 		// #4: weird edge cases
-		this->prev_pos.y == player.pos.y ? d.x == 1 :
-		this->prev_pos.x == player.pos.x ? !(d.x < 0 && abs(d.y) == 1) :
-		this->prev_pos.y == prev_pos.y ? abs(d.x) == 1 || (d.x == 2 && player.pos.x > spawn.x) :
-		this->prev_pos.x == prev_pos.x ? abs(d.y) > 1 + (d.x < 0) :
+		this->prev_pos.y == player.pos.y ? 0 :
+		this->prev_pos.x == player.pos.x ? 1 :
+		this->prev_pos.y == prev_pos.y ? abs(d.x) == 1 :
+		this->prev_pos.x == prev_pos.x ? abs(d.y) != 1 :
 
 		// #5: keep moving along the same axis
 		this->vertical;

@@ -31,9 +31,6 @@ endef
 $(eval $(call BUILDTYPE, bin, -g -O3 -flto -fno-omit-frame-pointer))
 $(eval $(call BUILDTYPE, dbin, -g -fsanitize=undefined,thread))
 
-test: dbin/test
-	$<
-
 debug: dbin/solve
 	lldb $< $(ARGS)
 
