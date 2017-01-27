@@ -325,7 +325,7 @@ void monster_kill(Monster *m, DamageType type)
 	case GORGON_2:
 		m->class = CRATE_1;
 		return;
-	case DIREBAT_1 ... OGRE:
+	case DIREBAT_1 ... METRONOME_2:
 		g.miniboss_killed = true;
 		break;
 	}
@@ -476,6 +476,12 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	case BANSHEE_1:
 	case BANSHEE_2:
 		knockback(m, dir, 1);
+		return false;
+	case METRONOME_1:
+	case METRONOME_2:
+		move(m, stairs);
+		m->delay = 1;
+		m->state = 2;
 		return false;
 	case PLAYER:
 		g.iframes = g.current_beat + 2;

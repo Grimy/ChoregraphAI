@@ -546,6 +546,17 @@ static void firepig(Monster *this, Coords d)
 	}
 }
 
+static void metrognome(Monster *this, Coords d)
+{
+	if (this->state) {
+		basic_seek(this, d);
+		--this->state;
+	} else {
+		mushroom(this, d);
+		this->state = 3;
+	}
+}
+
 static void nop() {}
 
 const ClassInfos class_infos[256] = {
@@ -686,8 +697,8 @@ const ClassInfos class_infos[256] = {
 	[NIGHTMARE_2] = {  5, 5, 1,  81,  true,  4, 30505215, RED "u",    basic_seek },
 	[MOMMY]       = {  4, 6, 3,   9,  true, -1, 30405215, BLACK "@",  mommy },
 	[OGRE]        = {  5, 5, 2,   9,  true,  2, 30505115, GREEN "O",  ogre },
-	[METRONOME_1] = {  4, 3, 0,   9,  true,  1, 30403115, YELLOW "G", nop },
-	[METRONOME_2] = {  5, 5, 0,   9,  true,  1, 30505115, GREEN "G",  nop },
+	[METRONOME_1] = {  4, 3, 0,   9,  true,  1, 30403115, YELLOW "G", metrognome },
+	[METRONOME_2] = {  5, 5, 0,   9,  true,  1, 30505115, GREEN "G",  metrognome },
 
 	[SHOPKEEPER]  = { 20, 9, 0,   9, false, -1, 99999997, "@",        nop },
 	[PLAYER]      = {  1, 1, 0,   0, false, -1,      ~0u, "@",        NULL },
