@@ -399,6 +399,13 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 		if (m->state == 1)
 			break;
 		return false;
+	case DEVIL_1:
+	case DEVIL_2:
+		if (m->state)
+			break;
+		m->state = 1;
+		knockback(m, dir, 1);
+		return false;
 	case BLADENOVICE:
 	case BLADEMASTER:
 		if (type != DMG_WEAPON || m->state == 2)
@@ -473,6 +480,8 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	case TELE_MONKEY:
 	case ASSASSIN_1:
 	case ASSASSIN_2:
+	case DEVIL_1:
+	case DEVIL_2:
 	case BANSHEE_1:
 	case BANSHEE_2:
 		knockback(m, dir, 1);

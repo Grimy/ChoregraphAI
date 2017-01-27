@@ -546,6 +546,13 @@ static void firepig(Monster *this, Coords d)
 	}
 }
 
+static void devil(Monster *this, Coords d)
+{
+	moore_seek(this, d);
+	if (this->state)
+		this->delay = 0;
+}
+
 static void metrognome(Monster *this, Coords d)
 {
 	if (this->state) {
@@ -678,8 +685,8 @@ const ClassInfos class_infos[256] = {
 	[ORC_1]       = {  1, 1, 0,   9, false, -1, 10101102, GREEN "o",  nop },
 	[ORC_2]       = {  2, 2, 0,   9, false, -1, 10202103, PINK "o",   nop },
 	[ORC_3]       = {  3, 3, 0,   9, false, -1, 10303104, PURPLE "o", nop },
-	[DEVIL_1]     = {  2, 1, 0,   9, false, -1, 10201303, RED "&",    moore_seek },
-	[DEVIL_2]     = {  4, 2, 0,   9, false, -1, 10402305, GREEN "&",  moore_seek },
+	[DEVIL_1]     = {  2, 1, 2,   9, false, -1, 10201303, RED "&",    devil },
+	[DEVIL_2]     = {  4, 2, 2,   9, false, -1, 10402305, GREEN "&",  devil },
 	[Z_SLIME]     = {  3, 1, 0, 999, false, -1, 10301102, PURPLE "P", nop },
 	[CURSE]       = {  0, 1, 0,   9,  true, -1, 10001102, YELLOW "W", basic_seek },
 	[SHOP_MIMIC]  = {  2, 1, 0,   0, false, -1, 10201100, YELLOW "m", nop },
