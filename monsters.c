@@ -291,6 +291,16 @@ static void mimic(Monster *this, Coords d)
 	}
 }
 
+static void moore_mimic(Monster *this, Coords d)
+{
+	if (this->state) {
+		this->state = 2;
+		moore_seek(this, d);
+	} else if (L2(d) <= 2) {
+		this->state = 1;
+	}
+}
+
 static bool can_breath(Monster *this)
 {
 	i64 dx = abs(player.pos.x - this->pos.x);
@@ -701,7 +711,7 @@ const ClassInfos class_infos[256] = {
 	[DEVIL_2]      = {  4, 2, 2,   9, false, -1, 10402305, GREEN "&",  devil },
 	[PURPLE_SLIME] = {  3, 1, 0, 999, false, -1, 10301102, PURPLE "P", slime },
 	[CURSE]        = {  0, 1, 0,   9,  true, -1, 10001102, YELLOW "W", basic_seek },
-	[SHOP_MIMIC]   = {  2, 1, 0,   0, false, -1, 10201100, YELLOW "m", nop },
+	[SHOP_MIMIC]   = {  2, 1, 0,   0, false, -1, 10201100, YELLOW "m", moore_mimic },
 
 	[DIREBAT_1]    = {  3, 2, 1,   9,  true, -1, 30302210, YELLOW "B", bat },
 	[DIREBAT_2]    = {  4, 3, 1,   9,  true, -1, 30403215, "B",        bat },
