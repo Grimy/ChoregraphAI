@@ -325,7 +325,7 @@ void monster_kill(Monster *m, DamageType type)
 	case GORGON_2:
 		m->class = CRATE_1;
 		return;
-	case DIREBAT_1 ... METRONOME_2:
+	case DIREBAT_1 ... EARTH_DRAGON:
 		g.miniboss_killed = true;
 		break;
 	}
@@ -388,7 +388,7 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 		return false;
 	case TARMONSTER:
 	case WALL_MIMIC:
-	case SEEK_STATUE:
+	case MIMIC_STATUE:
 	case FIRE_MIMIC:
 	case ICE_MIMIC:
 		if (type == DMG_BOMB || m->state == 2)
@@ -486,8 +486,8 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	case BANSHEE_2:
 		knockback(m, dir, 1);
 		return false;
-	case METRONOME_1:
-	case METRONOME_2:
+	case METROGNOME_1:
+	case METROGNOME_2:
 		move(m, stairs);
 		m->delay = 1;
 		m->state = 2;

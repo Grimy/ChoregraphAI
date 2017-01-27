@@ -44,7 +44,7 @@ typedef i8 Coords __attribute__((ext_vector_type(2)));
 // Monster types.
 typedef enum __attribute__((__packed__)) {
 	// Z1 enemies
-	GREEN_SLIME, BLUE_SLIME, YOLO_SLIME,
+	GREEN_SLIME, BLUE_SLIME, YELLOW_SLIME,
 	SKELETON_1, SKELETON_2, SKELETON_3,
 	BLUE_BAT, RED_BAT, GREEN_BAT,
 	MONKEY_1, MONKEY_2,
@@ -99,7 +99,7 @@ typedef enum __attribute__((__packed__)) {
 	SPIDER,
 	WARLOCK_1, WARLOCK_2,
 	MUMMY,
-	WIND_STATUE, SEEK_STATUE, BOMB_STATUE, MINE_STATUE,
+	WIND_STATUE, MIMIC_STATUE, BOMB_STATUE, MINE_STATUE,
 	CRATE_1, CRATE_2, BARREL, TEH_URN, CHEST,
 	FREE_SPIDER, // a spider that isn’t inside a wall
 	FIREPIG, // a fire trap (they’re treated as monsters, not traps)
@@ -120,7 +120,7 @@ typedef enum __attribute__((__packed__)) {
 	EYE_2,
 	ORC_1, ORC_2, ORC_3,
 	DEVIL_1, DEVIL_2,
-	Z_SLIME,
+	PURPLE_SLIME,
 	CURSE,
 	MIMIC_3, SHOP_MIMIC,
 	BLACK_SLIME, WHITE_SLIME,
@@ -134,7 +134,8 @@ typedef enum __attribute__((__packed__)) {
 	MINOTAUR_1, MINOTAUR_2,
 	NIGHTMARE_1, NIGHTMARE_2,
 	MOMMY, OGRE,
-	METRONOME_1, METRONOME_2,
+	METROGNOME_1, METROGNOME_2,
+	EARTH_DRAGON,
 
 	// Other
 	SHOPKEEPER,
