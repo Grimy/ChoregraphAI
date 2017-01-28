@@ -204,6 +204,7 @@ typedef enum {
 typedef struct {
 	Coords pos;
 	Coords prev_pos;
+	Coords dir;
 	MonsterClass class;
 	i8 hp;
 	u8 delay;
@@ -211,13 +212,13 @@ typedef struct {
 	u8 freeze;
 	u8 state;
 	u8 exhausted;
-	bool aggro;
-	bool vertical;
-	bool untrapped;
-	bool requeued;
-	bool was_requeued;
-	bool knocked;
 	ItemClass item;
+	bool aggro;
+	bool untrapped;
+	bool knocked;
+	bool requeued: 1;
+	bool was_requeued: 1;
+	bool padding: 6;
 } Monster;
 
 typedef struct {

@@ -11,18 +11,16 @@
 // Most monster AIs use this as a tiebreaker: when several destination tiles fit
 // all criteria equally well, monsters pick the one that comes first in bomb-order.
 
-// Move cardinally toward the player, avoiding obstacles.
-// Try to keep moving along the same axis, unless the monster’s current or
-// previous position is aligned with the player’s current or previous position.
-static void basic_seek(Monster *this, Coords d)
+// The direction a basic_seek enemy would move in.
+// Helper function for basic_seek and its variants.
+static Coords seek_dir(Monster *this, Coords d)
 {
+	// Ignore the player’s previous position if they moved more than one tile
+	Coords prev_pos = L1(player.pos - player.prev_pos) > 1 ? player.pos : player.prev_pos;
 	Coords vertical = {0, SIGN(d.y)};
 	Coords horizontal = {SIGN(d.x), 0};
 
-	// Ignore the player’s previous position if they moved more than one tile
-	Coords prev_pos = L1(player.pos - player.prev_pos) > 1 ? player.pos : player.prev_pos;
-
-	this->vertical =
+	bool axis =
 		// #1: move toward the player
 		d.y == 0 ? 0 :
 		d.x == 0 ? 1 :
@@ -43,9 +41,18 @@ static void basic_seek(Monster *this, Coords d)
 		this->prev_pos.x == prev_pos.x ? abs(d.y) != 1 :
 
 		// #5: keep moving along the same axis
-		this->vertical;
+		this->dir.y != 0;
 
-	enemy_move(this, this->vertical ? vertical : horizontal);
+	return axis ? vertical : horizontal;
+}
+
+// Move cardinally toward the player, avoiding obstacles.
+// Try to keep moving along the same axis, unless the monster’s current or
+// previous position is aligned with the player’s current or previous position.
+static void basic_seek(Monster *this, Coords d)
+{
+	this->dir = seek_dir(this, d);
+	enemy_move(this, this->dir);
 }
 
 // Move away from the player.
@@ -118,6 +125,7 @@ static void bat(Monster *this, Coords d)
 			return;
 }
 
+// Move in a randomer direction.
 static void green_bat(Monster *this, Coords d)
 {
 	static const Coords moves[] = {
@@ -193,20 +201,13 @@ static void mushroom(Monster *this, Coords d)
 	this->delay = CLASS(this).beat_delay;
 }
 
-static bool has_moved(Monster *this)
-{
-	if (L1(this->pos - this->prev_pos) == 0)
-		return false;
-	// bool result = this->state;
-	// this->state = 1;
-	return true;
-}
+#define HAS_MOVED(m) (L1((m)->pos - (m)->prev_pos))
 
 // Chase the player, then attack in a 3x3 zone.
 static void yeti(Monster *this, Coords d)
 {
 	basic_seek(this, d);
-	if (has_moved(this) && L2(player.pos - this->pos) < 4)
+	if (HAS_MOVED(this) && L2(player.pos - this->pos) < 4)
 		enemy_attack(this);
 }
 
@@ -444,9 +445,9 @@ static void digger(Monster *this, Coords d)
 	}
 	Coords moves[4] = {{-SIGN(d.x), 0}, {0, -SIGN(d.y)}, {0, SIGN(d.y)}, {SIGN(d.x), 0}};
 	Coords move = {0, 0};
-	this->vertical = abs(d.y) > (abs(d.x) + 1) / 3;
+	bool vertical = abs(d.y) > (abs(d.x) + 1) / 3;
 	for (i64 i = 0; i < 3; ++i) {
-		move = moves[i ^ this->vertical];
+		move = moves[i ^ vertical];
 		if (!TILE(this->pos + move).monster)
 			break;
 	}
@@ -517,7 +518,7 @@ static void mommy(Monster *this, Coords d)
 
 	basic_seek(this, d);
 
-	if (has_moved(this) && spawned->hp <= 0) {
+	if (HAS_MOVED(this) && spawned->hp <= 0) {
 		for (spawn_dir = spawn_dirs; !IS_EMPTY(this->pos + *spawn_dir); ++spawn_dir);
 		monster_init(spawned, MUMMY, this->pos + *spawn_dir);
 		spawned->delay = 2;
@@ -584,6 +585,16 @@ static void eye(Monster *this, Coords d)
 	} else if (can_charge(this, d) && L1(d) <= 3) {
 		this->state = 1;
 	}
+}
+
+static void orc(Monster *this, Coords d)
+{
+	Coords old_dir = this->dir;
+	this->dir = seek_dir(this, d);
+	if (this->dir.x == old_dir.x && this->dir.y == old_dir.y)
+		basic_seek(this, d);
+	else
+		this->prev_pos = this->pos;
 }
 
 static void nop() {}
@@ -704,9 +715,9 @@ const ClassInfos class_infos[256] = {
 	[WIRE_ZOMBIE]  = {  2, 1, 0, 999, false, -1, 10201201, ORANGE "Z", nop },
 	[EYE_1]        = {  1, 1, 0,   0,  true,  2, 10101103, GREEN "e",  eye },
 	[EYE_2]        = {  2, 2, 0,   0,  true,  2, 10202105, PINK "e",   eye },
-	[ORC_1]        = {  1, 1, 0,   9, false, -1, 10101102, GREEN "o",  nop },
-	[ORC_2]        = {  2, 2, 0,   9, false, -1, 10202103, PINK "o",   nop },
-	[ORC_3]        = {  3, 3, 0,   9, false, -1, 10303104, PURPLE "o", nop },
+	[ORC_1]        = {  1, 1, 0,   9, false, -1, 10101102, GREEN "o",  orc },
+	[ORC_2]        = {  2, 2, 0,   9, false, -1, 10202103, PINK "o",   orc },
+	[ORC_3]        = {  3, 3, 0,   9, false, -1, 10303104, PURPLE "o", orc },
 	[DEVIL_1]      = {  2, 1, 2,   9, false, -1, 10201303, RED "&",    devil },
 	[DEVIL_2]      = {  4, 2, 2,   9, false, -1, 10402305, GREEN "&",  devil },
 	[PURPLE_SLIME] = {  3, 1, 0, 999, false, -1, 10301102, PURPLE "P", slime },

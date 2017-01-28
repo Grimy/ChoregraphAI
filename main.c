@@ -192,6 +192,9 @@ static bool is_bogged(Monster *m)
 // The return code indicates what action actually took place.
 MoveResult enemy_move(Monster *m, Coords dir)
 {
+	if (m->hp <= 0)
+		return MOVE_FAIL;
+
 	m->prev_pos = m->pos;
 	m->delay = CLASS(m).beat_delay;
 	m->requeued = false;
@@ -311,7 +314,7 @@ void monster_kill(Monster *m, DamageType type)
 			move(&player, m->pos);
 		break;
 	case BOMBER:
-		bomb_plant(m->pos, 3);
+		bomb_plant(m->pos, 2);
 		break;
 	case SARCO_1:
 	case SARCO_2:
@@ -424,7 +427,7 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	case SKELETANK_1:
 	case SKELETANK_2:
 	case SKELETANK_3:
-		if (m->vertical ? !dir.y : !dir.x)
+		if (L1(m->dir + dir))
 			break;
 		if (dmg >= m->hp)
 			m->class = m->class - SKELETANK_1 + SKELETON_1;
@@ -451,6 +454,13 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	case GOOLEM:
 		tile_change(player.pos, OOZE);
 		break;
+	case ORC_1:
+	case ORC_2:
+	case ORC_3:
+		if (L1(m->dir + dir))
+			break;
+		knockback(m, dir, 1);
+		return false;
 	case PLAYER:
 		if (g.iframes > g.current_beat)
 			return false;
