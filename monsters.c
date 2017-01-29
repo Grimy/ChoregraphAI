@@ -259,9 +259,10 @@ static void harpy(Monster *this, Coords d)
 
 static void zombie(Monster *this, __attribute__((unused)) Coords d)
 {
-	static const Coords moves[] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
-	this->state ^= enemy_move(this, moves[this->state]) < MOVE_ATTACK;
-	this->delay = 1;
+	if (enemy_move(this, this->dir) < MOVE_ATTACK && !this->requeued) {
+		this->dir = -this->dir;
+		this->delay = 1;
+	}
 }
 
 static void slime(Monster *this, __attribute__((unused)) Coords d)
@@ -360,7 +361,7 @@ static void mole(Monster *this, Coords d)
 		this->state ^= 1;
 	else
 		basic_seek(this, d);
-	TILE(this->pos).traps_destroyed = true;
+	TILE(this->pos).destroyed = true;
 }
 
 static void beetle_shed(Monster *this)
@@ -564,17 +565,6 @@ static void devil(Monster *this, Coords d)
 		this->delay = 0;
 }
 
-static void metrognome(Monster *this, Coords d)
-{
-	if (this->state) {
-		basic_seek(this, d);
-		--this->state;
-	} else {
-		mushroom(this, d);
-		this->state = 3;
-	}
-}
-
 static void eye(Monster *this, Coords d)
 {
 	if (this->state) {
@@ -595,6 +585,30 @@ static void orc(Monster *this, Coords d)
 		basic_seek(this, d);
 	else
 		this->prev_pos = this->pos;
+}
+
+static void wire_zombie(Monster *this, __attribute__((unused)) Coords d)
+{
+	if (enemy_move(this, this->dir) < MOVE_ATTACK && !this->requeued)
+		this->dir = -this->dir;
+	if (TILE(this->pos).wired && !TILE(this->pos + this->dir).wired) {
+		Coords right = { -this->dir.y, this->dir.x };
+		Coords left = { this->dir.y, -this->dir.x };
+		if (TILE(this->pos + right).wired ^ TILE(this->pos + left).wired)
+			this->dir = TILE(this->pos + right).wired ? right : left;
+	}
+	this->delay = IS_WIRE(this->pos) ? 0 : 1;
+}
+
+static void metrognome(Monster *this, Coords d)
+{
+	if (this->state) {
+		basic_seek(this, d);
+		--this->state;
+	} else {
+		mushroom(this, d);
+		this->state = 3;
+	}
 }
 
 static void nop() {}
@@ -712,7 +726,7 @@ const ClassInfos class_infos[256] = {
 	[ORB_3]        = {  4, 1, 0,   0,  true,  1, 10401100, YELLOW "e", charge },
 	[GORGON_1]     = {  0, 1, 0,   9, false, -1, 10001102, GREEN "S",  basic_seek },
 	[GORGON_2]     = {  0, 3, 0,   9, false, -1, 10003100, YELLOW "S", basic_seek },
-	[WIRE_ZOMBIE]  = {  2, 1, 0, 999, false, -1, 10201201, ORANGE "Z", nop },
+	[WIRE_ZOMBIE]  = {  2, 1, 0, 999, false, -1, 10201201, ORANGE "Z", wire_zombie },
 	[EYE_1]        = {  1, 1, 0,   0,  true,  2, 10101103, GREEN "e",  eye },
 	[EYE_2]        = {  2, 2, 0,   0,  true,  2, 10202105, PINK "e",   eye },
 	[ORC_1]        = {  1, 1, 0,   9, false, -1, 10101102, GREEN "o",  orc },

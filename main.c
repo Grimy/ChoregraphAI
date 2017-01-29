@@ -8,6 +8,7 @@ Coords stairs;
 
 __extension__ __thread GameState g = {
 	.board = {[0 ... 31] = {[0 ... 31] = {.class = WALL, .hp = 5}}},
+	.inventory = { [BOMBS] = 3 },
 	.boots_on = true,
 };
 
@@ -118,8 +119,7 @@ void bomb_detonate(Monster *this, __attribute__((unused)) Coords d)
 	for (i64 i = 0; i < 9; ++i) {
 		Tile *tile = &TILE(this->pos + square_shape[i]);
 		tile->class = tile->class == WATER ? FLOOR : tile->class == ICE ? WATER : tile->class;
-		tile->traps_destroyed = true;
-		tile->wired = false;
+		tile->destroyed = true;
 		damage_tile(this->pos + square_shape[i], this->pos, 4, DMG_BOMB);
 	}
 	this->hp = 0;
@@ -285,8 +285,7 @@ void tile_change(Coords pos, TileClass new_class)
 		tile->class * new_class == FIRE * ICE ? WATER :
 		tile->class == WATER && new_class == FIRE ? FLOOR :
 		new_class;
-	tile->traps_destroyed = true;
-	tile->wired = false;
+	tile->destroyed = true;
 }
 
 // Kills the given monster, handling on-death effects.
@@ -461,6 +460,11 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 			break;
 		knockback(m, dir, 1);
 		return false;
+	case WIRE_ZOMBIE:
+		if (IS_WIRE(player.pos) || !IS_WIRE(m->pos))
+			break;
+		knockback(m, dir, 2);
+		return false;
 	case PLAYER:
 		if (g.iframes > g.current_beat)
 			return false;
@@ -612,7 +616,7 @@ static void player_move(i8 x, i8 y)
 		dig(player.pos + dir, TILE(player.pos).class == OOZE ? 0 : 2, false);
 	} else if (dest->monster) {
 		damage(&MONSTER(player.pos + dir), dmg, dir, DMG_WEAPON);
-		if (tile->wired)
+		if (IS_WIRE(player.pos))
 			chain_lightning(player.pos, dir);
 	} else {
 		g.player_moved = true;
@@ -739,7 +743,7 @@ static bool is_active(Monster *m)
 
 static void trap_turn(Trap *this)
 {
-	if (TILE(this->pos).traps_destroyed)
+	if (TILE(this->pos).destroyed)
 		return;
 
 	Monster *m = &MONSTER(this->pos);
@@ -805,9 +809,11 @@ void do_beat(u8 input)
 		Monster *m = queue[i];
 		Coords d = player.pos - m->pos;
 		u8 old_state = m->state;
+		Coords old_dir = m->dir;
 		CLASS(m).act(m, d);
 		if (m->requeued) {
 			m->state = old_state;
+			m->dir = old_dir;
 			m->was_requeued = true;
 			queue[queue_length++] = m;
 		}

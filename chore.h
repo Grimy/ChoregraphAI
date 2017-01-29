@@ -9,6 +9,7 @@
 #define MONSTER(pos) (g.monsters[TILE(pos).monster])
 #define BLOCKS_LOS(pos) (TILE(pos).class == WALL)
 #define IS_WALL(pos) (TILE(pos).class == WALL && TILE(pos).hp < 5)
+#define IS_WIRE(pos) (TILE(pos).wired && !TILE(pos).destroyed)
 #define IS_EMPTY(pos) (TILE(pos).class != WALL && !TILE(pos).monster)
 
 #define RNG() ((g.seed = g.seed >> 2 ^ g.seed << 3 ^ g.seed >> 14) & 3)
@@ -230,7 +231,7 @@ typedef struct {
 	i16 light;
 	bool revealed;
 	bool torch: 1;
-	bool traps_destroyed: 1;
+	bool destroyed: 1;
 	bool wired: 1;
 	i8 zone: 5;
 } Tile;

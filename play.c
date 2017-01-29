@@ -60,7 +60,7 @@ static void display_tile(Coords pos)
 		putchar(' ');
 	else if (tile->class == WALL)
 		display_wall(pos);
-	else if (tile->wired)
+	else if (IS_WIRE(pos))
 		display_wire(pos);
 	else
 		putchar(tile->item ? '*' : '.');
@@ -77,7 +77,7 @@ static void display_board(void)
 	}
 
 	for (Trap *t = g.traps; t->pos.x; ++t) {
-		if (TILE(t->pos).monster || TILE(t->pos).traps_destroyed)
+		if (TILE(t->pos).monster || TILE(t->pos).destroyed)
 			continue;
 		i64 glyph_index = t->class == BOUNCE ? 14 + 3*t->dir.y + t->dir.x : t->class;
 		char *glyph = &"■▫◭◭◆▫⇐⇒◭●↖↑↗←▫→↙↓↘"[3 * glyph_index];

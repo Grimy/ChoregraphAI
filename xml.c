@@ -110,6 +110,8 @@ static void xml_process_node(xmlTextReader *xml)
 			(++last_monster)->class = id;
 		if (id == LIGHTSHROOM)
 			adjust_lights(pos, +1, 3);
+		if (id == ZOMBIE || id == WIRE_ZOMBIE)
+			last_monster->dir = (Coords) {1, 0};
 	}
 
 	else if (streq(name, "chest")) {
