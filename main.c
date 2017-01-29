@@ -192,12 +192,12 @@ static bool is_bogged(Monster *m)
 // The return code indicates what action actually took place.
 MoveResult enemy_move(Monster *m, Coords dir)
 {
-	if (m->hp <= 0)
-		return MOVE_FAIL;
-
 	m->prev_pos = m->pos;
 	m->delay = CLASS(m).beat_delay;
 	m->requeued = false;
+
+	if (m->hp <= 0)
+		return MOVE_FAIL;
 
 	if (is_bogged(m))
 		return MOVE_SPECIAL;
@@ -548,6 +548,34 @@ bool forced_move(Monster *m, Coords dir)
 	return false;
 }
 
+static void chain_lightning(Coords pos, Coords dir)
+{
+	Coords queue[32] = { pos + dir };
+	i64 queue_length = 1;
+	Coords arcs[7] = {
+		{ dir.x, dir.y },
+		{ dir.x + dir.y, dir.y - dir.x },
+		{ dir.x - dir.y, dir.y + dir.x },
+		{ dir.y, -dir.x },
+		{ -dir.y, dir.x },
+		{ dir.y - dir.x, -dir.y - dir.x },
+		{ -dir.y - dir.x, dir.x - dir.y },
+	};
+
+	MONSTER(pos + dir).electrified = true;
+
+	for (i64 i = 0; queue[i].x; ++i) {
+		for (i64 j = 0; j < 7; ++j) {
+			Monster *m = &MONSTER(queue[i] + arcs[j]);
+			if (m->hp > 0 && !m->electrified) {
+				m->electrified = true;
+				damage(m, 1, CARDINAL(arcs[j]), DMG_NORMAL);
+				queue[queue_length++] = queue[i] + arcs[j];
+			}
+		}
+	}
+}
+
 // Attempts to move the player in the given direction
 // Will trigger attacking/digging if the destination contains an enemy/a wall.
 static void player_move(i8 x, i8 y)
@@ -556,10 +584,10 @@ static void player_move(i8 x, i8 y)
 	if (g.sliding_on_ice || player.freeze > g.current_beat)
 		return;
 
+	Tile *tile = &TILE(player.pos);
 	player.prev_pos = player.pos;
 	Coords dir = {x, y};
-	i32 dmg = TILE(player.pos).class == OOZE ? 0 :
-		g.inventory[JEWELED] ? 5 : 1;
+	i32 dmg = tile->class == OOZE ? 0 : g.inventory[JEWELED] ? 5 : 1;
 
 	if (player.confused || (g.monkey && g.monsters[g.monkey].class == CONF_MONKEY))
 		dir = -dir;
@@ -584,6 +612,8 @@ static void player_move(i8 x, i8 y)
 		dig(player.pos + dir, TILE(player.pos).class == OOZE ? 0 : 2, false);
 	} else if (dest->monster) {
 		damage(&MONSTER(player.pos + dir), dmg, dir, DMG_WEAPON);
+		if (tile->wired)
+			chain_lightning(player.pos, dir);
 	} else {
 		g.player_moved = true;
 		move(&player, player.pos + dir);

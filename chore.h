@@ -216,9 +216,10 @@ typedef struct {
 	bool aggro;
 	bool untrapped;
 	bool knocked;
+	bool electrified: 1;
 	bool requeued: 1;
 	bool was_requeued: 1;
-	bool padding: 6;
+	bool padding: 5;
 } Monster;
 
 typedef struct {
