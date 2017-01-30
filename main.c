@@ -67,10 +67,16 @@ static void destroy_wall(Coords pos)
 		wall->hp == 2 && wall->zone == 2 ? FIRE :
 		wall->hp == 2 && wall->zone == 3 ? ICE :
 		FLOOR;
+
 	if (MONSTER(pos).class == SPIDER) {
 		MONSTER(pos).class = FREE_SPIDER;
 		MONSTER(pos).delay = 1;
 	}
+
+	for (i64 i = 0; wall->hp == 0 && i < 4; ++i)
+		if (TILE(pos + plus_shape[i]).class == WALL && TILE(pos + plus_shape[i]).hp == 0)
+			destroy_wall(pos + plus_shape[i]);
+
 	if (wall->torch)
 		adjust_lights(pos, -1, 0);
 }
@@ -93,10 +99,6 @@ static bool dig(Coords pos, i32 digging_power, bool z4)
 		for (i64 i = 0; i < 4; ++i)
 			dig(pos + plus_shape[i], min(2, digging_power), true);
 
-	if (!wall->hp)
-		for (i64 i = 0; i < 4; ++i)
-			dig(pos + plus_shape[i], 0, false);
-
 	return true;
 }
 
@@ -114,16 +116,20 @@ void bomb_detonate(Monster *this, __attribute__((unused)) Coords d)
 		{0, -1}, {0, 0}, {0, 1},
 		{1, -1}, {1, 0}, {1, 1},
 	};
+
 	if (&MONSTER(this->pos) == this)
 		TILE(this->pos).monster = 0;
+
 	for (i64 i = 0; i < 9; ++i) {
 		Tile *tile = &TILE(this->pos + square_shape[i]);
-		tile->class = tile->class == WATER ? FLOOR : tile->class == ICE ? WATER : tile->class;
-		tile->destroyed = true;
+		if (this->class != PIXIE)
+			tile->class = tile->class == WATER ? FLOOR : tile->class == ICE ? WATER : tile->class;
+		if (i != 4 || this->class != PIXIE)
+			tile->destroyed = true;
 		damage_tile(this->pos + square_shape[i], this->pos, 4, DMG_BOMB);
 	}
+
 	this->hp = 0;
-	g.bomb_exploded = true;
 }
 
 // Handles an enemy attacking the player.
@@ -409,10 +415,16 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 		m->delay = 3;
 		return false;
 	case TARMONSTER:
+	case MIMIC_1:
+	case MIMIC_2:
+	case MIMIC_3:
+	case MIMIC_4:
+	case MIMIC_5:
 	case WALL_MIMIC:
 	case MIMIC_STATUE:
 	case FIRE_MIMIC:
 	case ICE_MIMIC:
+	case SHOP_MIMIC:
 		if (type == DMG_BOMB || m->state == 2)
 			break;
 		return false;
@@ -735,7 +747,11 @@ static bool check_aggro(Monster *m, Coords d)
 			|| L2(player.pos - m->pos) < 9
 			|| shadowed);
 
-	if (m->aggro && (m->class == BLUE_DRAGON || g.bomb_exploded || shadowed))
+	if (m->aggro && m->class == BLUE_DRAGON)
+		return true;
+
+	// The nightmare-bomb-aggro bug
+	if (m->aggro && (g.bomb_exploded || shadowed) && CLASS(m).radius)
 		return true;
 
 	if (L2(d) <= CLASS(m).radius) {
@@ -816,6 +832,8 @@ void do_beat(u8 input)
 		m->was_requeued = false;
 		if (!CLASS(m).act || !is_active(m))
 			continue;
+		if (m->class == BOMB || m->class == BOMB_STATUE)
+			g.bomb_exploded = true;
 		queue[queue_length++] = m;
 	}
 

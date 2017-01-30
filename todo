@@ -1,19 +1,7 @@
 TESTS:
 * Check that confuse/freeze have the right duration
-* Which phasing mobs are immune to cone of colds?
-* Which phasing mobs are immune to bomb damage?
-* Which explosions trigger bomb-aggro bug?
-* Check that harpies/mages/… are handled correctly with bomb-aggro
 * Check the behavior of revealed-aggro
-* Is light from held/dropped torches added to wall torches?
-* Check activation radii of Z5 mobs
-* Dragons digging while standing in water?
-* When bombing a wall, are mobs on the other side aggroed instantly?
-* Are goblin sleepers still weird?
-* Sarcophagus behavior when aggroed+activated on the same beat?
-* Bombing double-doors?
-* Diagonal slimes digging double-doors?
-* Activation radius of base / armored skeletons in Z3
+* Check bomb-aggro bug with MINE_STATUE and BOMB_STATUE
 
 FEATURES:
 * prettier logs
@@ -32,8 +20,8 @@ BUGFIXES:
 * monkey should tank explosions/fireballs for the player
 * clonking should hit both player and monkey
 * bombs shouldn’t damage unaggroed enemies
-* pixie explosions shouldn’t change terrain or destroy phasing enemies (but still destroy traps/walls)
 * non-player damage on Goolem shouldn’t spawn ooze
+* pixies should emit light
 
 REFACTORS:
 * Go ECS or go home

@@ -15,7 +15,7 @@ input/output layer on top of NecroDancer.
 
 This is why ChoregraphAI uses its own heavily optimized, pure C
 re-implementation of (the relevant parts of) NecroDancer. It can simulate
-**millions** of beats per second, with bug-for-bug accuracy.
+millions of beats per second, with bug-for-bug accuracy.
 
 Since NecroDancer isn’t open-source, this was achieved by black-box
 reverse-engineering: set up edge-case scenarios in the game, see what happens,

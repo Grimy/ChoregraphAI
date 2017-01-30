@@ -1,0 +1,6 @@
+                           pixie  exploding mushroom  player bomb  explode-on-hit gargoyles  other bomb  proximity gargoyles
+melts ice                  no     yes                 yes          yes                       yes         yes                   : OK
+damages unaggroed enemies  yes    yes                 yes          no                        no          no                    : TODO
+destroys mimics            no     no                  yes          yes                       yes         yes                   : TODO
+destroys same-tile traps   no     yes                 yes          yes                       yes         yes                   : OK
+causes bomb-aggro bug      no     no                  yes          no                        yes         yes                   : OK
