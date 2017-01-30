@@ -327,6 +327,24 @@ void monster_kill(Monster *m, DamageType type)
 	case GORGON_2:
 		m->class = CRATE_1;
 		return;
+	case SKULL_1:
+	case SKULL_2:
+	case SKULL_3:
+		m->class -= (SKULL_1 - SKELETON_1);
+		m->delay = 1;
+		m->hp = CLASS(m).max_hp;
+
+		u8 spawned = 1;
+		while (g.monsters[spawned].class)
+			++spawned;
+
+		for (u8 i = spawned; i <= spawned + 1; ++i) {
+			g.monsters[i] = *m;
+			g.monsters[i].pos += (i == spawned ? 1 : -1) * (Coords) {1, 0};
+			TILE(g.monsters[i].pos).monster = i;
+		}
+		return;
+
 	case DIREBAT_1 ... EARTH_DRAGON:
 		g.miniboss_killed = true;
 		break;

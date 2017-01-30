@@ -44,6 +44,8 @@ typedef i8 Coords __attribute__((ext_vector_type(2)));
 
 // Monster types.
 typedef enum __attribute__((__packed__)) {
+	NO_MONSTER,
+
 	// Z1 enemies
 	GREEN_SLIME, BLUE_SLIME, YELLOW_SLIME,
 	SKELETON_1, SKELETON_2, SKELETON_3,
@@ -262,6 +264,7 @@ typedef struct {
 	Tile board[32][32];
 	Monster monsters[72];
 	Trap traps[32];
+	u64 monster_count;
 
 	// Global properties
 	u64 seed;

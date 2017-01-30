@@ -201,13 +201,12 @@ static void mushroom(Monster *this, Coords d)
 	this->delay = CLASS(this).beat_delay;
 }
 
-#define HAS_MOVED(m) (L1((m)->pos - (m)->prev_pos))
-
 // Chase the player, then attack in a 3x3 zone.
 static void yeti(Monster *this, Coords d)
 {
+	bool has_moved = L1((this)->pos - (this)->prev_pos) != 0;
 	basic_seek(this, d);
-	if (HAS_MOVED(this) && L2(player.pos - this->pos) < 4)
+	if (has_moved && L2(player.pos - this->pos) < 4)
 		enemy_attack(this);
 }
 
@@ -517,9 +516,10 @@ static void mommy(Monster *this, Coords d)
 	const Coords *spawn_dir;
 	Monster *spawned = this + 1;
 
+	bool has_moved = L1((this)->pos - (this)->prev_pos) != 0;
 	basic_seek(this, d);
 
-	if (HAS_MOVED(this) && spawned->hp <= 0) {
+	if (has_moved && spawned->hp <= 0) {
 		for (spawn_dir = spawn_dirs; !IS_EMPTY(this->pos + *spawn_dir); ++spawn_dir);
 		monster_init(spawned, MUMMY, this->pos + *spawn_dir);
 		spawned->delay = 2;
