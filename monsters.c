@@ -267,6 +267,7 @@ static void zombie(Monster *this, __attribute__((unused)) Coords d)
 static void slime(Monster *this, __attribute__((unused)) Coords d)
 {
 	static const Coords moves[][4] = {
+		{{ 0,  0}, { 0, 0}, { 0,  0}, { 0,  0}}, // unassigned
 		{{ 0,  0}, { 0, 0}, { 0,  0}, { 0,  0}}, // green
 		{{ 0, -1}, { 0, 1}, { 0, -1}, { 0,  1}}, // blue
 		{{ 1,  0}, { 0, 1}, {-1,  0}, { 0, -1}}, // yellow
@@ -611,8 +612,6 @@ static void metrognome(Monster *this, Coords d)
 	}
 }
 
-static void nop() {}
-
 const ClassInfos class_infos[256] = {
 	// [Name] = { damage, max_hp, beat_delay, radius, flying, dig, priority, glyph, act }
 	[GREEN_SLIME]  = { 99, 1, 0, 999, false, -1,        0, GREEN "P",  slime },
@@ -654,7 +653,7 @@ const ClassInfos class_infos[256] = {
 	[WIGHT]        = {  2, 1, 0,   9,  true, -1, 10201103, GREEN "W",  basic_seek },
 	[WALL_MIMIC]   = {  2, 1, 0,   0, false, -1, 10201103, GREEN "m",  mimic },
 	[LIGHTSHROOM]  = {  0, 1, 0,   0, false, -1,        0, "%",        NULL },
-	[BOMBSHROOM]   = {  4, 1, 0,   0, false, -1,      ~2u, YELLOW "%", nop },
+	[BOMBSHROOM]   = {  4, 1, 0,   0, false, -1,      ~2u, YELLOW "%", NULL },
 	[BOMBSHROOM_]  = {  4, 1, 0,   9, false, -1,      ~2u, RED "%",    bomb_detonate },
 
 	[FIRE_SLIME]   = {  3, 1, 0, 999, false,  2, 10301101, RED "P",    slime },
@@ -718,9 +717,9 @@ const ClassInfos class_infos[256] = {
 	[SKULL_3]      = {  4, 1, 1,   9, false, -1, 10403200, BLACK "z",  basic_seek },
 	[WATER_BALL]   = {  0, 1, 0,   9,  true, -1, 10001101, BLUE "e",   moore_seek },
 	[TAR_BALL]     = {  0, 1, 0,   9,  true, -1, 10001102, BLACK "e",  moore_seek },
-	[ELECTRO_1]    = {  1, 1, 1,   9, false, -1, 10101202, BLUE "L",   nop },
-	[ELECTRO_2]    = {  3, 2, 1,   9, false, -1, 10302203, RED "L",    nop },
-	[ELECTRO_3]    = {  4, 3, 1,   9, false, -1, 10403204, YELLOW "L", nop },
+	[ELECTRO_1]    = {  1, 1, 1,   9, false, -1, 10101202, BLUE "L",   NULL },
+	[ELECTRO_2]    = {  3, 2, 1,   9, false, -1, 10302203, RED "L",    NULL },
+	[ELECTRO_3]    = {  4, 3, 1,   9, false, -1, 10403204, YELLOW "L", NULL },
 	[ORB_1]        = {  1, 1, 0,   0,  true,  1, 10101100, YELLOW "e", charge },
 	[ORB_2]        = {  3, 1, 0,   0,  true,  1, 10301100, YELLOW "e", charge },
 	[ORB_3]        = {  4, 1, 0,   0,  true,  1, 10401100, YELLOW "e", charge },
@@ -755,7 +754,7 @@ const ClassInfos class_infos[256] = {
 	[METROGNOME_1] = {  4, 3, 0,   9,  true,  1, 30403115, YELLOW "G", metrognome },
 	[METROGNOME_2] = {  5, 5, 0,   9,  true,  1, 30505115, GREEN "G",  metrognome },
 
-	[SHOPKEEPER]   = { 20, 9, 0,   9, false, -1, 99999997, "@",        nop },
+	[SHOPKEEPER]   = { 20, 9, 0,   9, false, -1, 99999997, "@",        NULL },
 	[PLAYER]       = {  1, 1, 0,   0, false, -1,      ~0u, "@",        NULL },
 	[BOMB]         = {  4, 0, 0,   0, false, -1,      ~1u, "x",        bomb_detonate },
 };
