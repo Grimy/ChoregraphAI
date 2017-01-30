@@ -2,12 +2,13 @@ TESTS:
 * Check all confusion/freeze/iframe mechanics again
 * Edge cases of bomb/nightmare/revealed aggro
 * Is light from held torches added to wall torches?
+* Check activation radii of Z5 mobs
 
 FEATURES:
+* electric mages
 * metal doors (type=111)
 * lord enemies
-* requeue enemies when close to enemies of the same priority
-* recursive requeueing
+* (priority, L2) sorting of the monster queue
 
 BUGFIXES:
 * beetle shedding isn’t quite right
@@ -18,7 +19,6 @@ BUGFIXES:
 * skeleton knights should take two stacks of damage from fire traps
 * monkey should tank explosions/fireballs for the player
 * clonking should hit both player and monkey
-* the `knocked` flag should be reset during the player’s turn
 * bombs shouldn’t damage unaggroed enemies
 * pixie explosions shouldn’t change terrain or destroy phasing enemies (but still destroy traps/walls)
 * non-player damage on Goolem shouldn’t spawn ooze
