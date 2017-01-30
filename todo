@@ -13,6 +13,7 @@ TESTS:
 * Sarcophagus behavior when aggroed+activated on the same beat?
 * Bombing double-doors?
 * Diagonal slimes digging double-doors?
+* Activation radius of base / armored skeletons in Z3
 
 FEATURES:
 * prettier logs

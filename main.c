@@ -291,6 +291,8 @@ void tile_change(Coords pos, TileClass new_class)
 // Kills the given monster, handling on-death effects.
 void monster_kill(Monster *m, DamageType type)
 {
+	m->hp = 0;
+
 	switch (m->class) {
 	case LIGHTSHROOM:
 		adjust_lights(m->pos, -1, 3);
@@ -344,14 +346,14 @@ void monster_kill(Monster *m, DamageType type)
 			TILE(g.monsters[i].pos).monster = i;
 		}
 		return;
-
 	case DIREBAT_1 ... EARTH_DRAGON:
 		g.miniboss_killed = true;
 		break;
 	}
 
-	m->hp = 0;
-	TILE(m->pos).monster = 0;
+	if (MONSTER(m->pos).hp == 0)
+		TILE(m->pos).monster = 0;
+
 	if (m->item)
 		TILE(m->pos).item = m->item;
 }
