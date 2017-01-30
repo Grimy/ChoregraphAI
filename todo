@@ -1,10 +1,21 @@
 TESTS:
-* Check all confusion/freeze/iframe mechanics again
-* Edge cases of bomb/nightmare/revealed aggro
-* Is light from held torches added to wall torches?
+* Check that confuse/freeze have the right duration
+* Which phasing mobs are immune to cone of colds?
+* Which phasing mobs are immune to bomb damage?
+* Which explosions trigger bomb-aggro bug?
+* Check that harpies/mages/… are handled correctly with bomb-aggro
+* Check the behavior of revealed-aggro
+* Is light from held/dropped torches added to wall torches?
 * Check activation radii of Z5 mobs
+* Dragons digging while standing in water?
+* When bombing a wall, are mobs on the other side aggroed instantly?
+* Are goblin sleepers still weird?
+* Sarcophagus behavior when aggroed+activated on the same beat?
+* Bombing double-doors?
+* Diagonal slimes digging double-doors?
 
 FEATURES:
+* prettier logs
 * electric mages
 * metal doors (type=111)
 * lord enemies
@@ -24,6 +35,7 @@ BUGFIXES:
 * non-player damage on Goolem shouldn’t spawn ooze
 
 REFACTORS:
+* Go ECS or go home
 * Refactor harpy AI
 * Don’t rely on qsort being stable
 

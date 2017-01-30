@@ -723,40 +723,34 @@ static void player_turn(u8 input)
 		&& can_move(&player, DIRECTION(player.pos - player.prev_pos));
 }
 
+static bool check_aggro(Monster *m, Coords d)
+{
+	bool shadowed = g.nightmare && L2(m->pos - g.monsters[g.nightmare].pos) < 9;
+	m->aggro = (d.y >= -5 && d.y <= 6)
+		&& (d.x >= -10 && d.x <= 9)
+		&& TILE(m->pos).revealed
+		&& (TILE(m->pos).light >= 102
+			|| L2(player.pos - m->pos) < 9
+			|| shadowed);
+
+	if (m->aggro && (m->class == BLUE_DRAGON || g.bomb_exploded || shadowed))
+		return true;
+
+	if (L2(d) <= CLASS(m).radius) {
+		if (m->class >= SARCO_1 && m->class <= SARCO_3)
+			m->delay = CLASS(m).beat_delay;
+		return true;
+	}
+
+	return false;
+}
+
 static bool is_active(Monster *m)
 {
-	if (m->hp <= 0)
-		return false;
-
-	Coords d = player.pos - m->pos;
-
-	if (!m->aggro) {
-		bool shadowed = g.nightmare && L2(m->pos - g.monsters[g.nightmare].pos) < 9;
-		m->aggro = (d.y >= -5 && d.y <= 6)
-			&& (d.x >= -10 && d.x <= 9)
-			&& TILE(m->pos).revealed
-			&& (TILE(m->pos).light >= 102
-				|| L2(player.pos - m->pos) < 9
-				|| shadowed);
-		if (m->aggro && (m->class == BLUE_DRAGON || g.bomb_exploded || shadowed)) {
-			(void) 0;
-		} else if (L2(d) <= CLASS(m).radius) {
-			if (m->class >= SARCO_1 && m->class <= SARCO_3)
-				m->delay = CLASS(m).beat_delay;
-		} else {
-			return false;
-		}
-	}
-
-	if (m->freeze > g.current_beat)
-		return false;
-
-	if (m->delay) {
-		--m->delay;
-		return false;
-	}
-
-	return true;
+	return m->hp > 0 &&
+		(m->aggro || check_aggro(m, player.pos - m->pos)) &&
+		(m->freeze <= g.current_beat) &&
+		(!m->delay--);
 }
 
 static void trap_turn(Trap *this)

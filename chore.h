@@ -4,8 +4,8 @@
 
 #define player (g.monsters[1])
 #define confused confusion > g.current_beat
-#define TILE(pos) (g.board[(pos).x][(pos).y])
 
+#define TILE(pos) (g.board[(pos).x][(pos).y])
 #define MONSTER(pos) (g.monsters[TILE(pos).monster])
 #define BLOCKS_LOS(pos) (TILE(pos).class == WALL)
 #define IS_WALL(pos) (TILE(pos).class == WALL && TILE(pos).hp < 5)
