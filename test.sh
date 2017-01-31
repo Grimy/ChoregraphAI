@@ -23,8 +23,8 @@ solve 2 3 'ffeeiiiefff'
 solve 3 1 'iiijjj jjj'
 solve 3 2 'jijififfi(fii|iie)jffee'
 solve 3 3 'ffei(ei|if)fff'
-solve 4 1 'effffeijiifijj'
-solve 4 2 'feeffffefeeefej'
+solve 4 1 'ffejjeeeeefijj'
+# solve 4 2 'feeffffefeeefej'
 solve 4 3 'jjifjjjeeeeiije'
 
 mbps=$(echo "scale=3; $beats / $time / 1000000" | bc)

@@ -2,21 +2,25 @@ TESTS:
 * Check that confuse/freeze have the right duration
 * Check the behavior of revealed-aggro
 * Check bomb-aggro bug with MINE_STATUE and BOMB_STATUE
+* Earth dragon activation radius?
+* Red dragon activation radius?
+* Red dragon aggroed-unactivated insta-move?
+* Skeleton knight + fire trap: double knockback?
+* Test the new 4-1 solution
 
 FEATURES:
-* prettier logs
 * electric mages
 * metal doors (type=111)
 * lord enemies
 * (priority, L2) sorting of the monster queue
 
 BUGFIXES:
+* fix green slime priority
 * beetle shedding isn’t quite right
 * banshees should have different activation radii depending on the zone
 * shovemonsters pushing the player on ice shoud trigger a slide
-* when monkeyed while trapped in tar, the player should stay trapped
 * charged breath attacks should have extreme priority
-* skeleton knights should take two stacks of damage from fire traps
+* when monkeyed while trapped in tar, the player should stay trapped
 * monkey should tank explosions/fireballs for the player
 * clonking should hit both player and monkey
 * bombs shouldn’t damage unaggroed enemies

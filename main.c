@@ -483,7 +483,10 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 		bomb_detonate(m, NO_DIR);
 		return false;
 	case GOOLEM:
-		tile_change(player.pos, OOZE);
+		if (m->state == 0) {
+			m->state = 1;
+			tile_change(player.pos, OOZE);
+		}
 		break;
 	case ORC_1:
 	case ORC_2:
@@ -768,7 +771,7 @@ static bool is_active(Monster *m)
 	return m->hp > 0 &&
 		(m->aggro || check_aggro(m, player.pos - m->pos)) &&
 		(m->freeze <= g.current_beat) &&
-		(!m->delay--);
+		(m->delay ? !m->delay-- : true);
 }
 
 static void trap_turn(Trap *this)

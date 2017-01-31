@@ -675,8 +675,8 @@ const ClassInfos class_infos[256] = {
 	[GHAST]        = {  2, 1, 0,   9,  true, -1, 10201102, PURPLE "W", basic_seek },
 	[FIRE_MIMIC]   = {  2, 1, 0,   0, false, -1, 10201102, RED "m",    mimic },
 	[ICE_MIMIC]    = {  2, 1, 0,   0, false, -1, 10201102, CYAN "m",   mimic },
-	[FIRE_POT]     = {  0, 1, 0,   9, false, -1,        0, RED "(",    NULL },
-	[ICE_POT]      = {  0, 1, 0,   9, false, -1,        0, CYAN "(",   NULL },
+	[FIRE_POT]     = {  0, 1, 0,   0, false, -1,        0, RED "(",    NULL },
+	[ICE_POT]      = {  0, 1, 0,   0, false, -1,        0, CYAN "(",   NULL },
 
 	[BOMBER]       = {  4, 1, 1,   0, false, -1, 99999998, RED "o",    diagonal_seek },
 	[DIGGER]       = {  1, 1, 1,   9, false,  2, 10101201, "o",        digger },
@@ -754,7 +754,7 @@ const ClassInfos class_infos[256] = {
 	[METROGNOME_1] = {  4, 3, 0,   9,  true,  1, 30403115, YELLOW "G", metrognome },
 	[METROGNOME_2] = {  5, 5, 0,   9,  true,  1, 30505115, GREEN "G",  metrognome },
 
-	[SHOPKEEPER]   = { 20, 9, 0,   9, false, -1, 99999997, "@",        NULL },
+	[SHOPKEEPER]   = { 20, 9, 0,   0, false, -1, 99999997, "@",        NULL },
 	[PLAYER]       = {  1, 1, 0,   0, false, -1,      ~0u, "@",        NULL },
 	[BOMB]         = {  4, 0, 0,   0, false, -1,      ~1u, "x",        bomb_detonate },
 };
