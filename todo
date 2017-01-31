@@ -1,4 +1,5 @@
 TESTS:
+* Check metrognome behavior
 * Check that confuse/freeze have the right duration
 * Check the behavior of revealed-aggro
 * Check bomb-aggro bug with MINE_STATUE and BOMB_STATUE
@@ -9,7 +10,8 @@ TESTS:
 * Test the new 4-1 solution
 * Lunging at ice beetles?
 * Can spiders move into any door type?
-* Double door wood+metal
+* Double door wood+metal?
+* Lich’s prev_pos after casting?
 
 FEATURES:
 * electric mages

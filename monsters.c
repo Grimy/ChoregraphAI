@@ -171,28 +171,6 @@ static void blademaster(Monster *this, Coords d)
 	}
 }
 
-// Common AI for liches and windmages.
-static void mage(Monster *this, Coords d)
-{
-	bool is_lich = this->class >= LICH_1 && this->class <= LICH_3;
-	bool can_cast = L2(d) == 4
-		&& can_move(this, DIRECTION(d))
-		&& !(this->confused)
-		&& !STUCK(this)
-		&& !(player.confused && is_lich);
-
-	if (!can_cast) {
-		basic_seek(this, d);
-		return;
-	}
-
-	this->delay = 1;
-	if (is_lich)
-		player.confusion = g.current_beat + 5;
-	else
-		forced_move(&player, -DIRECTION(d));
-}
-
 // Attack in a 3x3 zone without moving.
 static void mushroom(Monster *this, Coords d)
 {
@@ -400,7 +378,7 @@ static bool can_charge(Monster *this, Coords d)
 	Coords move = DIRECTION(d);
 	Coords dest = this->pos + d;
 	for (Coords pos = this->pos + move; pos.x != dest.x || pos.y != dest.y; pos += move)
-		if (BLOCKS_LOS(pos) || TILE(pos).monster)
+		if (!IS_EMPTY(pos))
 			return false;
 	this->prev_pos = this->pos - DIRECTION(d);
 	return true;
@@ -431,6 +409,36 @@ static void minotaur(Monster *this, Coords d)
 	} else {
 		basic_seek(this, d);
 	}
+}
+
+// Helper function for wind-mages, liches and electro-liches.
+static bool can_cast(Monster *this, Coords d)
+{
+	return !(this->confused) && !STUCK(this) && can_charge(this, d);
+}
+
+static void lich(Monster *this, Coords d)
+{
+	if (L2(d) == 4 && !(player.confused) && can_cast(this, d))
+		player.confusion = g.current_beat + 5;
+	else
+		basic_seek(this, d);
+}
+
+static void wind_mage(Monster *this, Coords d)
+{
+	if (L2(d) == 4 && can_cast(this, d))
+		forced_move(&player, -DIRECTION(d));
+	else
+		basic_seek(this, d);
+}
+
+static void electro_lich(Monster *this, Coords d)
+{
+	if (can_cast(this, d))
+		(void) 0; // TODO
+	else
+		basic_seek(this, d);
 }
 
 static void digger(Monster *this, Coords d)
@@ -603,13 +611,8 @@ static void wire_zombie(Monster *this, __attribute__((unused)) Coords d)
 
 static void metrognome(Monster *this, Coords d)
 {
-	if (this->state) {
-		basic_seek(this, d);
-		--this->state;
-	} else {
-		mushroom(this, d);
-		this->state = 3;
-	}
+	this->state = (this->state + 1) & 3;
+	(this->state ? basic_seek : mushroom)(this, d);
 }
 
 const ClassInfos class_infos[256] = {
@@ -638,9 +641,9 @@ const ClassInfos class_infos[256] = {
 	[SKELETANK_1]  = {  1, 1, 1,  25, false, -1, 10101202, "Z",        basic_seek },
 	[SKELETANK_2]  = {  3, 2, 1,  25, false, -1, 10302204, YELLOW "Z", basic_seek },
 	[SKELETANK_3]  = {  5, 3, 1,  25, false, -1, 10503206, BLACK "Z",  basic_seek },
-	[WINDMAGE_1]   = {  2, 1, 1,   0, false, -1, 10201202, BLUE "@",   mage },
-	[WINDMAGE_2]   = {  4, 2, 1,   0, false, -1, 10402204, YELLOW "@", mage },
-	[WINDMAGE_3]   = {  5, 3, 1,   0, false, -1, 10503206, BLACK "@",  mage },
+	[WINDMAGE_1]   = {  2, 1, 1,   0, false, -1, 10201202, BLUE "@",   wind_mage },
+	[WINDMAGE_2]   = {  4, 2, 1,   0, false, -1, 10402204, YELLOW "@", wind_mage },
+	[WINDMAGE_3]   = {  5, 3, 1,   0, false, -1, 10503206, BLACK "@",  wind_mage },
 	[MUSHROOM_1]   = {  2, 1, 3,  25, false, -1, 10201402, BLUE "%",   mushroom },
 	[MUSHROOM_2]   = {  4, 3, 2,  25, false, -1, 10403303, PURPLE "%", mushroom },
 	[GOLEM_1]      = {  4, 5, 3,  25,  true,  2, 20405404, "'",        basic_seek },
@@ -687,9 +690,9 @@ const ClassInfos class_infos[256] = {
 	[GHOUL]        = {  1, 1, 0,   9,  true, -1, 10301102, "W",        moore_seek },
 	[GOOLEM]       = {  5, 5, 3,   9,  true,  2, 20510407, GREEN "'",  basic_seek },
 	[HARPY]        = {  3, 1, 1,   0,  true, -1, 10301203, GREEN "h",  harpy },
-	[LICH_1]       = {  2, 1, 1,   0, false, -1, 10404202, GREEN "L",  mage },
-	[LICH_2]       = {  3, 2, 1,   0, false, -1, 10404302, PURPLE "L", mage },
-	[LICH_3]       = {  4, 3, 1,   0, false, -1, 10404402, BLACK "L",  mage },
+	[LICH_1]       = {  2, 1, 1,   0, false, -1, 10404202, GREEN "L",  lich },
+	[LICH_2]       = {  3, 2, 1,   0, false, -1, 10404302, PURPLE "L", lich },
+	[LICH_3]       = {  4, 3, 1,   0, false, -1, 10404402, BLACK "L",  lich },
 	[CONF_MONKEY]  = {  0, 1, 0,   9, false, -1, 10004103, GREEN "Y",  basic_seek },
 	[TELE_MONKEY]  = {  0, 2, 0,   9, false, -1, 10002103, PINK "Y",   basic_seek },
 	[PIXIE]        = {  4, 1, 0,   9,  true, -1, 10401102, "n",        basic_seek },
@@ -717,9 +720,9 @@ const ClassInfos class_infos[256] = {
 	[SKULL_3]      = {  4, 1, 1,   9, false, -1, 10403200, BLACK "z",  basic_seek },
 	[WATER_BALL]   = {  0, 1, 0,   9,  true, -1, 10001101, BLUE "e",   moore_seek },
 	[TAR_BALL]     = {  0, 1, 0,   9,  true, -1, 10001102, BLACK "e",  moore_seek },
-	[ELECTRO_1]    = {  1, 1, 1,   0, false, -1, 10101202, BLUE "L",   NULL },
-	[ELECTRO_2]    = {  3, 2, 1,   0, false, -1, 10302203, RED "L",    NULL },
-	[ELECTRO_3]    = {  4, 3, 1,   0, false, -1, 10403204, YELLOW "L", NULL },
+	[ELECTRO_1]    = {  1, 1, 1,   0, false, -1, 10101202, BLUE "L",   electro_lich },
+	[ELECTRO_2]    = {  3, 2, 1,   0, false, -1, 10302203, RED "L",    electro_lich },
+	[ELECTRO_3]    = {  4, 3, 1,   0, false, -1, 10403204, YELLOW "L", electro_lich },
 	[ORB_1]        = {  1, 1, 0,   0,  true,  1, 10101100, YELLOW "e", charge },
 	[ORB_2]        = {  3, 1, 0,   0,  true,  1, 10301100, YELLOW "e", charge },
 	[ORB_3]        = {  4, 1, 0,   0,  true,  1, 10401100, YELLOW "e", charge },
