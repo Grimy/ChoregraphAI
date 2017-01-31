@@ -83,17 +83,24 @@ static void xml_process_node(xmlTextReader *xml)
 	}
 
 	else if (streq(name, "tile")) {
-		if (type == 20) {
-			TILE(pos).wired = true;
-			type = FLOOR;
-		} else if (type == 118) {
-			TILE(pos).wired = true;
-			type = 103;
+		if (type == 103 || type == 111 || type == 118) {
+			type = DOOR;
+		} else if (type >= 100) {
+			i8 hp = TILE(pos).hp = wall_hp[type - 100];
+			i32 zone = xml_attr(xml, "zone");
+			g.locking_enemies = 1 + (zone == 4);
+			if (zone == 4 && (hp == 1 || hp == 2))
+				type = Z4WALL;
+			else if (zone == 2 && hp == 2)
+				type = FIREWALL;
+			else if (zone == 3 && hp == 2)
+				type = ICEWALL;
+			else
+				type = WALL;
 		}
-		TILE(pos).class = type >= 100 ? WALL : type < 2 ? FLOOR : (u8) type;
-		TILE(pos).hp = type >= 100 ? wall_hp[type - 100] : 0;
+		TILE(pos).wired = type == 20 || type == 118;
+		TILE(pos).class = (u8) type;
 		TILE(pos).torch = (u8) xml_attr(xml, "torch");
-		TILE(pos).zone = (i8) xml_attr(xml, "zone");
 		if (type == STAIRS)
 			stairs = pos;
 		if (TILE(pos).torch)

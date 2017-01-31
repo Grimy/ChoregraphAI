@@ -6,7 +6,7 @@
 #include <time.h>
 
 static const u8 floor_colors[] = {
-	[STAIRS] = 105, [SHOP] = 43,
+	[STAIRS] = 105, [SHOP_FLOOR] = 43,
 	[WATER] = 44, [TAR] = 40,
 	[FIRE] = 41, [ICE] = 107,
 	[OOZE] = 42,
@@ -16,26 +16,18 @@ static const u8 floor_colors[] = {
 // For example, when tiles to the bottom and right are walls too, use '┌'.
 static void display_wall(Coords pos)
 {
-	switch (TILE(pos).hp) {
-	case 0:
-		putchar('+');
-		return;
-	case 2:
-		printf(TILE(pos).zone == 2 ? RED : TILE(pos).zone == 3 ? CYAN : "");
-		break;
-	case 3:
+	if (TILE(pos).class == FIREWALL)
+		printf(RED);
+	else if (TILE(pos).class == ICEWALL)
+		printf(CYAN);
+	else if (TILE(pos).hp == 3)
 		printf(BLACK);
-		break;
-	case 4:
+	else if (TILE(pos).hp == 4)
 		printf(YELLOW);
-		break;
-	case 5:
-		putchar(' ');
-		return;
-	}
+
 	i64 glyph = 0;
 	for (i64 i = 0; i < 4; ++i)
-		glyph |= IS_WALL(pos + plus_shape[i]) << i;
+		glyph |= IS_DIGGABLE(pos + plus_shape[i]) << i;
 	printf("%3.3s", &"╳─│┘│┐│┤──└┴┌┬├┼"[3 * glyph]);
 }
 
@@ -50,20 +42,26 @@ static void display_wire(Coords pos)
 // Pretty-prints the tile at the given position.
 static void display_tile(Coords pos)
 {
-	cursor_to(pos.x, pos.y);
 	Tile *tile = &TILE(pos);
-	if (tile->class > FLOOR)
+
+	if (tile->class == EDGE || !tile->revealed)
+		return;
+
+	cursor_to(pos.x, pos.y);
+	if (!BLOCKS_LOS(pos))
 		printf("\033[%um", floor_colors[tile->class]);
+
 	if (tile->monster)
 		printf("%s", CLASS(&MONSTER(pos)).glyph);
-	else if (!TILE(pos).revealed)
-		putchar(' ');
-	else if (tile->class == WALL)
+	else if (IS_DOOR(pos))
+		putchar('+');
+	else if (IS_DIGGABLE(pos))
 		display_wall(pos);
 	else if (IS_WIRE(pos))
 		display_wire(pos);
 	else
 		putchar(tile->item ? '*' : '.');
+
 	printf(WHITE);
 }
 
@@ -99,7 +97,7 @@ static void display_enemy(Monster *m)
 
 static void display_trap(Trap *t)
 {
-	if (TILE(t->pos).monster || TILE(t->pos).destroyed)
+	if (!TILE(t->pos).revealed || TILE(t->pos).destroyed)
 		return;
 	i64 glyph_index = t->class == BOUNCE ? 14 + 3*t->dir.y + t->dir.x : t->class;
 	cursor_to(t->pos.x, t->pos.y);
@@ -111,12 +109,12 @@ static void display_all(void)
 {
 	printf("\033[J");
 
+	for (Trap *t = g.traps; t->pos.x; ++t)
+		display_trap(t);
+
 	for (i8 y = 1; y < ARRAY_SIZE(g.board) - 1; ++y)
 		for (i8 x = 1; x < ARRAY_SIZE(*g.board) - 1; ++x)
 			display_tile((Coords) {x, y});
-
-	for (Trap *t = g.traps; t->pos.x; ++t)
-		display_trap(t);
 
 	cursor_to(64, 0);
 	printf("\033[s");

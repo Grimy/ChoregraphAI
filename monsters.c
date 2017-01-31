@@ -310,7 +310,7 @@ static bool can_breath(Monster *this)
 	if (this->class == RED_DRAGON ? dy : dx > 3 || dy >= dx || player.freeze > g.current_beat)
 		return false;
 	for (i8 i = 0; i < dx; ++i)
-		if (IS_WALL(this->pos + i * DIRECTION(player.pos - this->pos)))
+		if (BLOCKS_LOS(this->pos + i * DIRECTION(player.pos - this->pos)))
 			return false;
 	return true;
 }
@@ -683,7 +683,7 @@ const ClassInfos class_infos[256] = {
 	[BLACK_BAT]    = {  2, 1, 0,   9,  true, -1, 10401120, BLACK "B",  black_bat },
 	[ARMADILDO]    = {  3, 3, 0, 999, false,  2, 10303104, ORANGE "q", armadillo },
 	[BLADENOVICE]  = {  1, 1, 1,   9, false, -1, 99999995, "b",        blademaster },
-	[BLADEMASTER]  = {  2, 2, 1,   9, false, -1, 99999996, "b",        blademaster },
+	[BLADEMASTER]  = {  2, 2, 1,   9, false, -1, 99999996, YELLOW "b", blademaster },
 	[GHOUL]        = {  1, 1, 0,   9,  true, -1, 10301102, "W",        moore_seek },
 	[GOOLEM]       = {  5, 5, 3,   9,  true,  2, 20510407, GREEN "'",  basic_seek },
 	[HARPY]        = {  3, 1, 1,   0,  true, -1, 10301203, GREEN "h",  harpy },

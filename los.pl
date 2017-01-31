@@ -48,13 +48,13 @@ for my $y (1..10) {
 		@masks = map {sprintf "!(walls & $_)"} grep {~$_} @masks;
 
 		my $l2 = $x * $x + $y * $y;
-		print 'if (tile->hp == 5) ', $x == 0 || $y == 10 ? 'return;' :
+		print 'if (tile->class == EDGE) ', $x == 0 || $y == 10 ? 'return;' :
 			sprintf "{ walls |= %#x; goto label$y; }",
 				(1 << id($y + 1, $y)) - (1 << id($x, $y));
 		print "if (torch >= $l2 || @masks) " if $l2 > 2;
 		print 'tile->revealed = true;';
 		print('}'), exit if $x == 10;
-		printf "walls |= (u64) (tile->class == WALL) << %d;\n", id($x, $y);
+		printf "walls |= (u64) (tile->class >> 7) << %d;\n", id($x, $y);
 		print "tile += x;";
 	}
 	print "label$y:";

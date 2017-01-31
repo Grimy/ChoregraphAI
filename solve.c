@@ -25,9 +25,7 @@ static i32 cost_function()
 // Estimates the number of beats it will take to clear the level.
 static i32 distance_function()
 {
-	return (i32) ((L1(player.pos - stairs) + 2) / 3)
-		+ 2 * !g.miniboss_killed
-		+ 1 * (!g.sarcophagus_killed && TILE(stairs).zone == 4);
+	return (i32) ((L1(player.pos - stairs) + 2) / 3) + 2 * g.locking_enemies;
 }
 
 // When a winning route is found with RNG disabled, estimate its probability

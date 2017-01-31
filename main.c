@@ -7,7 +7,7 @@ Coords spawn;
 Coords stairs;
 
 __extension__ __thread GameState g = {
-	.board = {[0 ... 31] = {[0 ... 31] = {.class = WALL, .hp = 5}}},
+	.board = {[0 ... 31] = {[0 ... 31] = {.class = EDGE}}},
 	.inventory = { [BOMBS] = 3 },
 	.boots_on = true,
 };
@@ -35,14 +35,14 @@ static void move(Monster *m, Coords dest)
 bool can_move(Monster *m, Coords dir)
 {
 	assert(m != &player || L1(dir));
-	Tile dest = TILE(m->pos + dir);
-	if (dest.monster)
+	Coords dest = m->pos + dir;
+	if (TILE(dest).monster)
 		return &MONSTER(m->pos + dir) == &player;
 	if (m->class == SPIDER)
-		return IS_WALL(m->pos + dir) && !dest.torch;
-	if (m->class == MOLE && (dest.class == WATER || dest.class == TAR))
+		return IS_DIGGABLE(dest) && !IS_DOOR(dest) && !TILE(dest).torch;
+	if (m->class == MOLE && (TILE(dest).class == WATER || TILE(dest).class == TAR))
 		return false;
-	return dest.class != WALL;
+	return !BLOCKS_LOS(dest);
 }
 
 void adjust_lights(Coords pos, i8 diff, i8 brightness)
@@ -60,13 +60,10 @@ void adjust_lights(Coords pos, i8 diff, i8 brightness)
 
 static void destroy_wall(Coords pos)
 {
-	assert(IS_WALL(pos));
+	assert(IS_DIGGABLE(pos));
 	Tile *wall = &TILE(pos);
 
-	wall->class =
-		wall->hp == 2 && wall->zone == 2 ? FIRE :
-		wall->hp == 2 && wall->zone == 3 ? ICE :
-		FLOOR;
+	wall->class -= 128;
 
 	if (MONSTER(pos).class == SPIDER) {
 		MONSTER(pos).class = FREE_SPIDER;
@@ -74,37 +71,37 @@ static void destroy_wall(Coords pos)
 	}
 
 	for (i64 i = 0; wall->hp == 0 && i < 4; ++i)
-		if (TILE(pos + plus_shape[i]).class == WALL && TILE(pos + plus_shape[i]).hp == 0)
+		if (IS_DOOR(pos + plus_shape[i]))
 			destroy_wall(pos + plus_shape[i]);
 
 	if (wall->torch)
 		adjust_lights(pos, -1, 0);
 }
 
+static void z4dig(Coords pos, i32 digging_power)
+{
+	if (TILE(pos).class == Z4WALL && TILE(pos).hp <= digging_power)
+		destroy_wall(pos);
+}
+
 // Tries to dig away the given wall, replacing it with floor.
 // Returns whether the dig succeeded.
-static bool dig(Coords pos, i32 digging_power, bool z4)
+static bool dig(Coords pos, i32 digging_power)
 {
-	Tile *wall = &TILE(pos);
-
-	// Doors are immune to Z4 AoE digging
-	if (z4 && !wall->hp)
-		return false;
-
-	if (wall->class != WALL || wall->hp > digging_power)
+	if (!IS_DIGGABLE(pos) || TILE(pos).hp > digging_power)
 		return false; // Dink!
 
-	destroy_wall(pos);
-	if (!z4 && wall->zone == 4 && (wall->hp == 1 || wall->hp == 2))
+	if (TILE(pos).class == Z4WALL)
 		for (i64 i = 0; i < 4; ++i)
-			dig(pos + plus_shape[i], min(2, digging_power), true);
+			z4dig(pos + plus_shape[i], digging_power);
 
+	destroy_wall(pos);
 	return true;
 }
 
 void damage_tile(Coords pos, Coords origin, i64 dmg, DamageType type)
 {
-	if (IS_WALL(pos))
+	if (IS_DIGGABLE(pos))
 		destroy_wall(pos);
 	damage(&MONSTER(pos), dmg, CARDINAL(pos - origin), type);
 }
@@ -239,7 +236,7 @@ MoveResult enemy_move(Monster *m, Coords dir)
 
 	// Digging
 	digging_power += (m->class == MINOTAUR_1 || m->class == MINOTAUR_2) && m->state;
-	if (dig(m->pos + dir, digging_power, false)) {
+	if (dig(m->pos + dir, digging_power)) {
 		return MOVE_SPECIAL;
 	}
 
@@ -288,6 +285,7 @@ void tile_change(Coords pos, TileClass new_class)
 	Tile *tile = &TILE(pos);
 	tile->class =
 		tile->class == STAIRS ? STAIRS :
+		BLOCKS_LOS(pos) ? tile->class :
 		tile->class * new_class == FIRE * ICE ? WATER :
 		tile->class == WATER && new_class == FIRE ? FLOOR :
 		new_class;
@@ -323,11 +321,6 @@ void monster_kill(Monster *m, DamageType type)
 	case BOMBER:
 		bomb_plant(m->pos, 2);
 		break;
-	case SARCO_1:
-	case SARCO_2:
-	case SARCO_3:
-		g.sarcophagus_killed = true;
-		break;
 	case WATER_BALL:
 		tile_change(m->pos, WATER);
 		break;
@@ -352,8 +345,9 @@ void monster_kill(Monster *m, DamageType type)
 			TILE(g.monsters[i].pos).monster = i;
 		}
 		return;
+	case SARCO_1 ... SARCO_3:
 	case DIREBAT_1 ... EARTH_DRAGON:
-		g.miniboss_killed = true;
+		--g.locking_enemies;
 		break;
 	}
 
@@ -561,7 +555,7 @@ static void after_move(Coords dir, bool forced)
 	if (g.inventory[MEMERS_CAP]) {
 		i32 digging_power = TILE(player.pos).class == OOZE ? 0 : 2;
 		for (i64 i = 0; i < 4; ++i)
-			dig(player.pos + plus_shape[i], digging_power, false);
+			dig(player.pos + plus_shape[i], digging_power);
 	}
 }
 
@@ -645,12 +639,12 @@ static void player_move(i8 x, i8 y)
 	if (is_bogged(&player))
 		return;
 
-	Tile *dest = &TILE(player.pos + dir);
+	Coords dest = player.pos + dir;
 
-	if (dest->class == WALL) {
-		dig(player.pos + dir, TILE(player.pos).class == OOZE ? 0 : 2, false);
-	} else if (dest->monster) {
-		damage(&MONSTER(player.pos + dir), dmg, dir, DMG_WEAPON);
+	if (BLOCKS_LOS(dest)) {
+		dig(player.pos + dir, TILE(player.pos).class == OOZE ? 0 : 2);
+	} else if (TILE(dest).monster) {
+		damage(&MONSTER(dest), dmg, dir, DMG_WEAPON);
 		if (IS_WIRE(player.pos))
 			chain_lightning(player.pos, dir);
 	} else {
@@ -676,16 +670,17 @@ void cone_of_cold(Coords pos, i8 dir)
 		{2, -1}, {2, 0}, {2, 1},
 		{3, -2}, {3, -1}, {3, 0}, {3, 1}, {3, 2},
 	};
-	for (u64 i = 0; i < ARRAY_SIZE(cone_shape); ++i)
+	for (u64 i = 0; i < ARRAY_SIZE(cone_shape); ++i) {
+		if (pos.x + dir * cone_shape[i].x >= 32)
+			return;
 		MONSTER(pos + dir * cone_shape[i]).freeze = g.current_beat + 5;
+	}
 }
 
 // Tests whether the level has been cleared
 bool player_won()
 {
-	return TILE(player.pos).class == STAIRS
-		&& g.miniboss_killed
-		&& (TILE(player.pos).zone != 4 || g.sarcophagus_killed);
+	return TILE(player.pos).class == STAIRS && g.locking_enemies == 0;
 }
 
 // Adds an item to the player’s inventory.
@@ -740,7 +735,7 @@ static void player_turn(u8 input)
 		&& can_move(&player, DIRECTION(player.pos - player.prev_pos));
 }
 
-static bool check_aggro(Monster *m, Coords d)
+static bool check_aggro(Monster *m, Coords d, bool bomb_exploded)
 {
 	bool shadowed = g.nightmare && L2(m->pos - g.monsters[g.nightmare].pos) < 9;
 	m->aggro = (d.y >= -5 && d.y <= 6)
@@ -754,7 +749,7 @@ static bool check_aggro(Monster *m, Coords d)
 		return true;
 
 	// The nightmare-bomb-aggro bug
-	if (m->aggro && (g.bomb_exploded || shadowed) && CLASS(m).radius)
+	if (m->aggro && (bomb_exploded || shadowed) && CLASS(m).radius)
 		return true;
 
 	if (L2(d) <= CLASS(m).radius) {
@@ -764,14 +759,6 @@ static bool check_aggro(Monster *m, Coords d)
 	}
 
 	return false;
-}
-
-static bool is_active(Monster *m)
-{
-	return m->hp > 0 &&
-		(m->aggro || check_aggro(m, player.pos - m->pos)) &&
-		(m->freeze <= g.current_beat) &&
-		(m->delay ? !m->delay-- : true);
 }
 
 static void trap_turn(Trap *this)
@@ -819,7 +806,7 @@ static void trap_turn(Trap *this)
 void do_beat(u8 input)
 {
 	g.input[g.current_beat++ & 31] = input;
-	g.bomb_exploded = false;
+	bool bomb_exploded = false;
 
 	player_turn(input);
 	if (player_won())
@@ -833,10 +820,19 @@ void do_beat(u8 input)
 		m->knocked = false;
 		m->requeued = false;
 		m->was_requeued = false;
-		if (!CLASS(m).act || !is_active(m))
+		if (!CLASS(m).act || m->hp <= 0)
 			continue;
+		if (!m->aggro && !check_aggro(m, player.pos - m->pos, bomb_exploded))
+			continue;
+		if (m->freeze > g.current_beat)
+			continue;
+		if (m->delay) {
+			--m->delay;
+			continue;
+		}
+
 		if (m->class == BOMB || m->class == BOMB_STATUE)
-			g.bomb_exploded = true;
+			bomb_exploded = true;
 		queue[queue_length++] = m;
 	}
 

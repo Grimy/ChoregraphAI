@@ -7,10 +7,12 @@
 
 #define TILE(pos) (g.board[(pos).x][(pos).y])
 #define MONSTER(pos) (g.monsters[TILE(pos).monster])
-#define BLOCKS_LOS(pos) (TILE(pos).class == WALL)
-#define IS_WALL(pos) (TILE(pos).class == WALL && TILE(pos).hp < 5)
 #define IS_WIRE(pos) (TILE(pos).wired && !TILE(pos).destroyed)
-#define IS_EMPTY(pos) (TILE(pos).class != WALL && !TILE(pos).monster)
+
+#define BLOCKS_LOS(pos) (TILE(pos).class >> 7)
+#define IS_EMPTY(pos) (!BLOCKS_LOS(pos) && !TILE(pos).monster)
+#define IS_DIGGABLE(pos) (TILE(pos).class >= DOOR)
+#define IS_DOOR(pos) (TILE(pos).class == DOOR)
 
 #define RNG() ((g.seed = g.seed >> 2 ^ g.seed << 3 ^ g.seed >> 14) & 3)
 #define STUCK(m) (!CLASS(m).flying && (TILE((m)->pos).class == WATER \
@@ -160,15 +162,21 @@ typedef enum __attribute__((__packed__)) {
 
 // Tile types.
 typedef enum __attribute__((__packed__)) {
-	WALL = 0,   // actually includes level edges and doors
-	FLOOR = 1,
-	SHOP = 3,   // shop floor (behaves like FLOOR, but looks different)
+	FLOOR = 0,
+	SHOP_FLOOR = 3,
 	WATER = 4,
 	TAR = 8,
 	STAIRS = 9,
 	FIRE = 10,
 	ICE = 11,
 	OOZE = 17,
+
+	EDGE = 128,
+	DOOR = 129,
+	WALL = 130,
+	Z4WALL = 133,
+	FIREWALL = 138,
+	ICEWALL = 139,
 } TileClass;
 
 // Trap types.
@@ -235,7 +243,7 @@ typedef struct {
 	bool torch: 1;
 	bool destroyed: 1;
 	bool wired: 1;
-	i8 zone: 5;
+	i8 padding: 5;
 } Tile;
 
 typedef struct {
@@ -270,10 +278,9 @@ typedef struct {
 	u64 seed;
 	u8 input[32];
 	u8 current_beat;
-	bool bomb_exploded;
-	bool miniboss_killed;
-	bool sarcophagus_killed;
+	u8 locking_enemies;
 	u8 nightmare;
+	u8 monkey;
 
 	// Attributes specific to the player
 	u8 inventory[ITEM_LAST];
@@ -281,8 +288,7 @@ typedef struct {
 	bool sliding_on_ice;
 	bool boots_on;
 	u8 iframes;
-	u8 monkey;
-	u64 padding: 56;
+	u8: 8;
 } GameState;
 
 extern const ClassInfos class_infos[256];

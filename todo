@@ -7,17 +7,21 @@ TESTS:
 * Red dragon aggroed-unactivated insta-move?
 * Skeleton knight + fire trap: double knockback?
 * Test the new 4-1 solution
+* Lunging at ice beetles?
+* Can spiders move into any door type?
+* Double door wood+metal
 
 FEATURES:
 * electric mages
 * metal doors (type=111)
 * lord enemies
 * (priority, L2) sorting of the monster queue
+* confusion de-aggroing enemies
 
 BUGFIXES:
 * fix green slime priority
 * beetle shedding isn’t quite right
-* banshees should have different activation radii depending on the zone
+* banshees/skeletons should have different activation radii depending on the zone
 * shovemonsters pushing the player on ice shoud trigger a slide
 * charged breath attacks should have extreme priority
 * when monkeyed while trapped in tar, the player should stay trapped
