@@ -305,12 +305,12 @@ extern __thread GameState g;
 void xml_parse(i32 argc, char **argv);
 void do_beat(u8 input);
 bool player_won(void);
-
+i32 compare_priorities(const void *a, const void *b);
 void cast_light(Tile *tile, i64 x, i64 y);
 void update_fov(void);
 ItemClass pickup_item(ItemClass item);
 void adjust_lights(Coords pos, i8 diff, i8 brightness);
-void monster_init(Monster *new, MonsterClass type, Coords pos);
+Monster *monster_spawn(MonsterClass type, Coords pos);
 void bomb_detonate(Monster *this, Coords d);
 void fireball(Coords pos, i8 dir);
 void cone_of_cold(Coords pos, i8 dir);

@@ -6,7 +6,6 @@ FEATURES:
 * electric mages
 * metal doors (type=111)
 * lord enemies
-* (priority, L2) sorting of the monster queue
 * confusion de-aggroing enemies
 * white mimics?
 
@@ -25,7 +24,6 @@ BUGFIXES:
 REFACTORS:
 * Go ECS or go home
 * Refactor harpy AI
-* Don’t rely on qsort being stable
 * Rename this → m
 * Split red/blue dragons?
 * Use WIRE/WIRE_DOOR classes instead of .wired

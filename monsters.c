@@ -75,6 +75,16 @@ static Coords seek_dir(Monster *this, Coords d)
 	return axis ? vertical : horizontal;
 }
 
+static void monster_init(Monster *m, MonsterClass type, Coords pos)
+{
+	m->class = type;
+	m->hp = CLASS(m).max_hp;
+	m->pos = m->prev_pos = pos;
+	TILE(pos).monster = (u8) (m - g.monsters);
+	m->delay = 2;
+	m->aggro = true;
+}
+
 // Common //
 
 // Move cardinally toward the player, avoiding obstacles.
@@ -427,9 +437,6 @@ ok:
 	while (!IS_EMPTY(this->pos + spawn_dir));
 
 	monster_init(spawned, types[RNG()] + this->class - SARCO_1, this->pos + spawn_dir);
-	spawned->delay = 2;
-	spawned->aggro = 1;
-	TILE(spawned->pos).monster = (u8) (spawned - g.monsters);
 }
 
 static void wind_statue(__attribute__((unused)) Monster *this, Coords d)
@@ -612,9 +619,6 @@ static void mommy(Monster *this, Coords d)
 	if (has_moved && spawned->hp <= 0) {
 		for (spawn_dir = spawn_dirs; !IS_EMPTY(this->pos + *spawn_dir); ++spawn_dir);
 		monster_init(spawned, MUMMY, this->pos + *spawn_dir);
-		spawned->delay = 2;
-		spawned->aggro = 1;
-		TILE(spawned->pos).monster = (u8) (spawned - g.monsters);
 	}
 }
 
@@ -787,5 +791,5 @@ const ClassInfos class_infos[256] = {
 
 	[SHOPKEEPER]   = { 20, 9, 0,   0, false, -1, 99999997, "@",        NULL },
 	[PLAYER]       = {  1, 1, 0,   0, false, -1,      ~0u, "@",        NULL },
-	[BOMB]         = {  4, 0, 0,   0, false, -1,      ~1u, "x",        bomb_detonate },
+	[BOMB]         = {  4, 1, 0, 999, false, -1,      ~1u, "x",        bomb_detonate },
 };

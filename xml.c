@@ -5,7 +5,6 @@
 #include <libxml/xmlreader.h>
 
 // Pointer to the end of the monsters array
-static Monster *last_monster;
 static Trap *last_trap;
 
 // Returns the numeric value of a named attribute of the current node.
@@ -74,8 +73,8 @@ static void xml_process_node(xmlTextReader *xml)
 	if (streq(name, "trap")) {
 		i32 subtype = xml_attr(xml, "subtype");
 		if (type == 10) {
-			monster_init(++last_monster, FIREPIG, pos);
-			last_monster->dir.x = subtype ? -1 : 1;
+			Monster *m = monster_spawn(FIREPIG, pos);
+			m->dir.x = subtype ? -1 : 1;
 			return;
 		}
 		last_trap->class = subtype == 8 ? OMNIBOUNCE : (u8) type;
@@ -111,26 +110,25 @@ static void xml_process_node(xmlTextReader *xml)
 
 	else if (streq(name, "enemy")) {
 		u8 id = enemy_id[type / 100] + type % 100;
-		if (id != GHAST && id != GHOUL && id != WRAITH && id != WIGHT)
-			monster_init(++last_monster, id, pos);
+		if (id == GHAST || id == GHOUL || id == WRAITH || id == WIGHT)
+			return;
+		Monster *m = monster_spawn(id, pos);
 		if (id == RED_DRAGON || id == BLUE_DRAGON)
-			last_monster->exhausted = 4;
-		if ((id >= SARCO_1 && id <= SARCO_3) || id == MOMMY)
-			(++last_monster)->class = id;
-		if (id == LIGHTSHROOM)
+			m->exhausted = 4;
+		else if ((id >= SARCO_1 && id <= SARCO_3) || id == MOMMY)
+			g.monsters[++g.last_monster].class = id;
+		else if (id == LIGHTSHROOM)
 			adjust_lights(pos, +1, 3);
-		if (id == ZOMBIE || id == WIRE_ZOMBIE)
-			last_monster->dir = (Coords) {1, 0};
+		else if (id == ZOMBIE || id == WIRE_ZOMBIE)
+			m->dir = (Coords) {1, 0};
 	}
 
 	else if (streq(name, "chest")) {
-		monster_init(++last_monster, CHEST, pos);
-		last_monster->item = xml_item(xml, "contents");
+		monster_spawn(CHEST, pos)->item = xml_item(xml, "contents");
 	}
 
 	else if (streq(name, "crate")) {
-		monster_init(++last_monster, CRATE_2 + (u8) type, pos);
-		last_monster->item = xml_item(xml, "contents");
+		monster_spawn(CRATE_2 + (u8) type, pos)->item = xml_item(xml, "contents");
 	}
 
 	else if (streq(name, "item")) {
@@ -139,14 +137,6 @@ static void xml_process_node(xmlTextReader *xml)
 		else
 			pickup_item(xml_item(xml, "type"));
 	}
-}
-
-// Compares the priorities of two monsters. Callback for qsort.
-static i32 compare_priorities(const void *a, const void *b)
-{
-	u64 pa = CLASS((const Monster*) a).priority;
-	u64 pb = CLASS((const Monster*) b).priority;
-	return (pb > pa) - (pb < pa);
 }
 
 static void xml_process_file(char *file, i64 level, void callback(xmlTextReader *xml))
@@ -175,23 +165,17 @@ void xml_parse(i32 argc, char **argv)
 		FATAL("Usage: %s dungeon_file.xml [level]", argv[0]);
 	i32 level = argc == 3 ? *argv[2] - '0' : 1;
 
-	last_monster = g.monsters;
 	last_trap = g.traps;
 
 	LIBXML_TEST_VERSION;
 	xml_process_file(argv[1], level, xml_first_pass);
-	monster_init(++last_monster, PLAYER, spawn);
+	monster_spawn(PLAYER, spawn);
 	xml_process_file(argv[1], level, xml_process_node);
 
-	for (i64 i = 0; i < 5; ++i)
-		monster_init(++last_monster, BOMB, spawn);
-
-	assert((last_monster - g.monsters) < ARRAY_SIZE(g.monsters));
-	qsort(g.monsters + 1, ARRAY_SIZE(g.monsters) - 1,
-			sizeof(Monster), compare_priorities);
+	// qsort(g.monsters + 1, ARRAY_SIZE(g.monsters) - 1, sizeof(Monster), compare_priorities);
 	assert(player.class == PLAYER);
 
-	for (Monster *m = last_monster; m >= g.monsters; --m) {
+	for (Monster *m = g.monsters + 1; m->class; ++m) {
 		TILE(m->pos).monster = (u8) (m - g.monsters);
 		if (m->class == NIGHTMARE_1 || m->class == NIGHTMARE_2)
 			g.nightmare = (u8) (m - g.monsters);

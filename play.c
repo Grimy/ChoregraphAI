@@ -120,7 +120,7 @@ static void display_all(void)
 
 	cursor_to(64, 0);
 	printf("\033[s");
-	for (Monster *m = &player + 6; m->class; ++m)
+	for (Monster *m = &player + 1; m->class; ++m)
 		display_enemy(m);
 
 	display_inventory();

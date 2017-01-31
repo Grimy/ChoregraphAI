@@ -15,11 +15,14 @@ __extension__ __thread GameState g = {
 // Some pre-declarations
 static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type);
 
-void monster_init(Monster *new, MonsterClass type, Coords pos)
+Monster *monster_spawn(MonsterClass type, Coords pos)
 {
+	Monster *new = &g.monsters[++g.last_monster];
+	assert(g.last_monster < ARRAY_SIZE(g.monsters));
 	new->class = type;
-	new->pos = new->prev_pos = pos;
 	new->hp = CLASS(new).max_hp;
+	new->pos = new->prev_pos = pos;
+	return new;
 }
 
 // Moves the given monster to a specific position.
@@ -270,12 +273,7 @@ static void knockback(Monster *m, Coords dir, u8 delay)
 // Places a bomb at the given position.
 static void bomb_plant(Coords pos, u8 delay)
 {
-	Monster *bomb = &player + 1;
-	while (bomb->hp > 0)
-		++bomb;
-	assert(bomb->class == BOMB);
-	bomb->hp = 1;
-	bomb->pos = pos;
+	Monster *bomb = monster_spawn(BOMB, pos);
 	bomb->delay = delay;
 }
 
@@ -806,6 +804,25 @@ static void trap_turn(Trap *this)
 	}
 }
 
+// Compares the priorities of two monsters. Callback for qsort.
+i32 compare_priorities(const void *a, const void *b)
+{
+	Monster *m1 = *(Monster * const *) a;
+	Monster *m2 = *(Monster * const *) b;
+
+	if (CLASS(m1).priority < CLASS(m2).priority)
+		return 1;
+	if (CLASS(m1).priority > CLASS(m2).priority)
+		return -1;
+	
+	if (L2(m1->pos - player.pos) > L2(m2->pos - player.pos))
+		return 1;
+	if (L2(m1->pos - player.pos) < L2(m2->pos - player.pos))
+		return -1;
+
+	return 0;
+}
+
 // Runs one full beat of the game.
 // During each beat, the player acts first, enemies second and traps last.
 // Enemies act in decreasing priority order. Traps have an arbitrary order.
@@ -841,6 +858,8 @@ void do_beat(u8 input)
 			bomb_exploded = true;
 		queue[queue_length++] = m;
 	}
+
+	qsort(queue, queue_length, sizeof(Monster *), compare_priorities);
 
 	for (u64 i = 0; i < queue_length; ++i) {
 		Monster *m = queue[i];
