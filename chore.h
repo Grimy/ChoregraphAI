@@ -44,6 +44,8 @@ typedef i8 Coords __attribute__((ext_vector_type(2)));
 // *Square* of the L² norm of a vector (mostly used for aggro/lighting).
 #define L2(d) ((d).x * (d).x + (d).y * (d).y)
 
+#define coords_eq(d1, d2) ((d1).x == (d2).x && (d1).y == (d2).y)
+
 // Monster types.
 typedef enum __attribute__((__packed__)) {
 	NO_MONSTER,
@@ -153,6 +155,8 @@ typedef enum __attribute__((__packed__)) {
 	NO_ITEM,
 	BOMBS,
 	BOMBS_3,
+	HEART_1,
+	HEART_2,
 	JEWELED,
 	LUNGING,
 	MEMERS_CAP,
@@ -170,6 +174,7 @@ typedef enum __attribute__((__packed__)) {
 	FIRE = 10,
 	ICE = 11,
 	OOZE = 17,
+	WIRE = 20,
 
 	EDGE = 128,
 	DOOR = 129,
@@ -272,7 +277,6 @@ typedef struct {
 	Tile board[32][32];
 	Monster monsters[72];
 	Trap traps[32];
-	u64 monster_count;
 
 	// Global properties
 	u64 seed;
@@ -281,6 +285,7 @@ typedef struct {
 	u8 locking_enemies;
 	u8 nightmare;
 	u8 monkey;
+	u8 last_monster;
 
 	// Attributes specific to the player
 	u8 inventory[ITEM_LAST];
@@ -288,7 +293,7 @@ typedef struct {
 	bool sliding_on_ice;
 	bool boots_on;
 	u8 iframes;
-	u8: 8;
+	u64: 48;
 } GameState;
 
 extern const ClassInfos class_infos[256];

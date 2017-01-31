@@ -13,7 +13,7 @@
 
 // Helpers //
 
-static bool can_breath(Monster *this, Coords d)
+static bool can_breathe(Monster *this, Coords d)
 {
 	if (this->class == BLUE_DRAGON && (abs(d.x) > 3 || abs(d.y) >= abs(d.x) || player.freeze > g.current_beat))
 		return false;
@@ -33,17 +33,11 @@ static bool can_charge(Monster *this, Coords d)
 		return false;
 	Coords move = DIRECTION(d);
 	Coords dest = this->pos + d;
-	for (Coords pos = this->pos + move; pos.x != dest.x || pos.y != dest.y; pos += move)
+	for (Coords pos = this->pos + move; !coords_eq(pos, dest); pos += move)
 		if (!IS_EMPTY(pos))
 			return false;
 	this->prev_pos = this->pos - DIRECTION(d);
 	return true;
-}
-
-// Helper function for wind-mages, liches and electro-liches.
-static bool can_cast(Monster *this, Coords d)
-{
-	return !(this->confused) && !STUCK(this) && can_charge(this, d);
 }
 
 // The direction a basic_seek enemy would move in.
@@ -218,12 +212,26 @@ static void ghost(Monster *this, Coords d)
 
 // Z2
 
-static void wind_mage(Monster *this, Coords d)
+// Common AI for liches and windmages.
+static void mage(Monster *this, Coords d)
 {
-	if (L2(d) == 4 && can_cast(this, d))
-		forced_move(&player, -DIRECTION(d));
-	else
+	bool is_lich = this->class >= LICH_1 && this->class <= LICH_3;
+	bool can_cast = L2(d) == 4
+		&& can_move(this, DIRECTION(d))
+		&& !(this->confused)
+		&& !STUCK(this)
+		&& !(player.confused && is_lich);
+
+	if (!can_cast) {
 		basic_seek(this, d);
+		return;
+	}
+
+	this->delay = 1;
+	if (is_lich)
+		player.confusion = g.current_beat + 5;
+	else
+		forced_move(&player, -DIRECTION(d));
 }
 
 // Attack in a 3x3 zone without moving.
@@ -399,14 +407,6 @@ static void harpy(Monster *this, Coords d)
 	enemy_move(this, best_move);
 }
 
-static void lich(Monster *this, Coords d)
-{
-	if (L2(d) == 4 && !(player.confused) && can_cast(this, d))
-		player.confusion = g.current_beat + 5;
-	else
-		basic_seek(this, d);
-}
-
 static void sarcophagus(Monster *this, __attribute__((unused)) Coords d)
 {
 	static const MonsterClass types[] = {SKELETON_1, SKELETANK_1, WINDMAGE_1, RIDER_1};
@@ -448,12 +448,12 @@ static void bomb_statue(Monster *this, Coords d)
 
 static void firepig(Monster *this, Coords d)
 {
-	if (d.y == 0 && abs(d.x) <= 5 && (d.x > 0) == this->state) {
-		this->state += 2;
-	} else if (this->state > 1) {
-		fireball(this->pos, SIGN(player.pos.x - this->pos.x));
-		this->state -= 2;
-		this->delay = 5;
+	if (this->state) {
+		fireball(this->pos, this->dir.x);
+		this->state = 0;
+		this->delay = 4;
+	} else if (abs(d.x) <= 5 && SIGN(d.x) == this->dir.x && can_breathe(this, d)) {
+		this->state = 1;
 	}
 }
 
@@ -461,10 +461,20 @@ static void firepig(Monster *this, Coords d)
 
 static void electro_lich(Monster *this, Coords d)
 {
-	if (can_cast(this, d))
-		(void) 0; // TODO
-	else
+	Coords true_prev_pos = this->prev_pos;
+
+	bool can_cast = L1(d) > 1
+		&& !(this->confused)
+		&& !STUCK(this)
+		&& (can_charge(this, d) || can_charge(this, player.prev_pos - this->pos));
+
+	if (!can_cast) {
 		basic_seek(this, d);
+		return;
+	}
+
+	this->delay = 1;
+	this->prev_pos = true_prev_pos;
 }
 
 static void wire_zombie(Monster *this, __attribute__((unused)) Coords d)
@@ -496,7 +506,7 @@ static void orc(Monster *this, Coords d)
 {
 	Coords old_dir = this->dir;
 	this->dir = seek_dir(this, d);
-	if (this->dir.x == old_dir.x && this->dir.y == old_dir.y)
+	if (coords_eq(this->dir, old_dir))
 		basic_seek(this, d);
 	else
 		this->prev_pos = this->pos;
@@ -563,7 +573,7 @@ static void dragon(Monster *this, Coords d)
 		this->state = 1;
 		break;
 	}
-	if (!this->exhausted && can_breath(this, player.pos - this->pos))
+	if (!this->exhausted && can_breathe(this, player.pos - this->pos))
 		this->state = 2 + (d.x > 0);
 }
 
@@ -635,7 +645,7 @@ static void metrognome(Monster *this, Coords d)
 
 const ClassInfos class_infos[256] = {
 	// [Name] = { damage, max_hp, beat_delay, radius, flying, dig, priority, glyph, act }
-	[GREEN_SLIME]  = { 99, 1, 0, 999, false, -1,        0, GREEN "P",  slime },
+	[GREEN_SLIME]  = { 99, 1, 0, 999, false, -1, 19901101, GREEN "P",  slime },
 	[BLUE_SLIME]   = {  2, 2, 1, 999, false, -1, 10202202, BLUE "P",   slime },
 	[YELLOW_SLIME] = {  1, 1, 0, 999, false, -1, 10101102, YELLOW "P", slime },
 	[SKELETON_1]   = {  1, 1, 1,   9, false, -1, 10101202, "Z",        basic_seek },
@@ -659,9 +669,9 @@ const ClassInfos class_infos[256] = {
 	[SKELETANK_1]  = {  1, 1, 1,  25, false, -1, 10101202, "Z",        basic_seek },
 	[SKELETANK_2]  = {  3, 2, 1,  25, false, -1, 10302204, YELLOW "Z", basic_seek },
 	[SKELETANK_3]  = {  5, 3, 1,  25, false, -1, 10503206, BLACK "Z",  basic_seek },
-	[WINDMAGE_1]   = {  2, 1, 1,   0, false, -1, 10201202, BLUE "@",   wind_mage },
-	[WINDMAGE_2]   = {  4, 2, 1,   0, false, -1, 10402204, YELLOW "@", wind_mage },
-	[WINDMAGE_3]   = {  5, 3, 1,   0, false, -1, 10503206, BLACK "@",  wind_mage },
+	[WINDMAGE_1]   = {  2, 1, 1,   0, false, -1, 10201202, BLUE "@",   mage },
+	[WINDMAGE_2]   = {  4, 2, 1,   0, false, -1, 10402204, YELLOW "@", mage },
+	[WINDMAGE_3]   = {  5, 3, 1,   0, false, -1, 10503206, BLACK "@",  mage },
 	[MUSHROOM_1]   = {  2, 1, 3,  25, false, -1, 10201402, BLUE "%",   mushroom },
 	[MUSHROOM_2]   = {  4, 3, 2,  25, false, -1, 10403303, PURPLE "%", mushroom },
 	[GOLEM_1]      = {  4, 5, 3,  25,  true,  2, 20405404, "'",        basic_seek },
@@ -708,9 +718,9 @@ const ClassInfos class_infos[256] = {
 	[GHOUL]        = {  1, 1, 0,   9,  true, -1, 10301102, "W",        moore_seek },
 	[GOOLEM]       = {  5, 5, 3,   9,  true,  2, 20510407, GREEN "'",  basic_seek },
 	[HARPY]        = {  3, 1, 1,   0,  true, -1, 10301203, GREEN "h",  harpy },
-	[LICH_1]       = {  2, 1, 1,   0, false, -1, 10404202, GREEN "L",  lich },
-	[LICH_2]       = {  3, 2, 1,   0, false, -1, 10404302, PURPLE "L", lich },
-	[LICH_3]       = {  4, 3, 1,   0, false, -1, 10404402, BLACK "L",  lich },
+	[LICH_1]       = {  2, 1, 1,   0, false, -1, 10404202, GREEN "L",  mage },
+	[LICH_2]       = {  3, 2, 1,   0, false, -1, 10404302, PURPLE "L", mage },
+	[LICH_3]       = {  4, 3, 1,   0, false, -1, 10404402, BLACK "L",  mage },
 	[CONF_MONKEY]  = {  0, 1, 0,   9, false, -1, 10004103, GREEN "Y",  basic_seek },
 	[TELE_MONKEY]  = {  0, 2, 0,   9, false, -1, 10002103, PINK "Y",   basic_seek },
 	[PIXIE]        = {  4, 1, 0,   9,  true, -1, 10401102, "n",        basic_seek },
@@ -763,7 +773,7 @@ const ClassInfos class_infos[256] = {
 	[DRAGON]       = {  4, 4, 1,  49,  true,  4, 30404210, GREEN "D",  basic_seek },
 	[RED_DRAGON]   = {  6, 6, 1, 100,  true,  4, 99999999, RED "D",    dragon },
 	[BLUE_DRAGON]  = {  6, 6, 1,   0,  true,  4, 99999997, BLUE "D",   dragon },
-	[EARTH_DRAGON] = {  6, 6, 1,  49,  true,  4, 30606215, BROWN "D",  basic_seek },
+	[EARTH_DRAGON] = {  6, 6, 1,   0,  true,  4, 30606215, BROWN "D",  basic_seek },
 	[BANSHEE_1]    = {  4, 3, 0,  25,  true, -1, 30403110, BLUE "8",   basic_seek },
 	[BANSHEE_2]    = {  6, 4, 0,   9,  true, -1, 30604115, GREEN "8",  basic_seek },
 	[MINOTAUR_1]   = {  4, 3, 0,  49,  true,  2, 30403110, "H",        minotaur },

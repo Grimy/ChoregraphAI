@@ -29,6 +29,8 @@ static ItemClass xml_item(xmlTextReader *xml, char* attr)
 	static const char* item_names[ITEM_LAST] = {
 		[BOMBS]      = "bomb",
 		[BOMBS_3]    = "bomb_3",
+		[HEART_1]    = "misc_heart_container",
+		[HEART_2]    = "misc_heart_container2",
 		[JEWELED]    = "weapon_dagger_jeweled",
 		[LUNGING]    = "feet_boots_lunging",
 		[MEMERS_CAP] = "head_miners_cap",
@@ -63,7 +65,6 @@ static void xml_process_node(xmlTextReader *xml)
 
 	const char *name = (const char*) xmlTextReaderConstName(xml);
 	i32 type = xml_attr(xml, "type");
-	i64 subtype = xml_attr(xml, "subtype");
 	Coords pos = {(i8) xml_attr(xml, "x"), (i8) xml_attr(xml, "y")};
 
 	pos += spawn;
@@ -71,9 +72,10 @@ static void xml_process_node(xmlTextReader *xml)
 		return;
 
 	if (streq(name, "trap")) {
+		i32 subtype = xml_attr(xml, "subtype");
 		if (type == 10) {
-			last_monster->state = !subtype;
 			monster_init(++last_monster, FIREPIG, pos);
+			last_monster->dir.x = subtype ? -1 : 1;
 			return;
 		}
 		last_trap->class = subtype == 8 ? OMNIBOUNCE : (u8) type;
@@ -178,9 +180,9 @@ void xml_parse(i32 argc, char **argv)
 
 	LIBXML_TEST_VERSION;
 	xml_process_file(argv[1], level, xml_first_pass);
+	monster_init(++last_monster, PLAYER, spawn);
 	xml_process_file(argv[1], level, xml_process_node);
 
-	monster_init(++last_monster, PLAYER, spawn);
 	for (i64 i = 0; i < 5; ++i)
 		monster_init(++last_monster, BOMB, spawn);
 

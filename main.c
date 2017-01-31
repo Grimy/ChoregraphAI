@@ -149,6 +149,7 @@ void enemy_attack(Monster *attacker)
 	case PIXIE:
 		TILE(attacker->pos).monster = 0;
 		attacker->hp = 0;
+		player.hp += 2;
 		break;
 	case SHOVE_1:
 	case SHOVE_2:
@@ -331,7 +332,7 @@ void monster_kill(Monster *m, DamageType type)
 	case SKULL_1:
 	case SKULL_2:
 	case SKULL_3:
-		m->class -= (SKULL_1 - SKELETON_1);
+		m->class -= SKULL_1 - SKELETON_1;
 		m->delay = 1;
 		m->hp = CLASS(m).max_hp;
 
@@ -452,7 +453,7 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	case SKELETANK_1:
 	case SKELETANK_2:
 	case SKELETANK_3:
-		if (L1(m->dir + dir))
+		if (!coords_eq(dir, -m->dir))
 			break;
 		if (dmg >= m->hp)
 			m->class = m->class - SKELETANK_1 + SKELETON_1;
@@ -467,7 +468,7 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 		return false;
 	case ICE_BEETLE:
 	case FIRE_BEETLE:
-		knockback(m, dir, 1);
+		knockback(m, L1(m->pos - player.pos) == 1 ? NO_DIR : dir, 1);
 		TileClass hazard = m->class == FIRE_BEETLE ? FIRE : ICE;
 		for (i64 i = 0; i < 5; ++i)
 			tile_change(m->pos + plus_shape[i], hazard);
@@ -477,7 +478,7 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 		bomb_detonate(m, NO_DIR);
 		return false;
 	case GOOLEM:
-		if (m->state == 0) {
+		if (type == DMG_WEAPON && m->state == 0) {
 			m->state = 1;
 			tile_change(player.pos, OOZE);
 		}
@@ -485,7 +486,7 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	case ORC_1:
 	case ORC_2:
 	case ORC_3:
-		if (L1(m->dir + dir))
+		if (!coords_eq(dir, -m->dir))
 			break;
 		knockback(m, dir, 1);
 		return false;
@@ -533,8 +534,8 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	case METROGNOME_2:
 		move(m, stairs);
 		m->delay = 1;
-		m->state = 2;
-		return false;
+		m->state = 1;
+		return true;
 	case PLAYER:
 		g.iframes = g.current_beat + 2;
 	}
@@ -548,8 +549,9 @@ static void after_move(Coords dir, bool forced)
 		i64 steps = 4;
 		while (--steps && !forced && can_move(&player, dir))
 			move(&player, player.pos + dir);
-		if (steps && damage(&MONSTER(player.pos + dir), 4, dir, DMG_NORMAL))
-			knockback(&MONSTER(player.pos + dir), dir, 1);
+		Monster *in_my_way = &MONSTER(player.pos + dir);
+		if (steps && damage(in_my_way, 4, dir, DMG_NORMAL))
+			knockback(in_my_way, dir, 1);
 	}
 
 	if (g.inventory[MEMERS_CAP]) {
@@ -654,7 +656,7 @@ static void player_move(i8 x, i8 y)
 	}
 }
 
-// Deals bomb-like damage to all monsters on a horizontal line).
+// Deals normal damage to all monsters on a horizontal line.
 void fireball(Coords pos, i8 dir)
 {
 	assert(dir != 0);
@@ -689,6 +691,10 @@ ItemClass pickup_item(ItemClass item)
 {
 	if (item == BOMBS_3)
 		g.inventory[BOMBS] += 3;
+	else if (item == HEART_1)
+		player.hp += 1;
+	else if (item == HEART_2)
+		player.hp += 2;
 	else
 		++g.inventory[item];
 	return NO_ITEM;
@@ -745,7 +751,7 @@ static bool check_aggro(Monster *m, Coords d, bool bomb_exploded)
 			|| L2(player.pos - m->pos) < 9
 			|| shadowed);
 
-	if (m->aggro && m->class == BLUE_DRAGON)
+	if (m->aggro && (m->class == BLUE_DRAGON || m->class == EARTH_DRAGON))
 		return true;
 
 	// The nightmare-bomb-aggro bug
@@ -767,7 +773,7 @@ static void trap_turn(Trap *this)
 		return;
 
 	Monster *m = &MONSTER(this->pos);
-	if (m->untrapped || CLASS(m).flying)
+	if (m->class == NO_MONSTER || m->untrapped || CLASS(m).flying)
 		return;
 	m->untrapped = true;
 

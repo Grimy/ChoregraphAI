@@ -7,9 +7,9 @@
 
 static const u8 floor_colors[] = {
 	[STAIRS] = 105, [SHOP_FLOOR] = 43,
-	[WATER] = 44, [TAR] = 40,
+	[WATER] = 44, [TAR] = 47,
 	[FIRE] = 41, [ICE] = 107,
-	[OOZE] = 42,
+	[OOZE] = 42, [WIRE] = 0,
 };
 
 // Picks an appropriate box-drawing glyph for a wall by looking at adjacent tiles.
@@ -85,10 +85,12 @@ static void display_enemy(Monster *m)
 {
 	if (m->hp <= 0)
 		return;
-	LINE("%s" WHITE " (%2d, %2d): %dhp%s%s%s",
+	LINE("%s" WHITE " (%2d, %2d) (%2d, %2d): %dhp%s%s%s",
 		CLASS(m).glyph,
 		m->pos.x,
 		m->pos.y,
+		m->prev_pos.x,
+		m->prev_pos.y,
 		m->hp,
 		m->aggro ? ", aggroed" : "",
 		m->freeze > g.current_beat ? ", frozen" : "",
@@ -109,12 +111,12 @@ static void display_all(void)
 {
 	printf("\033[J");
 
-	for (Trap *t = g.traps; t->pos.x; ++t)
-		display_trap(t);
-
 	for (i8 y = 1; y < ARRAY_SIZE(g.board) - 1; ++y)
 		for (i8 x = 1; x < ARRAY_SIZE(*g.board) - 1; ++x)
 			display_tile((Coords) {x, y});
+
+	for (Trap *t = g.traps; t->pos.x; ++t)
+		display_trap(t);
 
 	cursor_to(64, 0);
 	printf("\033[s");
