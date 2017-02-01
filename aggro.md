@@ -22,11 +22,7 @@ they are blocked from moving toward you. Trampling affects the 4 tiles adjacent
 to the dragon/nightmare, destroying walls and dealing 4 normal damage to anything
 that was standing there.
 
-[TODO: video of trampling here]
-
 Non-player bombs and exploding gargoyles do not cause any damage to non-aggroed enemies.
-
-[TODO: video proof here]
 
 More about activation
 ---------------------
@@ -35,15 +31,14 @@ Each enemy has an **activation radius**, which is a non-negative integer. The
 enemy is activated only when you are within a *circle* of that radius, centered on the
 enemy (formally: iff L² distance ≤ radius).
 
-Examples with activation radii 3 and 7. Moving to any ice tile will cause an
-enemy to activate. Floor tiles are safe.
+Example: activation radii 7 and 3, visualized using ice tiles.
 
-[TODO: screenshot here]
+![Activation radii](http://i.imgur.com/C5wn58a.png)
 
 Slimes and zombies have an “infinite” radius: they are always active.
 
-Mimics, harpies, all mages, goblin bombers, blue dragons and earth
-dragons have radius of 0: they will only move when aggroed.
+Harpies, all mages, goblin bombers, evil eyes, blue dragons, earth dragons and
+headless skeletons have a radius of 0: they will only move when aggroed.
 
 Green dragons and minotaurs have a radius of 7. Nightmares have a radius of 9.
 Red dragons have a radius of 10.
@@ -90,6 +85,9 @@ Note that freeze is completely independent from aggro. Frozen enemies can still
 aggro, and the freeze comes off at the same pace even for unaggroed,
 unactivated enemies.
 
+Enemies spawned by mommies, sarcophagi, electro-liches and skulls start out
+already aggroed, even if the enemy that spawned them wasn’t.
+
 Weird interactions / bugs
 -------------------------
 
@@ -107,4 +105,4 @@ before doing anything. There are, of course, exceptions:
 There are, of course, exceptions to the exceptions. Enemies with activation
 radius 0 are immune to the latter two bugs.
 
-[TODO: video of bomb-aggro bug here]
+[Video demonstrating the bomb-aggro bug](https://www.youtube.com/watch?v=0yCduza7eDQ).

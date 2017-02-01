@@ -3,15 +3,8 @@ TESTS:
 * Check the behavior of revealed-aggro
 * Check tracking direction of mages after casting
 * Check metrognome telefragging
-* Check unlit armadillos
 * Electro-zombie direction after knockback?
 * Electro-zombie behavior on stairs?
-* Lunging at armadillos: knockback or prev_pos change?
-* Unaggro headless skeleton?
-* Bomb-aggro evil eye?
-* Bomb-aggro goblin bomber?
-* Skull spawning inside firewall/icewall/z4wall?
-* Exhaustion ticking down while frozen?
 
 FEATURES:
 * metal doors (type=111)
@@ -21,6 +14,8 @@ FEATURES:
 * UI improvements!
 
 BUGFIXES:
+* exhaustion should tick down while frozen
+* unaggroed armadillos shouldn’t charge
 * don’t assume skull ids are adjacent (they aren’t)
 * skull spawns should override walls, not enemies
 * restore the bomb-aggro bug
