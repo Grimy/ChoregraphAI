@@ -148,7 +148,7 @@ static void charge(Monster *this, __attribute__((unused)) Coords d)
 
 static bool magic(Monster *this, Coords d, bool condition)
 {
-	if (!condition || this->confused || STUCK(this)) {
+	if (!condition || (this->confused) || STUCK(this)) {
 		basic_seek(this, d);
 		return false;
 	} else {
@@ -416,7 +416,7 @@ static void harpy(Monster *this, Coords d)
 static void lich(Monster *this, Coords d)
 {
 	if (magic(this, d, L2(d) == 4 && can_move(this, DIRECTION(d)) && !(player.confused)))
-		player.confusion = g.current_beat + 5;
+		player.confusion = g.current_beat + 4;
 }
 
 static void sarcophagus(Monster *this, __attribute__((unused)) Coords d)
@@ -493,13 +493,19 @@ static void wire_zombie(Monster *this, __attribute__((unused)) Coords d)
 {
 	if (enemy_move(this, this->dir) < MOVE_ATTACK && !this->requeued)
 		this->dir = -this->dir;
-	if (TILE(this->pos).wired && !TILE(this->pos + this->dir).wired) {
+
+	this->delay = IS_WIRE(this->pos) ? 0 : 1;
+
+	if (this->delay == 0 && !TILE(this->pos + this->dir).wired) {
 		Coords right = { -this->dir.y, this->dir.x };
 		Coords left = { this->dir.y, -this->dir.x };
-		if (TILE(this->pos + right).wired ^ TILE(this->pos + left).wired)
+		if (TILE(this->pos + right).wired ^ TILE(this->pos + left).wired) {
 			this->dir = TILE(this->pos + right).wired ? right : left;
+		} else {
+			this->dir = -this->dir;
+			this->delay = 1;
+		}
 	}
-	this->delay = IS_WIRE(this->pos) ? 0 : 1;
 }
 
 static void eye(Monster *this, Coords d)

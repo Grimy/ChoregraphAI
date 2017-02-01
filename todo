@@ -1,8 +1,6 @@
 TESTS:
 * Check that confuse/freeze have the right duration
 * Check the behavior of revealed-aggro
-* Electro-zombie direction after knockback?
-* Electro-zombie behavior on stairs?
 
 FEATURES:
 * metal doors (type=111)
@@ -12,6 +10,7 @@ FEATURES:
 * UI improvements!
 
 BUGFIXES:
+* THE WHOLE KNOCKBACK SYSTEM IS BROKEN AAAAAAAAGH
 * exhaustion should tick down while frozen
 * unaggroed armadillos shouldn’t charge
 * don’t assume skull ids are adjacent (they aren’t)
@@ -24,9 +23,10 @@ BUGFIXES:
 * when monkeyed while trapped in tar, the player should stay trapped
 * monkey should tank explosions/fireballs for the player
 * clonking should hit both player and monkey
-* bombs shouldn’t damage unaggroed enemies
 * pixies should emit light
 * metrognomes should reset tracking dir when hit with weapons
+* bombs shouldn’t damage unaggroed enemies
+* pixie explosions are *weird*
 
 REFACTORS:
 * Go ECS or go home

@@ -66,7 +66,7 @@ static void destroy_wall(Coords pos)
 	assert(IS_DIGGABLE(pos));
 	Tile *wall = &TILE(pos);
 
-	wall->class -= 128;
+	wall->class &= ICE;
 
 	if (MONSTER(pos).class == SPIDER) {
 		MONSTER(pos).class = FREE_SPIDER;
@@ -122,11 +122,9 @@ void bomb_detonate(Monster *this, __attribute__((unused)) Coords d)
 
 	for (i64 i = 0; i < 9; ++i) {
 		Tile *tile = &TILE(this->pos + square_shape[i]);
-		if (this->class != PIXIE)
-			tile->class = tile->class == WATER ? FLOOR : tile->class == ICE ? WATER : tile->class;
-		if (i != 4 || this->class != PIXIE)
-			tile->destroyed = true;
+		tile->class = tile->class == WATER ? FLOOR : tile->class == ICE ? WATER : tile->class;
 		damage_tile(this->pos + square_shape[i], this->pos, 4, DMG_BOMB);
+		tile->destroyed = true;
 	}
 
 	this->hp = 0;
@@ -489,7 +487,7 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 		knockback(m, dir, 1);
 		return false;
 	case WIRE_ZOMBIE:
-		if (IS_WIRE(player.pos) || !IS_WIRE(m->pos))
+		if (IS_WIRE(player.pos) || !(IS_WIRE(m->pos) || TILE(m->pos).class == STAIRS))
 			break;
 		knockback(m, dir, 2);
 		return false;
@@ -829,16 +827,17 @@ i32 compare_priorities(const void *a, const void *b)
 // Enemies act in decreasing priority order. Traps have an arbitrary order.
 void do_beat(u8 input)
 {
-	g.input[g.current_beat++ & 31] = input;
-	bool bomb_exploded = false;
+	g.input[g.current_beat & 31] = input;
 
 	player_turn(input);
 	if (player_won())
 		return;
 	update_fov();
 
+	++g.current_beat;
 	Monster *queue[64] = { 0 };
 	u64 queue_length = 0;
+	bool bomb_exploded = false;
 
 	for (Monster *m = &player + 1; m->class; ++m) {
 		m->knocked = false;
@@ -867,7 +866,8 @@ void do_beat(u8 input)
 		Coords d = player.pos - m->pos;
 		u8 old_state = m->state;
 		Coords old_dir = m->dir;
-		CLASS(m).act(m, d);
+		if (!m->knocked)
+			CLASS(m).act(m, d);
 		if (m->requeued) {
 			m->state = old_state;
 			m->dir = old_dir;
