@@ -1,8 +1,6 @@
 TESTS:
 * Check that confuse/freeze have the right duration
 * Check the behavior of revealed-aggro
-* Check tracking direction of mages after casting
-* Check metrognome telefragging
 * Electro-zombie direction after knockback?
 * Electro-zombie behavior on stairs?
 

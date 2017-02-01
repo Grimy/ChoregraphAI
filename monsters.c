@@ -146,6 +146,18 @@ static void charge(Monster *this, __attribute__((unused)) Coords d)
 		this->prev_pos = this->pos - charging_dir;
 }
 
+static bool magic(Monster *this, Coords d, bool condition)
+{
+	if (!condition || this->confused || STUCK(this)) {
+		basic_seek(this, d);
+		return false;
+	} else {
+		this->delay = 1;
+		this->dir = DIRECTION(d);
+		return true;
+	}
+}
+
 // Z1
 
 static void slime(Monster *this, __attribute__((unused)) Coords d)
@@ -222,25 +234,9 @@ static void ghost(Monster *this, Coords d)
 
 // Z2
 
-// Common AI for liches and windmages.
-static void mage(Monster *this, Coords d)
+static void wind_mage(Monster *this, Coords d)
 {
-	bool is_lich = this->class >= LICH_1 && this->class <= LICH_3;
-	bool can_cast = L2(d) == 4
-		&& can_move(this, DIRECTION(d))
-		&& !(this->confused)
-		&& !STUCK(this)
-		&& !(player.confused && is_lich);
-
-	if (!can_cast) {
-		basic_seek(this, d);
-		return;
-	}
-
-	this->delay = 1;
-	if (is_lich)
-		player.confusion = g.current_beat + 5;
-	else
+	if (magic(this, d, L2(d) == 4 && can_move(this, DIRECTION(d))))
 		forced_move(&player, -DIRECTION(d));
 }
 
@@ -417,6 +413,12 @@ static void harpy(Monster *this, Coords d)
 	enemy_move(this, best_move);
 }
 
+static void lich(Monster *this, Coords d)
+{
+	if (magic(this, d, L2(d) == 4 && can_move(this, DIRECTION(d)) && !(player.confused)))
+		player.confusion = g.current_beat + 5;
+}
+
 static void sarcophagus(Monster *this, __attribute__((unused)) Coords d)
 {
 	static const MonsterClass types[] = {SKELETON_1, SKELETANK_1, WINDMAGE_1, RIDER_1};
@@ -469,23 +471,14 @@ static void firepig(Monster *this, Coords d)
 static void electro_lich(Monster *this, Coords d)
 {
 	Coords true_prev_pos = this->prev_pos;
+	bool charge = can_charge(this, d) || can_charge(this, player.prev_pos - this->pos);
 
-	bool can_cast = L1(d) > 1
-		&& !(this->confused)
-		&& !STUCK(this)
-		&& (can_charge(this, d) || can_charge(this, player.prev_pos - this->pos));
-
-	if (!can_cast) {
-		basic_seek(this, d);
-		return;
+	if (magic(this, d, L1(d) > 1 && charge)) {
+		this->prev_pos = true_prev_pos;
+		Monster *orb = monster_spawn(ORB_1, this->pos);
+		orb->pos += this->dir;
+		TILE(orb->pos).monster = (u8) (orb - g.monsters);
 	}
-
-	Coords orb_dir = this->pos - this->prev_pos;
-	this->delay = 1;
-	this->prev_pos = true_prev_pos;
-	Monster *orb = monster_spawn(ORB_1, this->pos);
-	orb->pos += orb_dir;
-	TILE(orb->pos).monster = (u8) (orb - g.monsters);
 }
 
 static void orb(Monster *this, __attribute__((unused)) Coords d)
@@ -685,9 +678,9 @@ const ClassInfos class_infos[256] = {
 	[SKELETANK_1]  = {  1, 1, 1,  25, false, -1, 10101202, "Z",        basic_seek },
 	[SKELETANK_2]  = {  3, 2, 1,  25, false, -1, 10302204, YELLOW "Z", basic_seek },
 	[SKELETANK_3]  = {  5, 3, 1,  25, false, -1, 10503206, BLACK "Z",  basic_seek },
-	[WINDMAGE_1]   = {  2, 1, 1,   0, false, -1, 10201202, BLUE "@",   mage },
-	[WINDMAGE_2]   = {  4, 2, 1,   0, false, -1, 10402204, YELLOW "@", mage },
-	[WINDMAGE_3]   = {  5, 3, 1,   0, false, -1, 10503206, BLACK "@",  mage },
+	[WINDMAGE_1]   = {  2, 1, 1,   0, false, -1, 10201202, BLUE "@",   wind_mage },
+	[WINDMAGE_2]   = {  4, 2, 1,   0, false, -1, 10402204, YELLOW "@", wind_mage },
+	[WINDMAGE_3]   = {  5, 3, 1,   0, false, -1, 10503206, BLACK "@",  wind_mage },
 	[MUSHROOM_1]   = {  2, 1, 3,  25, false, -1, 10201402, BLUE "%",   mushroom },
 	[MUSHROOM_2]   = {  4, 3, 2,  25, false, -1, 10403303, PURPLE "%", mushroom },
 	[GOLEM_1]      = {  4, 5, 3,  25,  true,  2, 20405404, "'",        basic_seek },
@@ -734,9 +727,9 @@ const ClassInfos class_infos[256] = {
 	[GHOUL]        = {  1, 1, 0,   9,  true, -1, 10301102, "W",        moore_seek },
 	[GOOLEM]       = {  5, 5, 3,   9,  true,  2, 20510407, GREEN "'",  basic_seek },
 	[HARPY]        = {  3, 1, 1,   0,  true, -1, 10301203, GREEN "h",  harpy },
-	[LICH_1]       = {  2, 1, 1,   0, false, -1, 10404202, GREEN "L",  mage },
-	[LICH_2]       = {  3, 2, 1,   0, false, -1, 10404302, PURPLE "L", mage },
-	[LICH_3]       = {  4, 3, 1,   0, false, -1, 10404402, BLACK "L",  mage },
+	[LICH_1]       = {  2, 1, 1,   0, false, -1, 10404202, GREEN "L",  lich },
+	[LICH_2]       = {  3, 2, 1,   0, false, -1, 10404302, PURPLE "L", lich },
+	[LICH_3]       = {  4, 3, 1,   0, false, -1, 10404402, BLACK "L",  lich },
 	[CONF_MONKEY]  = {  0, 1, 0,   9, false, -1, 10004103, GREEN "Y",  basic_seek },
 	[TELE_MONKEY]  = {  0, 2, 0,   9, false, -1, 10002103, PINK "Y",   basic_seek },
 	[PIXIE]        = {  4, 1, 0,   9,  true, -1, 10401102, "n",        basic_seek },
