@@ -6,12 +6,28 @@
 #include <time.h>
 #include <unistd.h>
 
-static const u8 floor_colors[] = {
-	[STAIRS] = 105, [SHOP_FLOOR] = 43,
-	[WATER] = 44, [TAR] = 47,
-	[FIRE] = 41, [ICE] = 107,
-	[OOZE] = 42, [WIRE] = 0,
+#define LINE(fmt, ...) printf("\033[u\033[B\033[s " fmt, __VA_ARGS__)
+
+static const char* floor_colors[] = {
+	[SHOP_FLOOR] = YELLOW,
+	[WATER] = BLUE,
+	[TAR] = DARK,
+	[STAIRS] = PURPLE,
+	[FIRE] = RED,
+	[ICE] = CYAN,
+	[OOZE] = GREEN,
+	[WIRE] = "",
 };
+
+static const char* dir_to_arrow(Coords dir)
+{
+	static const char *arrows[] = {
+		"↖", "↑", "↗",
+		"←", " ", "→",
+		"↙", "↓", "↘",
+	};
+	return arrows[3 * (dir.y + 1) + (dir.x + 1)];
+}
 
 // Picks an appropriate box-drawing glyph for a wall by looking at adjacent tiles.
 // For example, when tiles to the bottom and right are walls too, use '┌'.
@@ -49,8 +65,6 @@ static void display_tile(Coords pos)
 		return;
 
 	cursor_to(pos.x, pos.y);
-	if (!BLOCKS_LOS(pos))
-		printf("\033[%um", floor_colors[tile->class]);
 
 	if (tile->monster)
 		printf("%s", CLASS(&MONSTER(pos)).glyph);
@@ -60,13 +74,15 @@ static void display_tile(Coords pos)
 		display_wall(pos);
 	else if (IS_WIRE(pos))
 		display_wire(pos);
+	else if (tile->item)
+		putchar('*');
+	else if (floor_colors[tile->class])
+		printf("%s.", floor_colors[tile->class]);
 	else
-		putchar(tile->item ? '*' : '.');
+		putchar('.');
 
 	printf(WHITE);
 }
-
-#define LINE(fmt, ...) printf("\033[u\033[B\033[s " fmt, __VA_ARGS__)
 
 static void display_inventory(void)
 {
@@ -79,32 +95,33 @@ static void display_inventory(void)
 	if (g.inventory[LUNGING])
 		LINE("Boots: Lunging (%s)", g.boots_on ? "on" : "off");
 	if (g.inventory[MEMERS_CAP])
-		LINE("Headpiece: %s", "Miner’s Cap");
+		LINE("Head: %s", "Miner’s Cap");
 }
 
 static void display_enemy(Monster *m)
 {
 	if (m->hp <= 0)
 		return;
-	LINE("%s" WHITE " (%2d, %2d) (%2d, %2d): %dhp%s%s%s",
+	LINE("%s" WHITE " %s (%2d, %2d) (%2d, %2d) " RED "%.*s" WHITE " %s%s",
 		CLASS(m).glyph,
+		dir_to_arrow(m->dir),
 		m->pos.x,
 		m->pos.y,
 		m->prev_pos.x,
 		m->prev_pos.y,
-		m->hp,
-		m->aggro ? ", aggroed" : "",
-		m->freeze > g.current_beat ? ", frozen" : "",
-		m->confused ? ", confused" : "");
+		3 * m->hp,
+		"ღღღღღღღღღღ",
+		m->freeze > g.current_beat ? " frozen" : "",
+		m->confused ? " confused" : "");
 }
 
 static void display_trap(Trap *t)
 {
-	if (!TILE(t->pos).revealed || TILE(t->pos).destroyed)
-		return;
-	i64 glyph_index = t->class == BOUNCE ? 14 + 3*t->dir.y + t->dir.x : t->class;
 	cursor_to(t->pos.x, t->pos.y);
-	printf("%3.3s", &"■▫◭◭◆▫⇐⇒◭●↖↑↗←▫→↙↓↘"[3 * glyph_index]);
+	if (t->class == BOUNCE)
+		printf("%s", dir_to_arrow(t->dir));
+	else
+		printf("%3.3s", &"■▫◭◭◆▫⇐⇒◭●"[3 * t->class]);
 }
 
 // Clears and redraws the entire interface.
@@ -117,12 +134,15 @@ static void display_all(void)
 			display_tile((Coords) {x, y});
 
 	for (Trap *t = g.traps; t->pos.x; ++t)
-		display_trap(t);
+		if (TILE(t->pos).revealed && !TILE(t->pos).destroyed)
+			display_trap(t);
 
 	cursor_to(64, 0);
 	printf("\033[s");
+
 	for (Monster *m = &player + 1; m->class; ++m)
-		display_enemy(m);
+		if (m->aggro)
+			display_enemy(m);
 
 	display_inventory();
 	cursor_to(0, 0);

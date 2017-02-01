@@ -42,6 +42,7 @@ typedef int64_t  i64;
 #define BROWN  "\033[33m"
 #define BLUE   "\033[34m"
 #define PINK   "\033[35m"
+#define DARK   "\033[37m"
 #define BLACK  "\033[90m"
 #define ORANGE "\033[91m"
 #define GREEN  "\033[92m"

@@ -801,6 +801,7 @@ const ClassInfos class_infos[256] = {
 	[METROGNOME_1] = {  4, 3, 0,   9,  true,  1, 30403115, YELLOW "G", metrognome },
 	[METROGNOME_2] = {  5, 5, 0,   9,  true,  1, 30505115, GREEN "G",  metrognome },
 
+	[NO_MONSTER]   = {  0, 0, 0,   0,  true, -1,        0, NULL,       NULL },
 	[SHOPKEEPER]   = { 20, 9, 0,   0, false, -1, 99999997, "@",        NULL },
 	[PLAYER]       = {  1, 1, 0,   0, false, -1,      ~0u, "@",        NULL },
 	[BOMB]         = {  4, 1, 0, 999, false, -1,      ~1u, "x",        bomb_detonate },

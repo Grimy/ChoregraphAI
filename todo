@@ -11,6 +11,7 @@ TESTS:
 * Bomb-aggro evil eye?
 * Bomb-aggro goblin bomber?
 * Skull spawning inside firewall/icewall/z4wall?
+* Exhaustion ticking down while frozen?
 
 FEATURES:
 * metal doors (type=111)

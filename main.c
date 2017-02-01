@@ -772,7 +772,7 @@ static void trap_turn(Trap *this)
 		return;
 
 	Monster *m = &MONSTER(this->pos);
-	if (m->class == NO_MONSTER || m->untrapped || CLASS(m).flying)
+	if (m->untrapped || CLASS(m).flying)
 		return;
 	m->untrapped = true;
 
