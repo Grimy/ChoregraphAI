@@ -425,7 +425,7 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	case GHOST:
 		if (m->state == 1)
 			break;
-		return false;
+		return true;
 	case DEVIL_1:
 	case DEVIL_2:
 		if (m->state)
@@ -441,7 +441,7 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 			knockback(m, dir, 1);
 			m->state = 1;
 		}
-		return false;
+		return true;
 	case RIDER_1:
 	case RIDER_2:
 	case RIDER_3:
@@ -530,6 +530,7 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 		return false;
 	case METROGNOME_1:
 	case METROGNOME_2:
+		MONSTER(stairs).hp = 0;
 		move(m, stairs);
 		m->delay = 1;
 		m->state = 1;

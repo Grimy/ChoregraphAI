@@ -4,6 +4,7 @@
 #include "chore.h"
 
 #include <time.h>
+#include <unistd.h>
 
 static const u8 floor_colors[] = {
 	[STAIRS] = 105, [SHOP_FLOOR] = 43,
@@ -140,7 +141,9 @@ int main(i32 argc, char **argv)
 	while (player.hp > 0 && !player_won()) {
 		display_all();
 		int c = getchar();
-		if (c == EOF || c == 't')
+		if (c == 't')
+			execv(*argv, argv);
+		if (c == EOF || c == 'q')
 			break;
 		do_beat((u8) c);
 	}

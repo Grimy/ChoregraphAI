@@ -2,17 +2,20 @@ TESTS:
 * Check that confuse/freeze have the right duration
 * Check the behavior of revealed-aggro
 * Check tracking direction of mages after casting
+* Check metrognome telefragging
 * Electro-zombie direction after knockback?
+* Electro-zombie behavior on stairs?
+* Lunging at armadillos: knockback or prev_pos change?
 
 FEATURES:
 * metal doors (type=111)
 * lord enemies
 * confusion de-aggroing enemies
 * white mimics?
-* metrognome telefragging
 
 BUGFIXES:
 * skull spawns
+* restore the bomb-aggro bug
 * beetle shedding isn’t quite right
 * banshees/skeletons should have different activation radii depending on the zone
 * shovemonsters pushing the player on ice shoud trigger a slide
