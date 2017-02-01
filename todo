@@ -3,9 +3,13 @@ TESTS:
 * Check the behavior of revealed-aggro
 * Check tracking direction of mages after casting
 * Check metrognome telefragging
+* Check unlit armadillos
 * Electro-zombie direction after knockback?
 * Electro-zombie behavior on stairs?
 * Lunging at armadillos: knockback or prev_pos change?
+* Unaggro headless skeleton?
+* Bomb-aggro evil eye?
+* Bomb-aggro goblin bomber?
 
 FEATURES:
 * metal doors (type=111)
