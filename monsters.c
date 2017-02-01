@@ -480,8 +480,20 @@ static void electro_lich(Monster *this, Coords d)
 		return;
 	}
 
+	Coords orb_dir = this->pos - this->prev_pos;
 	this->delay = 1;
 	this->prev_pos = true_prev_pos;
+	Monster *orb = monster_spawn(ORB_1, this->pos);
+	orb->pos += orb_dir;
+	TILE(orb->pos).monster = (u8) (orb - g.monsters);
+}
+
+static void orb(Monster *this, __attribute__((unused)) Coords d)
+{
+	this->was_requeued = true;
+	enemy_move(this, this->pos - this->prev_pos);
+	if (coords_eq(this->pos, this->prev_pos))
+		monster_kill(this, DMG_NORMAL);
 }
 
 static void wire_zombie(Monster *this, __attribute__((unused)) Coords d)
@@ -755,9 +767,9 @@ const ClassInfos class_infos[256] = {
 	[ELECTRO_1]    = {  1, 1, 1,   0, false, -1, 10101202, BLUE "L",   electro_lich },
 	[ELECTRO_2]    = {  3, 2, 1,   0, false, -1, 10302203, RED "L",    electro_lich },
 	[ELECTRO_3]    = {  4, 3, 1,   0, false, -1, 10403204, YELLOW "L", electro_lich },
-	[ORB_1]        = {  1, 1, 0,   0,  true,  1, 10101100, YELLOW "e", charge },
-	[ORB_2]        = {  3, 1, 0,   0,  true,  1, 10301100, YELLOW "e", charge },
-	[ORB_3]        = {  4, 1, 0,   0,  true,  1, 10401100, YELLOW "e", charge },
+	[ORB_1]        = {  1, 1, 0, 999,  true,  1, 10101100, YELLOW "e", orb },
+	[ORB_2]        = {  3, 1, 0, 999,  true,  1, 10301100, YELLOW "e", orb },
+	[ORB_3]        = {  4, 1, 0, 999,  true,  1, 10401100, YELLOW "e", orb },
 	[GORGON_1]     = {  0, 1, 0,   9, false, -1, 10001102, GREEN "S",  basic_seek },
 	[GORGON_2]     = {  0, 3, 0,   9, false, -1, 10003100, YELLOW "S", basic_seek },
 	[WIRE_ZOMBIE]  = {  2, 1, 0, 999, false, -1, 10201201, ORANGE "Z", wire_zombie },

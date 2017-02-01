@@ -1,15 +1,18 @@
 TESTS:
 * Check that confuse/freeze have the right duration
 * Check the behavior of revealed-aggro
+* Check tracking direction of mages after casting
+* Electro-zombie direction after knockback?
 
 FEATURES:
-* electric mages
 * metal doors (type=111)
 * lord enemies
 * confusion de-aggroing enemies
 * white mimics?
+* metrognome telefragging
 
 BUGFIXES:
+* skull spawns
 * beetle shedding isn’t quite right
 * banshees/skeletons should have different activation radii depending on the zone
 * shovemonsters pushing the player on ice shoud trigger a slide
