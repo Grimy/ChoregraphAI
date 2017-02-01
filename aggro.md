@@ -86,6 +86,10 @@ you are holding them. Light mushrooms are brighter than wall torches.
 Tiles inside a nightmare’s shadow are an exception. They’re considered fully
 lit for aggro purposes, but not for mapping purposes.
 
+Note that freeze is completely independent from aggro. Frozen enemies can still
+aggro, and the freeze comes off at the same pace even for unaggroed,
+unactivated enemies.
+
 Weird interactions / bugs
 -------------------------
 

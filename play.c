@@ -132,8 +132,10 @@ static void display_all(void)
 int main(i32 argc, char **argv)
 {
 	xml_parse(argc, argv);
-
 	g.seed = (u64) time(NULL);
+	if (argc == 4)
+		while (*argv[3])
+			do_beat((u8) *argv[3]++);
 
 	system("stty -echo -icanon eol \1");
 	printf("\033[?1049h");

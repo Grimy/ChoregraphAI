@@ -10,15 +10,18 @@ TESTS:
 * Unaggro headless skeleton?
 * Bomb-aggro evil eye?
 * Bomb-aggro goblin bomber?
+* Skull spawning inside firewall/icewall/z4wall?
 
 FEATURES:
 * metal doors (type=111)
 * lord enemies
 * confusion de-aggroing enemies
 * white mimics?
+* UI improvements!
 
 BUGFIXES:
-* skull spawns
+* don’t assume skull ids are adjacent (they aren’t)
+* skull spawns should override walls, not enemies
 * restore the bomb-aggro bug
 * beetle shedding isn’t quite right
 * banshees/skeletons should have different activation radii depending on the zone
@@ -36,4 +39,4 @@ REFACTORS:
 * Refactor harpy AI
 * Rename this → m
 * Split red/blue dragons?
-* Use WIRE/WIRE_DOOR classes instead of .wired
+* Use WIRE/WIRE_DOOR classes instead of .wired ???
