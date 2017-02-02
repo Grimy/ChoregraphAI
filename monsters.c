@@ -681,9 +681,9 @@ const ClassInfos class_infos[256] = {
 	[MIMIC_5]      = {  2, 1, 0,   0, false, -1, 10201100, YELLOW "m", mimic },
 	[HEADLESS]     = {  1, 1, 0,   0, false, -1, 10302203, "∠",        charge },
 
-	[SKELETANK_1]  = {  1, 1, 1,  25, false, -1, 10101202, "Z",        basic_seek },
-	[SKELETANK_2]  = {  3, 2, 1,  25, false, -1, 10302204, YELLOW "Z", basic_seek },
-	[SKELETANK_3]  = {  5, 3, 1,  25, false, -1, 10503206, BLACK "Z",  basic_seek },
+	[SKELETANK_1]  = {  1, 1, 1,  25, false, -1, 10101202, "Ź",        basic_seek },
+	[SKELETANK_2]  = {  3, 2, 1,  25, false, -1, 10302204, YELLOW "Ź", basic_seek },
+	[SKELETANK_3]  = {  5, 3, 1,  25, false, -1, 10503206, BLACK "Ź",  basic_seek },
 	[WINDMAGE_1]   = {  2, 1, 1,   0, false, -1, 10201202, BLUE "@",   wind_mage },
 	[WINDMAGE_2]   = {  4, 2, 1,   0, false, -1, 10402204, YELLOW "@", wind_mage },
 	[WINDMAGE_3]   = {  5, 3, 1,   0, false, -1, 10503206, BLACK "@",  wind_mage },
@@ -803,5 +803,5 @@ const ClassInfos class_infos[256] = {
 	[NO_MONSTER]   = {  0, 0, 0,   0,  true, -1,        0, NULL,       NULL },
 	[SHOPKEEPER]   = { 20, 9, 0,   0, false, -1, 99999997, "@",        NULL },
 	[PLAYER]       = {  1, 1, 0,   0, false, -1,      ~0u, "@",        NULL },
-	[BOMB]         = {  4, 1, 0, 999, false, -1,      ~1u, "x",        bomb_detonate },
+	[BOMB]         = {  4, 1, 0, 999, false, -1,      ~1u, "●",        bomb_detonate },
 };

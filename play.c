@@ -8,15 +8,27 @@
 
 #define LINE(fmt, ...) printf("\033[u\033[B\033[s " fmt, __VA_ARGS__)
 
-static const char* floor_colors[] = {
-	[SHOP_FLOOR] = YELLOW,
-	[WATER] = BLUE,
-	[TAR] = DARK,
-	[STAIRS] = PURPLE,
-	[FIRE] = RED,
-	[ICE] = CYAN,
-	[OOZE] = GREEN,
-	[WIRE] = "",
+static const char* floor_glyphs[] = {
+	".", ".", ".",
+	[SHOP_FLOOR] = YELLOW ".",
+	[WATER] = BLUE ".",
+	[TAR] = BLACK ".",
+	[STAIRS] = ">",
+	[FIRE] = RED ".",
+	[ICE] = CYAN ".",
+	[OOZE] = GREEN ".",
+	[WIRE] = ".",
+};
+
+static const char* trap_glyphs[] = {
+	[OMNIBOUNCE] = BROWN "■",
+	[SPIKE] = "◭",
+	[TRAPDOOR] = BROWN "▫",
+	[CONFUSE] = YELLOW "◆",
+	[TELEPORT] = YELLOW "▫",
+	[TEMPO_DOWN] = YELLOW "⇐",
+	[TEMPO_UP] = YELLOW "⇒",
+	[BOMBTRAP] = BROWN "●",
 };
 
 static const char* dir_to_arrow(Coords dir)
@@ -76,10 +88,8 @@ static void display_tile(Coords pos)
 		display_wire(pos);
 	else if (tile->item)
 		putchar('*');
-	else if (floor_colors[tile->class])
-		printf("%s.", floor_colors[tile->class]);
 	else
-		putchar('.');
+		printf("%s", floor_glyphs[tile->class]);
 
 	printf(WHITE);
 }
@@ -88,8 +98,13 @@ static void display_inventory(void)
 {
 	cursor_to(32, 0);
 	printf("\033[s");
-	LINE("%s (%d, %d)", "Bard", player.pos.x, player.pos.y);
-	LINE("HP: %.1f/%d", player.hp / 2.0, 2);
+	LINE("%s (%d, %d) " RED "%.*s", "Bard", player.pos.x, player.pos.y,
+		3 * player.hp, "ღღღღღღღღღღ");
+	LINE("%s%s%s%s",
+		player.confused ? YELLOW "Confused " : "",
+		player.freeze > g.current_beat ? CYAN "Frozen " : "",
+		g.sliding_on_ice ? CYAN "Sliding " : "",
+		g.iframes > g.current_beat ? PINK "I-framed " : "");
 	LINE("Bombs: %d", g.inventory[BOMBS]);
 	LINE("Weapon: %s", g.inventory[JEWELED] ? "Jeweled Dagger" : "Dagger");
 	if (g.inventory[LUNGING])
@@ -102,26 +117,27 @@ static void display_enemy(Monster *m)
 {
 	if (m->hp <= 0)
 		return;
-	LINE("%s" WHITE " %s (%2d, %2d) (%2d, %2d) " RED "%.*s" WHITE " %s%s",
+	LINE("%s %s%s%s%s" WHITE "%s %s(%2d, %2d) (%2d, %2d) state=%d " RED "%.*s" WHITE,
 		CLASS(m).glyph,
+		m->aggro ? ORANGE "!" : " ",
+		m->delay ? BLACK "◔" : " ",
+		m->confused ? YELLOW "?" : " ",
+		m->freeze > g.current_beat ? CYAN "=" : " ",
 		dir_to_arrow(m->dir),
-		m->pos.x,
-		m->pos.y,
-		m->prev_pos.x,
-		m->prev_pos.y,
+		floor_glyphs[TILE(m->pos).class & ICE],
+		m->pos.x, m->pos.y,
+		m->prev_pos.x, m->prev_pos.y,
+		m->state,
 		3 * m->hp,
-		"ღღღღღღღღღღ",
-		m->freeze > g.current_beat ? " frozen" : "",
-		m->confused ? " confused" : "");
+		"ღღღღღღღღღღ");
 }
 
 static void display_trap(Trap *t)
 {
+	if (TILE(t->pos).monster)
+		return;
 	cursor_to(t->pos.x, t->pos.y);
-	if (t->class == BOUNCE)
-		printf("%s", dir_to_arrow(t->dir));
-	else
-		printf("%3.3s", &"■▫◭◭◆▫⇐⇒◭●"[3 * t->class]);
+	printf("%s", t->class == BOUNCE ? dir_to_arrow(t->dir) : trap_glyphs[t->class]);
 }
 
 // Clears and redraws the entire interface.
@@ -141,7 +157,7 @@ static void display_all(void)
 	printf("\033[s");
 
 	for (Monster *m = &player + 1; m->class; ++m)
-		if (m->aggro)
+		if (m->aggro || TILE(m->pos).revealed)
 			display_enemy(m);
 
 	display_inventory();
