@@ -88,7 +88,7 @@ static void display_tile(Coords pos)
 		display_wire(pos);
 	else if (tile->item)
 		putchar('*');
-	else
+	else if (L2(pos - g.monsters[g.nightmare].pos) >= 8)
 		printf("%s", floor_glyphs[tile->class]);
 
 	printf(WHITE);
@@ -106,7 +106,8 @@ static void display_inventory(void)
 	printf("\033[s");
 	LINE("Bard ");
 	display_hearts(&player);
-	LINE("%s%s%s%s",
+	LINE("%s%s%s%s%s",
+		g.monkey ? PURPLE "Monkeyed " : "",
 		player.confusion > 1 ? YELLOW "Confused " : "",
 		player.freeze ? CYAN "Frozen " : "",
 		g.sliding_on_ice ? CYAN "Sliding " : "",

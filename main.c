@@ -751,7 +751,7 @@ static void player_turn(u8 input)
 
 static bool check_aggro(Monster *m, Coords d, bool bomb_exploded)
 {
-	bool shadowed = g.nightmare && L2(m->pos - g.monsters[g.nightmare].pos) < 9;
+	bool shadowed = g.nightmare && L2(m->pos - g.monsters[g.nightmare].pos) < 8;
 	m->aggro = (d.y >= -5 && d.y <= 6)
 		&& (d.x >= -10 && d.x <= 9)
 		&& TILE(m->pos).revealed
