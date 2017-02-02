@@ -1,6 +1,6 @@
 TESTS:
-* Check that confuse/freeze have the right duration
 * Check the behavior of revealed-aggro
+* Hellhound activation radius
 
 FEATURES:
 * metal doors (type=111)
@@ -9,7 +9,6 @@ FEATURES:
 * white mimics?
 
 BUGFIXES:
-* THE WHOLE KNOCKBACK SYSTEM IS BROKEN AAAAAAAAGH
 * exhaustion should tick down while frozen
 * unaggroed armadillos shouldn’t charge
 * don’t assume skull ids are adjacent (they aren’t)

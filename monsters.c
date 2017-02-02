@@ -416,7 +416,7 @@ static void harpy(Monster *this, Coords d)
 static void lich(Monster *this, Coords d)
 {
 	if (magic(this, d, L2(d) == 4 && can_move(this, DIRECTION(d)) && !(player.confused)))
-		player.confusion = g.current_beat + 4;
+		player.confusion = g.current_beat + 5;
 }
 
 static void sarcophagus(Monster *this, __attribute__((unused)) Coords d)
@@ -696,11 +696,11 @@ const ClassInfos class_infos[256] = {
 	[CLONE]        = {  3, 1, 0,  25, false, -1, 10301102, "@",        clone },
 	[TARMONSTER]   = {  3, 1, 0,   0, false, -1, 10304103, "t",        mimic },
 	[MOLE]         = {  2, 1, 0,  25,  true, -1,  1020113, "r",        mole },
-	[WIGHT]        = {  2, 1, 0,   9,  true, -1, 10201103, GREEN "W",  basic_seek },
+	[WIGHT]        = {  2, 1, 0,  25,  true, -1, 10201103, GREEN "W",  basic_seek },
 	[WALL_MIMIC]   = {  2, 1, 0,   0, false, -1, 10201103, GREEN "m",  mimic },
 	[LIGHTSHROOM]  = {  0, 1, 0,   0, false, -1,        0, "%",        NULL },
 	[BOMBSHROOM]   = {  4, 1, 0,   0, false, -1,      ~2u, YELLOW "%", NULL },
-	[BOMBSHROOM_]  = {  4, 1, 0,   9, false, -1,      ~2u, RED "%",    bomb_detonate },
+	[BOMBSHROOM_]  = {  4, 1, 0, 999, false, -1,      ~2u, RED "%",    bomb_detonate },
 
 	[FIRE_SLIME]   = {  3, 1, 0, 999, false,  2, 10301101, RED "P",    slime },
 	[ICE_SLIME]    = {  3, 1, 0, 999, false,  2, 10301101, CYAN "P",   slime },
@@ -718,7 +718,7 @@ const ClassInfos class_infos[256] = {
 	[SHOVE_1]      = {  0, 2, 0,  49, false, -1, 10002102, PURPLE "~", basic_seek },
 	[SHOVE_2]      = {  0, 3, 0,  49, false, -1, 10003102, BLACK "~",  basic_seek },
 	[YETI]         = {  3, 1, 3,  49,  true,  2, 20301403, CYAN "Y",   yeti },
-	[GHAST]        = {  2, 1, 0,   9,  true, -1, 10201102, PURPLE "W", basic_seek },
+	[GHAST]        = {  2, 1, 0,  49,  true, -1, 10201102, PURPLE "W", basic_seek },
 	[FIRE_MIMIC]   = {  2, 1, 0,   0, false, -1, 10201102, RED "m",    mimic },
 	[ICE_MIMIC]    = {  2, 1, 0,   0, false, -1, 10201102, CYAN "m",   mimic },
 	[FIRE_POT]     = {  0, 1, 0,   0, false, -1,        0, RED "(",    NULL },

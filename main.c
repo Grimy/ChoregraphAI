@@ -831,10 +831,9 @@ void do_beat(u8 input)
 
 	player_turn(input);
 	if (player_won())
-		return;
+		goto end;
 	update_fov();
 
-	++g.current_beat;
 	Monster *queue[64] = { 0 };
 	u64 queue_length = 0;
 	bool bomb_exploded = false;
@@ -849,10 +848,6 @@ void do_beat(u8 input)
 			continue;
 		if (m->freeze > g.current_beat)
 			continue;
-		if (m->delay) {
-			--m->delay;
-			continue;
-		}
 
 		if (m->class == BOMB || m->class == BOMB_STATUE)
 			bomb_exploded = true;
@@ -866,8 +861,12 @@ void do_beat(u8 input)
 		Coords d = player.pos - m->pos;
 		u8 old_state = m->state;
 		Coords old_dir = m->dir;
-		if (!m->knocked)
+
+		if (m->delay)
+			--m->delay;
+		else
 			CLASS(m).act(m, d);
+
 		if (m->requeued) {
 			m->state = old_state;
 			m->dir = old_dir;
@@ -878,4 +877,6 @@ void do_beat(u8 input)
 
 	for (Trap *t = g.traps; t->pos.x; ++t)
 		trap_turn(t);
+
+	end: ++g.current_beat;
 }
