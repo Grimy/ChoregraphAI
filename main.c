@@ -176,7 +176,7 @@ void enemy_attack(Monster *attacker)
 		break;
 	case GORGON_1:
 	case GORGON_2:
-		player.freeze = g.current_beat + 4;
+		player.freeze = 3;
 		attacker->class = CRATE_1;
 		break;
 	default:
@@ -214,7 +214,7 @@ MoveResult enemy_move(Monster *m, Coords dir)
 	if (is_bogged(m))
 		return MOVE_SPECIAL;
 
-	if (IS_CONFUSED(*m))
+	if (m->confusion)
 		dir = -dir;
 
 	// Attack
@@ -237,7 +237,7 @@ MoveResult enemy_move(Monster *m, Coords dir)
 	}
 
 	// Trampling
-	i32 digging_power = IS_CONFUSED(*m) ? -1 : CLASS(m).digging_power;
+	i32 digging_power = m->confusion ? -1 : CLASS(m).digging_power;
 	if (!m->aggro && digging_power == 4) {
 		for (i64 i = 0; i < 4; ++i)
 			damage_tile(m->pos + plus_shape[i], m->pos, 4, DMG_NORMAL);
@@ -497,6 +497,7 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	case PLAYER:
 		if (g.iframes > g.current_beat)
 			return false;
+		m->freeze = 0;
 		break;
 	}
 
@@ -566,7 +567,7 @@ static void after_move(Coords dir, bool forced)
 bool forced_move(Monster *m, Coords dir)
 {
 	assert(m != &player || L1(dir));
-	if (IS_FROZEN(*m) || is_bogged(m) || (m == &player && g.monkey))
+	if (m->freeze || is_bogged(m) || (m == &player && g.monkey))
 		return false;
 
 	if (&MONSTER(m->pos + dir) == &player) {
@@ -616,7 +617,7 @@ static void chain_lightning(Coords pos, Coords dir)
 static void player_move(i8 x, i8 y)
 {
 	// While frozen or ice-sliding, the player can’t move on their own
-	if (g.sliding_on_ice || IS_FROZEN(player))
+	if (g.sliding_on_ice || player.freeze)
 		return;
 
 	Tile *tile = &TILE(player.pos);
@@ -624,7 +625,7 @@ static void player_move(i8 x, i8 y)
 	Coords dir = {x, y};
 	i32 dmg = tile->class == OOZE ? 0 : g.inventory[JEWELED] ? 5 : 1;
 
-	if (IS_CONFUSED(player) || (g.monkey && g.monsters[g.monkey].class == CONF_MONKEY))
+	if (player.confusion || (g.monkey && g.monsters[g.monkey].class == CONF_MONKEY))
 		dir = -dir;
 
 	if (g.monkey) {
@@ -675,7 +676,7 @@ void cone_of_cold(Coords pos, i8 dir)
 	for (u64 i = 0; i < ARRAY_SIZE(cone_shape); ++i) {
 		if (pos.x + dir * cone_shape[i].x >= 32)
 			return;
-		MONSTER(pos + dir * cone_shape[i]).freeze = g.current_beat + 5;
+		MONSTER(pos + dir * cone_shape[i]).freeze = 4;
 	}
 }
 
@@ -704,8 +705,8 @@ static void player_turn(u8 input)
 {
 	g.player_moved = false;
 
-	if (TILE(player.pos).item)
-		TILE(player.pos).item = pickup_item(TILE(player.pos).item);
+	if (player.confusion)
+		--player.confusion;
 
 	switch (input) {
 	case 'e':
@@ -731,7 +732,10 @@ static void player_turn(u8 input)
 		break;
 	}
 
-	// Handle ice and fire
+	// Ice and fire
+	if (player.freeze)
+		--player.freeze;
+
 	if (g.sliding_on_ice)
 		g.player_moved = forced_move(&player, DIRECTION(player.pos - player.prev_pos));
 	else if (!g.player_moved && TILE(player.pos).class == FIRE)
@@ -739,6 +743,9 @@ static void player_turn(u8 input)
 
 	g.sliding_on_ice = g.player_moved && TILE(player.pos).class == ICE
 		&& can_move(&player, DIRECTION(player.pos - player.prev_pos));
+
+	if (TILE(player.pos).item)
+		TILE(player.pos).item = pickup_item(TILE(player.pos).item);
 }
 
 static bool check_aggro(Monster *m, Coords d, bool bomb_exploded)
@@ -793,8 +800,8 @@ static void trap_turn(Trap *this)
 		monster_kill(m, DMG_NORMAL);
 		break;
 	case CONFUSE:
-		if (!IS_CONFUSED(*m) && m->class != BARREL)
-			m->confusion = g.current_beat + 10;
+		if (!m->confusion && m->class != BARREL)
+			m->confusion = 10;
 		break;
 	case BOMBTRAP:
 		if (m == &player)
@@ -842,14 +849,19 @@ void do_beat(u8 input)
 	bool bomb_exploded = false;
 
 	for (Monster *m = &player + 1; m->class; ++m) {
+		if (!CLASS(m).act || m->hp <= 0)
+			continue;
+
+		// Flag upkeep: done when frozen/delayed, but not when dead
 		m->knocked = false;
 		m->requeued = false;
 		m->was_requeued = false;
-		if (!CLASS(m).act || m->hp <= 0)
-			continue;
+		if (m->confusion)
+			--m->confusion;
+		if (m->exhausted && m->aggro)
+			--m->exhausted;
+
 		if (!m->aggro && !check_aggro(m, player.pos - m->pos, bomb_exploded))
-			continue;
-		if (IS_FROZEN(*m))
 			continue;
 
 		if (m->class == BOMB || m->class == BOMB_STATUE)
@@ -865,7 +877,9 @@ void do_beat(u8 input)
 		u8 old_state = m->state;
 		Coords old_dir = m->dir;
 
-		if (m->delay)
+		if (m->freeze)
+			--m->freeze;
+		else if (m->delay)
 			--m->delay;
 		else
 			CLASS(m).act(m, d);

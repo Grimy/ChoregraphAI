@@ -113,7 +113,7 @@ static void xml_process_node(xmlTextReader *xml)
 			return;
 		Monster *m = monster_spawn(id, pos, 0);
 		if (id == RED_DRAGON || id == BLUE_DRAGON)
-			m->exhausted = 4;
+			m->exhausted = 3;
 		else if (id == LIGHTSHROOM)
 			adjust_lights(pos, +1, 3);
 		else if (id == ZOMBIE || id == WIRE_ZOMBIE)

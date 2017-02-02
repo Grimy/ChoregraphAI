@@ -5,7 +5,6 @@ FEATURES:
 * white mimics?
 
 BUGFIXES:
-* exhaustion should tick down while frozen
 * unaggroed armadillos shouldn’t charge
 * restore the bomb-aggro bug
 * beetle shedding isn’t quite right

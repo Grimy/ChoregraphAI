@@ -6,7 +6,7 @@
 #include <time.h>
 #include <unistd.h>
 
-#define LINE(fmt, ...) printf("\033[u\033[B\033[s " fmt, __VA_ARGS__)
+#define LINE(...) printf("\033[u\033[B\033[s " __VA_ARGS__)
 
 static const char* floor_glyphs[] = {
 	".", ".", ".",
@@ -94,17 +94,25 @@ static void display_tile(Coords pos)
 	printf(WHITE);
 }
 
+static void display_hearts(Monster *m)
+{
+	printf("%c%02d (%c%02d)", 64 + m->pos.x, m->pos.y, 64 + m->prev_pos.x, m->prev_pos.y);
+	printf(RED " %.*s%.*s" WHITE, 3 * m->hp, "ღღღღღღღღღ", 9 - m->hp, "         ");
+}
+
 static void display_inventory(void)
 {
 	cursor_to(32, 0);
 	printf("\033[s");
-	LINE("%s (%d, %d) " RED "%.*s", "Bard", player.pos.x, player.pos.y,
-		3 * player.hp, "ღღღღღღღღღღ");
+	LINE("Bard ");
+	display_hearts(&player);
 	LINE("%s%s%s%s",
-		IS_CONFUSED(player) ? YELLOW "Confused " : "",
-		IS_FROZEN(player) ? CYAN "Frozen " : "",
+		player.confusion > 1 ? YELLOW "Confused " : "",
+		player.freeze ? CYAN "Frozen " : "",
 		g.sliding_on_ice ? CYAN "Sliding " : "",
 		g.iframes > g.current_beat ? PINK "I-framed " : "");
+	LINE("Beat #%d", g.current_beat);
+	LINE("");
 	LINE("Bombs: %d", g.inventory[BOMBS]);
 	LINE("Weapon: %s", g.inventory[JEWELED] ? "Jeweled Dagger" : "Dagger");
 	if (g.inventory[LUNGING])
@@ -117,19 +125,19 @@ static void display_enemy(Monster *m)
 {
 	if (m->hp <= 0)
 		return;
-	LINE("%s %s%s%s%s" WHITE "%s %s(%2d, %2d) (%2d, %2d) state=%d " RED "%.*s" WHITE,
+	LINE("%s %s%s%s%s" WHITE "%s ",
 		CLASS(m).glyph,
 		m->aggro ? ORANGE "!" : " ",
 		m->delay ? BLACK "◔" : " ",
-		IS_CONFUSED(*m) ? YELLOW "?" : " ",
-		IS_FROZEN(*m) ? CYAN "=" : " ",
-		dir_to_arrow(m->dir),
-		floor_glyphs[TILE(m->pos).class & ICE],
-		m->pos.x, m->pos.y,
-		m->prev_pos.x, m->prev_pos.y,
-		m->state,
-		3 * m->hp,
-		"ღღღღღღღღღღ");
+		m->confusion > 1 ? YELLOW "?" : " ",
+		m->freeze ? CYAN "=" : " ",
+		dir_to_arrow(m->dir));
+	display_hearts(m);
+
+	if (m->state)
+		printf(" state=%d", m->state);
+	if (m->exhausted)
+		printf(" exhausted=%d", m->exhausted);
 }
 
 static void display_trap(Trap *t)
@@ -137,7 +145,7 @@ static void display_trap(Trap *t)
 	if (TILE(t->pos).monster)
 		return;
 	cursor_to(t->pos.x, t->pos.y);
-	printf("%s", t->class == BOUNCE ? dir_to_arrow(t->dir) : trap_glyphs[t->class]);
+	printf("%s" WHITE, t->class == BOUNCE ? dir_to_arrow(t->dir) : trap_glyphs[t->class]);
 }
 
 // Clears and redraws the entire interface.

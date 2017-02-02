@@ -15,7 +15,7 @@
 
 static bool can_breathe(Monster *this, Coords d)
 {
-	if (this->class == BLUE_DRAGON && (abs(d.x) > 3 || abs(d.y) >= abs(d.x) || IS_FROZEN(player)))
+	if (this->class == BLUE_DRAGON && (abs(d.x) > 3 || abs(d.y) >= abs(d.x) || player.freeze))
 		return false;
 	if (this->class != BLUE_DRAGON && d.y)
 		return false;
@@ -138,7 +138,7 @@ static void charge(Monster *this, __attribute__((unused)) Coords d)
 
 static bool magic(Monster *this, Coords d, bool condition)
 {
-	if (!condition || IS_CONFUSED(*this) || STUCK(this)) {
+	if (!condition || this->confusion || STUCK(this)) {
 		basic_seek(this, d);
 		return false;
 	} else {
@@ -180,7 +180,7 @@ static void zombie(Monster *this, __attribute__((unused)) Coords d)
 static void bat(Monster *this, Coords d)
 {
 	static const Coords moves[] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
-	if (IS_CONFUSED(*this)) {
+	if (this->confusion) {
 		basic_seek(this, d);
 		return;
 	}
@@ -201,7 +201,7 @@ static void green_bat(Monster *this, Coords d)
 		{1, 0}, {-1, 0}, {0, 1}, {0, -1},
 		{1, -1}, {1, 1}, {-1, -1}, {-1, 1},
 	};
-	if (IS_CONFUSED(*this)) {
+	if (this->confusion) {
 		basic_seek(this, d);
 		return;
 	}
@@ -405,8 +405,8 @@ static void harpy(Monster *this, Coords d)
 
 static void lich(Monster *this, Coords d)
 {
-	if (magic(this, d, L2(d) == 4 && can_move(this, DIRECTION(d)) && !IS_CONFUSED(player)))
-		player.confusion = g.current_beat + 5;
+	if (magic(this, d, L2(d) == 4 && can_move(this, DIRECTION(d)) && !player.confusion))
+		player.confusion = 5;
 }
 
 // Unlike bats, sarcophagi aren’t biased.
@@ -556,9 +556,6 @@ static void moore_mimic(Monster *this, Coords d)
 // They then resume chasing, but can’t charge another breath in the next two beats.
 static void dragon(Monster *this, Coords d)
 {
-	if (this->aggro && this->exhausted)
-		--this->exhausted;
-
 	i8 direction = 1;
 
 	switch (this->state) {
