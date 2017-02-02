@@ -81,7 +81,7 @@ static void monster_init(Monster *m, MonsterClass type, Coords pos)
 	m->hp = CLASS(m).max_hp;
 	m->pos = m->prev_pos = pos;
 	TILE(pos).monster = (u8) (m - g.monsters);
-	m->delay = 2;
+	m->delay = 1;
 	m->aggro = true;
 }
 
@@ -474,6 +474,7 @@ static void electro_lich(Monster *this, Coords d)
 	bool charge = can_charge(this, d) || can_charge(this, player.prev_pos - this->pos);
 
 	if (magic(this, d, L1(d) > 1 && charge)) {
+		this->dir = this->pos - this->prev_pos;
 		this->prev_pos = true_prev_pos;
 		Monster *orb = monster_spawn(ORB_1, this->pos);
 		orb->pos += this->dir;
@@ -803,5 +804,5 @@ const ClassInfos class_infos[256] = {
 	[NO_MONSTER]   = {  0, 0, 0,   0,  true, -1,        0, NULL,       NULL },
 	[SHOPKEEPER]   = { 20, 9, 0,   0, false, -1, 99999997, "@",        NULL },
 	[PLAYER]       = {  1, 1, 0,   0, false, -1,      ~0u, "@",        NULL },
-	[BOMB]         = {  4, 1, 0, 999, false, -1,      ~1u, "●",        bomb_detonate },
+	[BOMB]         = {  4, 1, 0, 999, false, -1,      ~1u, ORANGE "●", bomb_detonate },
 };

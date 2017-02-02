@@ -1,6 +1,7 @@
 TESTS:
 * Check the behavior of revealed-aggro
 * Hellhound activation radius
+* Bomb-order vs skulls
 
 FEATURES:
 * metal doors (type=111)
@@ -11,8 +12,6 @@ FEATURES:
 BUGFIXES:
 * exhaustion should tick down while frozen
 * unaggroed armadillos shouldn’t charge
-* don’t assume skull ids are adjacent (they aren’t)
-* skull spawns should override walls, not enemies
 * restore the bomb-aggro bug
 * beetle shedding isn’t quite right
 * banshees/skeletons should have different activation radii depending on the zone
@@ -27,6 +26,7 @@ BUGFIXES:
 * pixie explosions are *weird*
 
 REFACTORS:
+* Do something about monster_spawn / monster_init
 * Go ECS or go home
 * Refactor harpy AI
 * Rename this → m

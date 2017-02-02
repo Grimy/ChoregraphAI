@@ -325,23 +325,6 @@ void monster_kill(Monster *m, DamageType type)
 	case GORGON_2:
 		m->class = CRATE_1;
 		return;
-	case SKULL_1:
-	case SKULL_2:
-	case SKULL_3:
-		m->class -= SKULL_1 - SKELETON_1;
-		m->delay = 1;
-		m->hp = CLASS(m).max_hp;
-
-		u8 spawned = 1;
-		while (g.monsters[spawned].class)
-			++spawned;
-
-		for (u8 i = spawned; i <= spawned + 1; ++i) {
-			g.monsters[i] = *m;
-			g.monsters[i].pos += (i == spawned ? 1 : -1) * (Coords) {1, 0};
-			TILE(g.monsters[i].pos).monster = i;
-		}
-		return;
 	case SARCO_1 ... SARCO_3:
 	case DIREBAT_1 ... EARTH_DRAGON:
 		--g.locking_enemies;
@@ -485,6 +468,28 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 		if (!coords_eq(dir, -m->dir))
 			break;
 		knockback(m, dir, 1);
+		return false;
+	case SKULL_1:
+		m->class = SKULL_2 - 1;
+		// FALLTHROUGH
+	case SKULL_2:
+	case SKULL_3:
+		m->class -= SKULL_2 - SKELETON_2;
+		m->delay = 1;
+		m->hp = CLASS(m).max_hp;
+		Coords spawn_dir = (Coords) { dir.x == 0, dir.x != 0 };
+
+		for (i8 i = -1; i <= 1; i += 2) {
+			Coords spawn_pos = m->pos + i * spawn_dir;
+			if (IS_DIGGABLE(spawn_pos))
+				destroy_wall(spawn_pos);
+			else if (!IS_EMPTY(spawn_pos))
+				continue;
+			monster_spawn(m->class, spawn_pos);
+			g.monsters[g.last_monster].delay = 1;
+			g.monsters[g.last_monster].dir = CARDINAL(dir);
+			TILE(spawn_pos).monster = g.last_monster;
+		}
 		return false;
 	case WIRE_ZOMBIE:
 		if (IS_WIRE(player.pos) || !(IS_WIRE(m->pos) || TILE(m->pos).class == STAIRS))
