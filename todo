@@ -5,6 +5,7 @@ TESTS:
 * Hellhound activation radius
 * Bomb-order vs skulls
 * Minotaurs/armadillos charging at old prev_pos?
+* Confused barrels?
 
 FEATURES:
 * metal doors (type=111)
@@ -34,6 +35,5 @@ REFACTORS:
 * Refactor harpy AI
 * Rename this → m
 * Use WIRE/WIRE_DOOR classes instead of .wired ???
-* confused / frozen
 * can_charge overhaul
 * use an insertion sort instead of qsort

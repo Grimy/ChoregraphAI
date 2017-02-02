@@ -213,7 +213,8 @@ MoveResult enemy_move(Monster *m, Coords dir)
 
 	if (is_bogged(m))
 		return MOVE_SPECIAL;
-	if (m->confused && m->class != BARREL)
+
+	if (IS_CONFUSED(*m))
 		dir = -dir;
 
 	// Attack
@@ -236,7 +237,7 @@ MoveResult enemy_move(Monster *m, Coords dir)
 	}
 
 	// Trampling
-	i32 digging_power = m->confused ? -1 : CLASS(m).digging_power;
+	i32 digging_power = IS_CONFUSED(*m) ? -1 : CLASS(m).digging_power;
 	if (!m->aggro && digging_power == 4) {
 		for (i64 i = 0; i < 4; ++i)
 			damage_tile(m->pos + plus_shape[i], m->pos, 4, DMG_NORMAL);
@@ -565,7 +566,7 @@ static void after_move(Coords dir, bool forced)
 bool forced_move(Monster *m, Coords dir)
 {
 	assert(m != &player || L1(dir));
-	if (m->freeze > g.current_beat || is_bogged(m) || (m == &player && g.monkey))
+	if (IS_FROZEN(*m) || is_bogged(m) || (m == &player && g.monkey))
 		return false;
 
 	if (&MONSTER(m->pos + dir) == &player) {
@@ -615,7 +616,7 @@ static void chain_lightning(Coords pos, Coords dir)
 static void player_move(i8 x, i8 y)
 {
 	// While frozen or ice-sliding, the player can’t move on their own
-	if (g.sliding_on_ice || player.freeze > g.current_beat)
+	if (g.sliding_on_ice || IS_FROZEN(player))
 		return;
 
 	Tile *tile = &TILE(player.pos);
@@ -623,7 +624,7 @@ static void player_move(i8 x, i8 y)
 	Coords dir = {x, y};
 	i32 dmg = tile->class == OOZE ? 0 : g.inventory[JEWELED] ? 5 : 1;
 
-	if (player.confused || (g.monkey && g.monsters[g.monkey].class == CONF_MONKEY))
+	if (IS_CONFUSED(player) || (g.monkey && g.monsters[g.monkey].class == CONF_MONKEY))
 		dir = -dir;
 
 	if (g.monkey) {
@@ -792,7 +793,7 @@ static void trap_turn(Trap *this)
 		monster_kill(m, DMG_NORMAL);
 		break;
 	case CONFUSE:
-		if (!(m->confused))
+		if (!IS_CONFUSED(*m) && m->class != BARREL)
 			m->confusion = g.current_beat + 10;
 		break;
 	case BOMBTRAP:
@@ -848,7 +849,7 @@ void do_beat(u8 input)
 			continue;
 		if (!m->aggro && !check_aggro(m, player.pos - m->pos, bomb_exploded))
 			continue;
-		if (m->freeze > g.current_beat)
+		if (IS_FROZEN(*m))
 			continue;
 
 		if (m->class == BOMB || m->class == BOMB_STATUE)

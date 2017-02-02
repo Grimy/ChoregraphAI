@@ -3,7 +3,9 @@
 #include "base.h"
 
 #define player (g.monsters[1])
-#define confused confusion > g.current_beat
+
+#define IS_CONFUSED(m) ((m).confusion > g.current_beat)
+#define IS_FROZEN(m) ((m).freeze > g.current_beat)
 
 #define TILE(pos) (g.board[(pos).x][(pos).y])
 #define MONSTER(pos) (g.monsters[TILE(pos).monster])

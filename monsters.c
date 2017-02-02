@@ -15,7 +15,7 @@
 
 static bool can_breathe(Monster *this, Coords d)
 {
-	if (this->class == BLUE_DRAGON && (abs(d.x) > 3 || abs(d.y) >= abs(d.x) || player.freeze > g.current_beat))
+	if (this->class == BLUE_DRAGON && (abs(d.x) > 3 || abs(d.y) >= abs(d.x) || IS_FROZEN(player)))
 		return false;
 	if (this->class != BLUE_DRAGON && d.y)
 		return false;
@@ -138,7 +138,7 @@ static void charge(Monster *this, __attribute__((unused)) Coords d)
 
 static bool magic(Monster *this, Coords d, bool condition)
 {
-	if (!condition || (this->confused) || STUCK(this)) {
+	if (!condition || IS_CONFUSED(*this) || STUCK(this)) {
 		basic_seek(this, d);
 		return false;
 	} else {
@@ -180,7 +180,7 @@ static void zombie(Monster *this, __attribute__((unused)) Coords d)
 static void bat(Monster *this, Coords d)
 {
 	static const Coords moves[] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
-	if (this->confused) {
+	if (IS_CONFUSED(*this)) {
 		basic_seek(this, d);
 		return;
 	}
@@ -201,7 +201,7 @@ static void green_bat(Monster *this, Coords d)
 		{1, 0}, {-1, 0}, {0, 1}, {0, -1},
 		{1, -1}, {1, 1}, {-1, -1}, {-1, 1},
 	};
-	if (this->confused) {
+	if (IS_CONFUSED(*this)) {
 		basic_seek(this, d);
 		return;
 	}
@@ -405,7 +405,7 @@ static void harpy(Monster *this, Coords d)
 
 static void lich(Monster *this, Coords d)
 {
-	if (magic(this, d, L2(d) == 4 && can_move(this, DIRECTION(d)) && !(player.confused)))
+	if (magic(this, d, L2(d) == 4 && can_move(this, DIRECTION(d)) && !IS_CONFUSED(player)))
 		player.confusion = g.current_beat + 5;
 }
 

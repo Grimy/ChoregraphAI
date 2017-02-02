@@ -101,8 +101,8 @@ static void display_inventory(void)
 	LINE("%s (%d, %d) " RED "%.*s", "Bard", player.pos.x, player.pos.y,
 		3 * player.hp, "ღღღღღღღღღღ");
 	LINE("%s%s%s%s",
-		player.confused ? YELLOW "Confused " : "",
-		player.freeze > g.current_beat ? CYAN "Frozen " : "",
+		IS_CONFUSED(player) ? YELLOW "Confused " : "",
+		IS_FROZEN(player) ? CYAN "Frozen " : "",
 		g.sliding_on_ice ? CYAN "Sliding " : "",
 		g.iframes > g.current_beat ? PINK "I-framed " : "");
 	LINE("Bombs: %d", g.inventory[BOMBS]);
@@ -121,8 +121,8 @@ static void display_enemy(Monster *m)
 		CLASS(m).glyph,
 		m->aggro ? ORANGE "!" : " ",
 		m->delay ? BLACK "◔" : " ",
-		m->confused ? YELLOW "?" : " ",
-		m->freeze > g.current_beat ? CYAN "=" : " ",
+		IS_CONFUSED(*m) ? YELLOW "?" : " ",
+		IS_FROZEN(*m) ? CYAN "=" : " ",
 		dir_to_arrow(m->dir),
 		floor_glyphs[TILE(m->pos).class & ICE],
 		m->pos.x, m->pos.y,
