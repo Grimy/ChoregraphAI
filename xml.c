@@ -112,7 +112,6 @@ static void xml_process_node(xmlTextReader *xml)
 		if (id == GHAST || id == GHOUL || id == WRAITH || id == WIGHT)
 			return;
 		Monster *m = monster_spawn(id, pos, 0);
-		m->aggro = false;
 		if (id == RED_DRAGON || id == BLUE_DRAGON)
 			m->exhausted = 4;
 		else if (id == LIGHTSHROOM)
@@ -172,7 +171,8 @@ void xml_parse(i32 argc, char **argv)
 	monster_spawn(PLAYER, spawn, 0);
 	xml_process_file(argv[1], level, xml_process_node);
 
+	for (Monster *m = g.monsters + 2; m->class; ++m)
+		m->aggro = false;
 	assert(player.class == PLAYER);
-
 	update_fov();
 }

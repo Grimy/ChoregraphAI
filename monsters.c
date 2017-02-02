@@ -409,6 +409,7 @@ static void lich(Monster *this, Coords d)
 		player.confusion = g.current_beat + 5;
 }
 
+// Unlike bats, sarcophagi aren’t biased.
 static void sarcophagus(Monster *this, __attribute__((unused)) Coords d)
 {
 	static const MonsterClass types[] = {SKELETON_1, SKELETANK_1, WINDMAGE_1, RIDER_1};
@@ -417,20 +418,16 @@ static void sarcophagus(Monster *this, __attribute__((unused)) Coords d)
 	if (g.monsters[g.sarco_spawn].hp > 0 || !g.seed)
 		return;
 
-	// Make sure that at least one direction isn’t blocked
-	Coords spawn_dir;
-	for (i64 i = 0; i < 4; ++i)
-		if (IS_EMPTY(this->pos + plus_shape[i]))
-			goto ok;
-	return;
-ok:
-
-	do spawn_dir = plus_shape[RNG()];
-	while (!IS_EMPTY(this->pos + spawn_dir));
-
-	MonsterClass spawned = types[RNG()] + this->class - SARCO_1;
-	monster_spawn(spawned, this->pos + spawn_dir, 1);
-	g.sarco_spawn = g.last_monster;
+	// Try at random up to 4 times, then try in order
+	for (u64 i = 0; i < 8; ++i) {
+		Coords spawn_dir = plus_shape[i < 4 ? RNG() : i & 3];
+		if (!IS_EMPTY(this->pos + spawn_dir))
+			continue;
+		MonsterClass spawned = types[RNG()] + this->class - SARCO_1;
+		monster_spawn(spawned, this->pos + spawn_dir, 1);
+		g.sarco_spawn = g.last_monster;
+		return;
+	}
 }
 
 static void wind_statue(__attribute__((unused)) Monster *this, Coords d)
@@ -468,7 +465,7 @@ static void electro_lich(Monster *this, Coords d)
 	if (magic(this, d, L1(d) > 1 && charge)) {
 		this->dir = this->pos - this->prev_pos;
 		this->prev_pos = true_prev_pos;
-		monster_spawn(ORB_1, this->pos, 0)->prev_pos = this->pos;
+		monster_spawn(ORB_1, this->pos + this->dir, 0)->prev_pos = this->pos;
 	}
 }
 
@@ -705,7 +702,7 @@ const ClassInfos class_infos[256] = {
 	[FIRE_BEETLE]  = {  3, 3, 1,  49, false, -1, 10303202, RED "a",    beetle },
 	[ICE_BEETLE]   = {  3, 3, 1,  49, false, -1, 10303202, CYAN "a",   beetle },
 	[BEETLE]       = {  3, 3, 1,  49, false, -1, 10303202, "a",        basic_seek },
-	[HELLHOUND]    = {  3, 1, 1,   9, false, -1, 10301202, RED "d",    moore_seek },
+	[HELLHOUND]    = {  3, 1, 1,  49, false, -1, 10301202, RED "d",    moore_seek },
 	[SHOVE_1]      = {  0, 2, 0,  49, false, -1, 10002102, PURPLE "~", basic_seek },
 	[SHOVE_2]      = {  0, 3, 0,  49, false, -1, 10003102, BLACK "~",  basic_seek },
 	[YETI]         = {  3, 1, 3,  49,  true,  2, 20301403, CYAN "Y",   yeti },
@@ -779,7 +776,7 @@ const ClassInfos class_infos[256] = {
 	[DRAGON]       = {  4, 4, 1,  49,  true,  4, 30404210, GREEN "D",  basic_seek },
 	[RED_DRAGON]   = {  6, 6, 1, 100,  true,  4, 99999999, RED "D",    dragon },
 	[BLUE_DRAGON]  = {  6, 6, 1,   0,  true,  4, 99999997, BLUE "D",   dragon },
-	[EARTH_DRAGON] = {  6, 6, 1,   0,  true,  4, 30606215, BROWN "D",  basic_seek },
+	[EARTH_DRAGON] = {  6, 8, 1,   0,  true,  4, 30608215, BROWN "D",  basic_seek },
 	[BANSHEE_1]    = {  4, 3, 0,  25,  true, -1, 30403110, BLUE "8",   basic_seek },
 	[BANSHEE_2]    = {  6, 4, 0,   9,  true, -1, 30604115, GREEN "8",  basic_seek },
 	[MINOTAUR_1]   = {  4, 3, 0,  49,  true,  2, 30403110, "H",        minotaur },

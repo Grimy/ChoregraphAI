@@ -317,7 +317,7 @@ void monster_kill(Monster *m, DamageType type)
 			move(&player, m->pos);
 		break;
 	case BOMBER:
-		monster_new(BOMB, m->pos, 2);
+		monster_new(BOMB, m->pos, 3);
 		break;
 	case WATER_BALL:
 		tile_change(m->pos, WATER);
