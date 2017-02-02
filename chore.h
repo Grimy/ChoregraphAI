@@ -285,6 +285,8 @@ typedef struct {
 	u8 locking_enemies;
 	u8 nightmare;
 	u8 monkey;
+	u8 mommy_spawn;
+	u8 sarco_spawn;
 	u8 last_monster;
 
 	// Attributes specific to the player
@@ -293,7 +295,7 @@ typedef struct {
 	bool sliding_on_ice;
 	bool boots_on;
 	u8 iframes;
-	u64: 48;
+	u64: 32;
 } GameState;
 
 extern const ClassInfos class_infos[256];
@@ -302,6 +304,7 @@ extern Coords stairs;
 extern const Coords plus_shape[];
 extern __thread GameState g;
 
+Monster* monster_spawn(MonsterClass type, Coords pos, u8 delay);
 void xml_parse(i32 argc, char **argv);
 void do_beat(u8 input);
 bool player_won(void);
@@ -310,7 +313,6 @@ void cast_light(Tile *tile, i64 x, i64 y);
 void update_fov(void);
 ItemClass pickup_item(ItemClass item);
 void adjust_lights(Coords pos, i8 diff, i8 brightness);
-Monster *monster_spawn(MonsterClass type, Coords pos);
 void bomb_detonate(Monster *this, Coords d);
 void fireball(Coords pos, i8 dir);
 void cone_of_cold(Coords pos, i8 dir);

@@ -12,17 +12,24 @@ __extension__ __thread GameState g = {
 	.boots_on = true,
 };
 
-// Some pre-declarations
 static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type);
 
-Monster *monster_spawn(MonsterClass type, Coords pos)
+static void monster_new(MonsterClass type, Coords pos, u8 delay)
 {
-	Monster *new = &g.monsters[++g.last_monster];
-	assert(g.last_monster < ARRAY_SIZE(g.monsters));
-	new->class = type;
-	new->hp = CLASS(new).max_hp;
-	new->pos = new->prev_pos = pos;
-	return new;
+	Monster *m = &g.monsters[++g.last_monster];
+	m->class = type;
+	m->hp = CLASS(m).max_hp;
+	m->pos = pos;
+	m->prev_pos = pos;
+	m->delay = delay;
+	m->aggro = true;
+}
+
+Monster* monster_spawn(MonsterClass type, Coords pos, u8 delay)
+{
+	monster_new(type, pos, delay);
+	TILE(pos).monster = g.last_monster;
+	return &g.monsters[g.last_monster];
 }
 
 // Moves the given monster to a specific position.
@@ -268,13 +275,6 @@ static void knockback(Monster *m, Coords dir, u8 delay)
 	m->delay = delay;
 }
 
-// Places a bomb at the given position.
-static void bomb_plant(Coords pos, u8 delay)
-{
-	Monster *bomb = monster_spawn(BOMB, pos);
-	bomb->delay = delay;
-}
-
 // Overrides a tile with a given floor hazard. Also destroys traps on the tile.
 // Special cases: stairs are immune, fire+ice => water, fire+water => nothing.
 void tile_change(Coords pos, TileClass new_class)
@@ -316,7 +316,7 @@ void monster_kill(Monster *m, DamageType type)
 			move(&player, m->pos);
 		break;
 	case BOMBER:
-		bomb_plant(m->pos, 2);
+		monster_new(BOMB, m->pos, 2);
 		break;
 	case WATER_BALL:
 		tile_change(m->pos, WATER);
@@ -485,10 +485,7 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 				destroy_wall(spawn_pos);
 			else if (!IS_EMPTY(spawn_pos))
 				continue;
-			monster_spawn(m->class, spawn_pos);
-			g.monsters[g.last_monster].delay = 1;
-			g.monsters[g.last_monster].dir = CARDINAL(dir);
-			TILE(spawn_pos).monster = g.last_monster;
+			monster_spawn(m->class, spawn_pos, 1)->dir = CARDINAL(dir);
 		}
 		return false;
 	case WIRE_ZOMBIE:
@@ -725,7 +722,7 @@ static void player_turn(u8 input)
 	case '<':
 		if (g.inventory[BOMBS]) {
 			--g.inventory[BOMBS];
-			bomb_plant(player.pos, 3);
+			monster_new(BOMB, player.pos, 3);
 		}
 		break;
 	case ' ':
@@ -800,7 +797,7 @@ static void trap_turn(Trap *this)
 		break;
 	case BOMBTRAP:
 		if (m == &player)
-			bomb_plant(this->pos, 2);
+			monster_new(BOMB, player.pos, 2);
 		break;
 	case TEMPO_DOWN:
 	case TEMPO_UP:
@@ -818,7 +815,7 @@ i32 compare_priorities(const void *a, const void *b)
 		return 1;
 	if (CLASS(m1).priority > CLASS(m2).priority)
 		return -1;
-	
+
 	if (L2(m1->pos - player.pos) > L2(m2->pos - player.pos))
 		return 1;
 	if (L2(m1->pos - player.pos) < L2(m2->pos - player.pos))

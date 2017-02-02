@@ -1,7 +1,10 @@
 TESTS:
 * Check the behavior of revealed-aggro
+* Check all monster spawning
+* When is the knocked flag reset?
 * Hellhound activation radius
 * Bomb-order vs skulls
+* Minotaurs/armadillos charging at old prev_pos?
 
 FEATURES:
 * metal doors (type=111)
@@ -26,9 +29,11 @@ BUGFIXES:
 * pixie explosions are *weird*
 
 REFACTORS:
-* Do something about monster_spawn / monster_init
+* GET AN ACTUAL BUILD SYSTEM FOR LINUS’ SAKE
 * Go ECS or go home
 * Refactor harpy AI
 * Rename this → m
-* Split red/blue dragons?
 * Use WIRE/WIRE_DOOR classes instead of .wired ???
+* confused / frozen
+* can_charge overhaul
+* use an insertion sort instead of qsort

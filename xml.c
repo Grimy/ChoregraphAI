@@ -73,8 +73,7 @@ static void xml_process_node(xmlTextReader *xml)
 	if (streq(name, "trap")) {
 		i32 subtype = xml_attr(xml, "subtype");
 		if (type == 10) {
-			Monster *m = monster_spawn(FIREPIG, pos);
-			m->dir.x = subtype ? -1 : 1;
+			monster_spawn(FIREPIG, pos, 0)->dir.x = subtype ? -1 : 1;
 			return;
 		}
 		last_trap->class = subtype == 8 ? OMNIBOUNCE : (u8) type;
@@ -112,23 +111,24 @@ static void xml_process_node(xmlTextReader *xml)
 		u8 id = enemy_id[type / 100] + type % 100;
 		if (id == GHAST || id == GHOUL || id == WRAITH || id == WIGHT)
 			return;
-		Monster *m = monster_spawn(id, pos);
+		Monster *m = monster_spawn(id, pos, 0);
+		m->aggro = false;
 		if (id == RED_DRAGON || id == BLUE_DRAGON)
 			m->exhausted = 4;
-		else if ((id >= SARCO_1 && id <= SARCO_3) || id == MOMMY)
-			g.monsters[++g.last_monster].class = id;
 		else if (id == LIGHTSHROOM)
 			adjust_lights(pos, +1, 3);
 		else if (id == ZOMBIE || id == WIRE_ZOMBIE)
-			m->dir = (Coords) {1, 0};
+			m->dir.x = 1;
+		else if (m->class == NIGHTMARE_1 || m->class == NIGHTMARE_2)
+			g.nightmare = g.last_monster;
 	}
 
 	else if (streq(name, "chest")) {
-		monster_spawn(CHEST, pos)->item = xml_item(xml, "contents");
+		monster_spawn(CHEST, pos, 0)->item = xml_item(xml, "contents");
 	}
 
 	else if (streq(name, "crate")) {
-		monster_spawn(CRATE_2 + (u8) type, pos)->item = xml_item(xml, "contents");
+		monster_spawn(CRATE_2 + (u8) type, pos, 0)->item = xml_item(xml, "contents");
 	}
 
 	else if (streq(name, "item")) {
@@ -169,17 +169,10 @@ void xml_parse(i32 argc, char **argv)
 
 	LIBXML_TEST_VERSION;
 	xml_process_file(argv[1], level, xml_first_pass);
-	monster_spawn(PLAYER, spawn);
+	monster_spawn(PLAYER, spawn, 0);
 	xml_process_file(argv[1], level, xml_process_node);
 
-	// qsort(g.monsters + 1, ARRAY_SIZE(g.monsters) - 1, sizeof(Monster), compare_priorities);
 	assert(player.class == PLAYER);
-
-	for (Monster *m = g.monsters + 1; m->class; ++m) {
-		TILE(m->pos).monster = (u8) (m - g.monsters);
-		if (m->class == NIGHTMARE_1 || m->class == NIGHTMARE_2)
-			g.nightmare = (u8) (m - g.monsters);
-	}
 
 	update_fov();
 }

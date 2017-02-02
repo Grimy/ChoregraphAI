@@ -75,16 +75,6 @@ static Coords seek_dir(Monster *this, Coords d)
 	return axis ? vertical : horizontal;
 }
 
-static void monster_init(Monster *m, MonsterClass type, Coords pos)
-{
-	m->class = type;
-	m->hp = CLASS(m).max_hp;
-	m->pos = m->prev_pos = pos;
-	TILE(pos).monster = (u8) (m - g.monsters);
-	m->delay = 1;
-	m->aggro = true;
-}
-
 // Common //
 
 // Move cardinally toward the player, avoiding obstacles.
@@ -422,9 +412,9 @@ static void lich(Monster *this, Coords d)
 static void sarcophagus(Monster *this, __attribute__((unused)) Coords d)
 {
 	static const MonsterClass types[] = {SKELETON_1, SKELETANK_1, WINDMAGE_1, RIDER_1};
-	Monster *spawned = this + 1;
+
 	this->delay = CLASS(this).beat_delay;
-	if (spawned->hp > 0 || !g.seed)
+	if (g.monsters[g.sarco_spawn].hp > 0 || !g.seed)
 		return;
 
 	// Make sure that at least one direction isn’t blocked
@@ -438,7 +428,9 @@ ok:
 	do spawn_dir = plus_shape[RNG()];
 	while (!IS_EMPTY(this->pos + spawn_dir));
 
-	monster_init(spawned, types[RNG()] + this->class - SARCO_1, this->pos + spawn_dir);
+	MonsterClass spawned = types[RNG()] + this->class - SARCO_1;
+	monster_spawn(spawned, this->pos + spawn_dir, 1);
+	g.sarco_spawn = g.last_monster;
 }
 
 static void wind_statue(__attribute__((unused)) Monster *this, Coords d)
@@ -476,9 +468,7 @@ static void electro_lich(Monster *this, Coords d)
 	if (magic(this, d, L1(d) > 1 && charge)) {
 		this->dir = this->pos - this->prev_pos;
 		this->prev_pos = true_prev_pos;
-		Monster *orb = monster_spawn(ORB_1, this->pos);
-		orb->pos += this->dir;
-		TILE(orb->pos).monster = (u8) (orb - g.monsters);
+		monster_spawn(ORB_1, this->pos, 0)->prev_pos = this->pos;
 	}
 }
 
@@ -623,14 +613,14 @@ static void mommy(Monster *this, Coords d)
 		{-1, 2}, {1, 2}, {-2, 1}, {2, 1}, {0, -1},
 	};
 	const Coords *spawn_dir;
-	Monster *spawned = this + 1;
 
 	bool has_moved = L1((this)->pos - (this)->prev_pos) != 0;
 	basic_seek(this, d);
 
-	if (has_moved && spawned->hp <= 0) {
+	if (has_moved && g.monsters[g.mommy_spawn].hp <= 0) {
 		for (spawn_dir = spawn_dirs; !IS_EMPTY(this->pos + *spawn_dir); ++spawn_dir);
-		monster_init(spawned, MUMMY, this->pos + *spawn_dir);
+		monster_spawn(MUMMY, this->pos + *spawn_dir, 1);
+		g.mommy_spawn = g.last_monster;
 	}
 }
 
