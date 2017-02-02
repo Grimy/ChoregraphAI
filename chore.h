@@ -57,8 +57,7 @@ typedef enum __attribute__((__packed__)) {
 	GHOST,
 	ZOMBIE,
 	WRAITH,
-	MIMIC_1, MIMIC_2,
-	HEADLESS, // a decapitated skeleton
+	MIMIC_1, MIMIC_2, WHITE_MIMIC,
 
 	// Z2 enemies
 	SKELETANK_1, SKELETANK_2, SKELETANK_3,
@@ -147,6 +146,7 @@ typedef enum __attribute__((__packed__)) {
 	SHOPKEEPER,
 	PLAYER,
 	BOMB,
+	HEADLESS, // a decapitated skeleton
 } MonsterClass;
 
 // Items

@@ -395,6 +395,7 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	case MIMIC_3:
 	case MIMIC_4:
 	case MIMIC_5:
+	case WHITE_MIMIC:
 	case WALL_MIMIC:
 	case MIMIC_STATUE:
 	case FIRE_MIMIC:
@@ -402,7 +403,7 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	case SHOP_MIMIC:
 		if (type == DMG_BOMB || m->state == 2)
 			break;
-		return false;
+		return true;
 	case MOLE:
 	case GHOST:
 		if (m->state == 1)
