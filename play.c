@@ -122,6 +122,63 @@ static void display_inventory(void)
 		LINE("Head: %s", "Miner’s Cap");
 }
 
+static const char* additional_info(Monster *m)
+{
+	switch (m->class) {
+	case BARREL:
+		return m->state ? "rolling" : "";
+	case ARMADILLO_1:
+	case ARMADILLO_2:
+	case ARMADILDO:
+	case MINOTAUR_1:
+	case MINOTAUR_2:
+		return m->state ? "charging" : "";
+	case GHOST:
+		return m->state ? "" : "phased out";
+	case ASSASSIN_1:
+	case ASSASSIN_2:
+		return m->state ? "" : "fleeing";
+	case MOLE:
+		return m->state ? "" : "burrowed";
+	case DIGGER:
+		return m->state ? "" : "sleeping";
+	case BLADENOVICE:
+	case BLADEMASTER:
+		return m->state == 1 ? "parrying" :
+			m->state == 2 ? "vulnerable" : "";
+	case BOMB_STATUE:
+		return m->state ? "active" : "";
+	case FIREPIG:
+		return m->state ? "breathing" : "";
+	case EVIL_EYE_1:
+	case EVIL_EYE_2:
+		return m->state ? "glowing" : "";
+	case DEVIL_1:
+	case DEVIL_2:
+		return m->state ? "unshelled" : "";
+	case TARMONSTER:
+	case MIMIC_1:
+	case MIMIC_2:
+	case MIMIC_3:
+	case MIMIC_4:
+	case MIMIC_5:
+	case WHITE_MIMIC:
+	case WALL_MIMIC:
+	case MIMIC_STATUE:
+	case FIRE_MIMIC:
+	case ICE_MIMIC:
+	case SHOP_MIMIC:
+		return m->state == 2 ? "vulnerable" :
+			m->state ? "" : "hidden";
+	case RED_DRAGON:
+	case BLUE_DRAGON:
+		return m->state >= 2 ? "breathing" : m->exhausted ? "exhausted" : "";
+	case OGRE:
+		return m->state == 2 ? "clonking" : "";
+	}
+	return "";
+}
+
 static void display_enemy(Monster *m)
 {
 	if (m->hp <= 0)
@@ -134,11 +191,7 @@ static void display_enemy(Monster *m)
 		m->freeze ? CYAN "=" : " ",
 		dir_to_arrow(m->dir));
 	display_hearts(m);
-
-	if (m->state)
-		printf(" state=%d", m->state);
-	if (m->exhausted)
-		printf(" exhausted=%d", m->exhausted);
+	printf("%s", additional_info(m));
 }
 
 static void display_trap(Trap *t)
