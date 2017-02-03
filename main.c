@@ -760,8 +760,9 @@ static bool check_aggro(Monster *m, Coords d, bool bomb_exploded)
 		&& (d.x >= -10 && d.x <= 9)
 		&& TILE(m->pos).revealed
 		&& (TILE(m->pos).light >= 102
-			|| L2(player.pos - m->pos) < 9
-			|| shadowed);
+			|| shadowed
+			|| (m->class >= DIREBAT_1 && m->class <= EARTH_DRAGON)
+			|| L2(player.pos - m->pos) < 9);
 
 	if (m->aggro && (m->class == BLUE_DRAGON || m->class == EARTH_DRAGON))
 		return true;

@@ -328,7 +328,7 @@ static void digger(Monster *this, Coords d)
 	bool vertical = abs(d.y) > (abs(d.x) + 1) / 3;
 	for (i64 i = 0; i < 3; ++i) {
 		move = moves[i ^ vertical];
-		if (!TILE(this->pos + move).monster)
+		if (!TILE(this->pos + move).monster && TILE(this->pos + move).class != EDGE)
 			break;
 	}
 	if (enemy_move(this, move) < MOVE_ATTACK) {
@@ -717,7 +717,7 @@ const ClassInfos class_infos[256] = {
 	[ICE_POT]      = {  0, 1, 0,   0, false, -1,        0, CYAN "(",   NULL },
 
 	[BOMBER]       = {  4, 1, 1,   0, false, -1, 99999998, RED "o",    diagonal_seek },
-	[DIGGER]       = {  1, 1, 1,   9, false,  2, 10101201, "o",        digger },
+	[DIGGER]       = {  1, 1, 0,   9, false,  2, 10101201, "o",        digger },
 	[BLACK_BAT]    = {  2, 1, 0,   9,  true, -1, 10401120, BLACK "B",  black_bat },
 	[ARMADILDO]    = {  3, 3, 0,   0, false,  2, 10303104, ORANGE "q", armadillo },
 	[BLADENOVICE]  = {  1, 1, 1,   9, false, -1, 99999995, "b",        blademaster },
