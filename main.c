@@ -447,7 +447,7 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	case ARMADILLO_1:
 	case ARMADILLO_2:
 	case ARMADILDO:
-		if (m->state != 3)
+		if (!m->state)
 			break;
 		m->prev_pos = m->pos - dir;
 		return false;

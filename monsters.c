@@ -27,7 +27,7 @@ static bool can_breathe(Monster *this, Coords d)
 	return true;
 }
 
-static bool can_charge(Monster *this, Coords d)
+static bool _can_charge(Monster *this, Coords d)
 {
 	if (d.x * d.y != 0 && !(this->class == ARMADILDO && abs(d.x) == abs(d.y)))
 		return false;
@@ -38,6 +38,12 @@ static bool can_charge(Monster *this, Coords d)
 			return false;
 	this->prev_pos = this->pos - DIRECTION(d);
 	return true;
+}
+
+static bool can_charge(Monster *this, Coords d)
+{
+	return _can_charge(this, d) || (g.player_moved &&
+		_can_charge(this, d + player.prev_pos - player.pos));
 }
 
 // The direction a basic_seek enemy would move in.
@@ -239,15 +245,14 @@ static void mushroom(Monster *this, Coords d)
 }
 
 // State 0: passive
-// State 1: ready
-// State 2: about to charge
-// State 3: charging
+// State 1: charging
 static void armadillo(Monster *this, Coords d)
 {
-	this->state = this->state >= 2 ? 3 : can_charge(this, d) ? this->state + 2 : this->aggro;
-	if (this->state == 3) {
+	if (this->state == 0)
+		this->state = can_charge(this, d);
+	if (this->state == 1) {
 		charge(this, d);
-		this->delay = this->state ? 0 : 1;
+		this->delay = this->state ? 0 : 2;
 	}
 }
 
@@ -460,9 +465,8 @@ static void firepig(Monster *this, Coords d)
 static void electro_lich(Monster *this, Coords d)
 {
 	Coords true_prev_pos = this->prev_pos;
-	bool charge = can_charge(this, d) || can_charge(this, player.prev_pos - this->pos);
 
-	if (magic(this, d, L1(d) > 1 && charge)) {
+	if (magic(this, d, L1(d) > 1 && can_charge(this, d))) {
 		this->dir = this->pos - this->prev_pos;
 		this->prev_pos = true_prev_pos;
 		MonsterClass spawned = this->class + (ORB_1 - ELECTRO_1);
@@ -496,16 +500,18 @@ static void wire_zombie(Monster *this, __attribute__((unused)) Coords d)
 	}
 }
 
-static void eye(Monster *this, Coords d)
+static void evil_eye(Monster *this, Coords d)
 {
-	if (this->state) {
-		this->state = 0;
-		Coords dir = this->pos - this->prev_pos;
-		this->was_requeued = true;
-		enemy_move(this, dir) && enemy_move(this, dir) && enemy_move(this, dir);
-	} else if (can_charge(this, d) && L1(d) <= 3) {
-		this->state = 1;
+	if (!this->state) {
+		this->state = L1(d) <= 3 && _can_charge(this, d);
+		return;
 	}
+	this->state = 0;
+	Coords dir = this->pos - this->prev_pos;
+	this->was_requeued = true;
+	for (i64 i = 0; i < 3; ++i)
+		if (enemy_move(this, dir) != MOVE_SUCCESS)
+			return;
 }
 
 static void orc(Monster *this, Coords d)
@@ -585,7 +591,7 @@ static void dragon(Monster *this, Coords d)
 static void minotaur(Monster *this, Coords d)
 {
 	if (this->state == 0)
-		this->state = can_charge(this, d) || can_charge(this, player.prev_pos - this->pos);
+		this->state = can_charge(this, d);
 	if (this->state == 1) {
 		charge(this, d);
 		this->delay = this->state ? 0 : 2;
@@ -677,8 +683,8 @@ const ClassInfos class_infos[256] = {
 	[MUSHROOM_2]   = {  4, 3, 2,  25, false, -1, 10403303, PURPLE "%", mushroom },
 	[GOLEM_1]      = {  4, 5, 3,  25,  true,  2, 20405404, "'",        basic_seek },
 	[GOLEM_2]      = {  6, 7, 3,  25,  true,  2, 20607407, BLACK "'",  basic_seek },
-	[ARMADILLO_1]  = {  2, 1, 0, 999, false,  2, 10201102, "q",        armadillo },
-	[ARMADILLO_2]  = {  3, 2, 0, 999, false,  2, 10302105, YELLOW "q", armadillo },
+	[ARMADILLO_1]  = {  2, 1, 0,   0, false,  2, 10201102, "q",        armadillo },
+	[ARMADILLO_2]  = {  3, 2, 0,   0, false,  2, 10302105, YELLOW "q", armadillo },
 	[CLONE]        = {  3, 1, 0,  25, false, -1, 10301102, "@",        clone },
 	[TARMONSTER]   = {  3, 1, 0,   0, false, -1, 10304103, "t",        mimic },
 	[MOLE]         = {  2, 1, 0,  25,  true, -1,  1020113, "r",        mole },
@@ -713,7 +719,7 @@ const ClassInfos class_infos[256] = {
 	[BOMBER]       = {  4, 1, 1,   0, false, -1, 99999998, RED "o",    diagonal_seek },
 	[DIGGER]       = {  1, 1, 1,   9, false,  2, 10101201, "o",        digger },
 	[BLACK_BAT]    = {  2, 1, 0,   9,  true, -1, 10401120, BLACK "B",  black_bat },
-	[ARMADILDO]    = {  3, 3, 0, 999, false,  2, 10303104, ORANGE "q", armadillo },
+	[ARMADILDO]    = {  3, 3, 0,   0, false,  2, 10303104, ORANGE "q", armadillo },
 	[BLADENOVICE]  = {  1, 1, 1,   9, false, -1, 99999995, "b",        blademaster },
 	[BLADEMASTER]  = {  2, 2, 1,   9, false, -1, 99999996, YELLOW "b", blademaster },
 	[GHOUL]        = {  1, 1, 0,   9,  true, -1, 10301102, "W",        moore_seek },
@@ -758,8 +764,8 @@ const ClassInfos class_infos[256] = {
 	[GORGON_1]     = {  0, 1, 0,   9, false, -1, 10001102, GREEN "S",  basic_seek },
 	[GORGON_2]     = {  0, 3, 0,   9, false, -1, 10003100, YELLOW "S", basic_seek },
 	[WIRE_ZOMBIE]  = {  2, 1, 0, 999, false, -1, 10201201, ORANGE "Z", wire_zombie },
-	[EYE_1]        = {  1, 1, 0,   0,  true,  2, 10101103, GREEN "e",  eye },
-	[EYE_2]        = {  2, 2, 0,   0,  true,  2, 10202105, PINK "e",   eye },
+	[EVIL_EYE_1]   = {  1, 1, 0,   0,  true,  2, 10101103, GREEN "e",  evil_eye },
+	[EVIL_EYE_2]   = {  2, 2, 0,   0,  true,  2, 10202105, PINK "e",   evil_eye },
 	[ORC_1]        = {  1, 1, 0,   9, false, -1, 10101102, GREEN "o",  orc },
 	[ORC_2]        = {  2, 2, 0,   9, false, -1, 10202103, PINK "o",   orc },
 	[ORC_3]        = {  3, 3, 0,   9, false, -1, 10303104, PURPLE "o", orc },

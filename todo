@@ -1,10 +1,17 @@
+TESTS:
+* A causing B and C to requeue, with priorities A > B > C
+* 2+2 → 2+1 tiles from an unlit armadildo, w/ and w/o bomb-aggro
+* Check bomb-aggro on armadillos
+* Can unaggroed minotaurs charge?
+* TEST.xml golden electro-lich ' eejjjjfjjejffj'
+
 FEATURES:
 * metal doors (type=111)
 * lord enemies
+* use an insertion sort instead of qsort
 * confusion de-aggroing enemies?
 
 BUGFIXES:
-* unaggroed armadillos shouldn’t charge
 * restore the bomb-aggro bug
 * beetle shedding isn’t quite right
 * banshees/skeletons should have different activation radii depending on the zone
@@ -24,6 +31,5 @@ REFACTORS:
 * GET AN ACTUAL BUILD SYSTEM FOR LINUS’ SAKE
 * Go ECS or go home
 * Rename this → m
+* Rename _can_charge → something
 * Use WIRE/WIRE_DOOR classes instead of .wired ???
-* can_charge overhaul
-* use an insertion sort instead of qsort
