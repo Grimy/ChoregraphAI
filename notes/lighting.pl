@@ -3,6 +3,7 @@
 use List::Util qw(min max);
 
 @ok = (
+	[5],
 	[9, 18, 18, 18, 18],
 	[10, 16],
 	[13, 13],
@@ -28,18 +29,19 @@ use List::Util qw(min max);
 );
 
 # Simplified: 9 8 5 2 1
-@light = (102, 102, 102, -1, 102, 102, -1, -1, 102,
+my @light = (102, 102, 102, -1, 102, 102, -1, -1, 102,
 	94, 83, -1, -1, 53, -1, -1, 19, 10, 2);
-
-# 4.2494 to 4.2505 would do
-my $a = 4.25;
 
 sub lit {
 	my $light = 0;
-	$light += $a - sqrt for @$_;
+	$light += int($a * (4.25 - sqrt)) for @$_;
 	# $light += $light[$_] for @$_;
 	return $light;
 }
 
-print min map lit, @ok;
-print max map lit, @ko;
+while ($a < 10000) {
+	++$a;
+	my $min = (min map lit, @ok);
+	my $max = (max map lit, @ko);
+	print "Yay $a: $min > $max!" if $min > $max && $min > 7777 && $max < 7777;
+}

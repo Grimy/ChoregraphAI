@@ -311,7 +311,7 @@ i32 compare_priorities(const void *a, const void *b);
 void cast_light(Tile *tile, i64 x, i64 y);
 void update_fov(void);
 ItemClass pickup_item(ItemClass item);
-void adjust_lights(Coords pos, i8 diff, i8 brightness);
+void adjust_lights(Coords pos, i8 diff, double radius);
 void bomb_detonate(Monster *this, Coords d);
 void fireball(Coords pos, i8 dir);
 void cone_of_cold(Coords pos, i8 dir);

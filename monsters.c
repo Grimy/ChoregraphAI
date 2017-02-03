@@ -556,6 +556,7 @@ static void mimic(Monster *this, Coords d)
 	}
 }
 
+// Like a mimic, but can also move or wake up diagonally.
 static void moore_mimic(Monster *this, Coords d)
 {
 	if (this->state) {
@@ -630,6 +631,11 @@ static void mommy(Monster *this, Coords d)
 	}
 }
 
+// Can clonk on either the third or fourth beat of his 4 beat cycle.
+// After clonking, attacks on a 3-tile long line, destroying walls.
+// State 0 = 4th beat (can move or clonk)
+// State 1 = 3rd beat (can clonk, but not move).
+// State 2 = clonking
 static void ogre(Monster *this, Coords d)
 {
 	if (this->state == 2) {
@@ -649,6 +655,7 @@ static void ogre(Monster *this, Coords d)
 	}
 }
 
+// Move three times, then attack like a mushroom
 static void metrognome(Monster *this, Coords d)
 {
 	this->state = (this->state + 1) & 3;

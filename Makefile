@@ -7,7 +7,7 @@ CFLAGS += -std=c99 -Weverything -Werror -march=native -mtune=native
 CFLAGS += -fstrict-aliasing -fstrict-overflow -fno-asynchronous-unwind-tables
 CFLAGS += -Wno-c++-compat -Wno-switch -Wno-switch-enum -Wno-gnu-statement-expression -Wno-gnu-case-range -Wno-disabled-macro-expansion
 CFLAGS += -I/usr/include/libxml2 -Wno-unknown-warning-option -Wno-documentation -Wno-documentation-unknown-command -Wno-reserved-id-macro
-LDFLAGS += -lxml2
+LDFLAGS += -lxml2 -lm
 %/solve: CFLAGS += -fopenmp=libomp
 
 .PHONY: all debug report stat

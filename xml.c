@@ -104,7 +104,7 @@ static void xml_process_node(xmlTextReader *xml)
 		if (type == STAIRS)
 			stairs = pos;
 		if (TILE(pos).torch)
-			adjust_lights(pos, +1, 0);
+			adjust_lights(pos, +1, 4.25);
 	}
 
 	else if (streq(name, "enemy")) {
@@ -115,7 +115,7 @@ static void xml_process_node(xmlTextReader *xml)
 		if (id == RED_DRAGON || id == BLUE_DRAGON)
 			m->exhausted = 3;
 		else if (id == LIGHTSHROOM)
-			adjust_lights(pos, +1, 3);
+			adjust_lights(pos, +1, 4.5);
 		else if (id == ZOMBIE || id == WIRE_ZOMBIE)
 			m->dir.x = 1;
 		else if (m->class == NIGHTMARE_1 || m->class == NIGHTMARE_2)

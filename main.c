@@ -1,5 +1,7 @@
 // main.c - core game logic
 
+#include <math.h>
+
 #include "chore.h"
 
 const Coords plus_shape[] = {{-1, 0}, {0, -1}, {0, 1}, {1, 0}, {0, 0}};
@@ -55,17 +57,13 @@ bool can_move(Monster *m, Coords dir)
 	return !BLOCKS_LOS(dest);
 }
 
-void adjust_lights(Coords pos, i8 diff, i8 brightness)
+void adjust_lights(Coords pos, i8 diff, double radius)
 {
-	static const i16 lights[33] = {
-		102, 102, 102, 102, 102, 102, 102, 102, 102,
-		94, 83, -1, -1, 53, 43, 33, 19, 10, 2,
-	};
 	Coords d = {0, 0};
 	assert(ARRAY_SIZE(g.board) == 32);
 	for (d.x = -min(pos.x, 4); d.x <= min(4, 31 - pos.x); ++d.x)
 		for (d.y = -min(pos.y, 4); d.y <= min(4, 31 - pos.y); ++d.y)
-			TILE(pos + d).light += diff * lights[max(0, L2(d) - brightness)];
+			TILE(pos + d).light += diff * max(0, (int) (6100 * (radius - sqrt(L2(d)))));
 }
 
 static void destroy_wall(Coords pos)
@@ -85,7 +83,7 @@ static void destroy_wall(Coords pos)
 			destroy_wall(pos + plus_shape[i]);
 
 	if (wall->torch)
-		adjust_lights(pos, -1, 0);
+		adjust_lights(pos, -1, 4.25);
 }
 
 static void z4dig(Coords pos, i32 digging_power)
@@ -306,7 +304,7 @@ void monster_kill(Monster *m, DamageType type)
 		}
 		break;
 	case LIGHTSHROOM:
-		adjust_lights(m->pos, -1, 3);
+		adjust_lights(m->pos, -1, 4.5);
 		break;
 	case ICE_SLIME:
 	case YETI:
@@ -338,6 +336,8 @@ void monster_kill(Monster *m, DamageType type)
 	case SARCO_1 ... SARCO_3:
 	case DIREBAT_1 ... EARTH_DRAGON:
 		--g.locking_enemies;
+		if (m->class == NIGHTMARE_1 || m->class == NIGHTMARE_2)
+			g.nightmare = 0;
 		break;
 	}
 
@@ -768,7 +768,7 @@ static bool check_aggro(Monster *m, Coords d, bool bomb_exploded)
 	m->aggro = (d.y >= -5 && d.y <= 6)
 		&& (d.x >= -10 && d.x <= 9)
 		&& TILE(m->pos).revealed
-		&& (TILE(m->pos).light >= 102
+		&& (TILE(m->pos).light >= 7777
 			|| shadowed
 			|| (m->class >= DIREBAT_1 && m->class <= EARTH_DRAGON)
 			|| L2(player.pos - m->pos) < 9);
