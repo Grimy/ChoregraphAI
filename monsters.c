@@ -465,15 +465,15 @@ static void electro_lich(Monster *this, Coords d)
 	if (magic(this, d, L1(d) > 1 && charge)) {
 		this->dir = this->pos - this->prev_pos;
 		this->prev_pos = true_prev_pos;
-		monster_spawn(ORB_1, this->pos + this->dir, 0)->prev_pos = this->pos;
+		MonsterClass spawned = this->class + (ORB_1 - ELECTRO_1);
+		monster_spawn(spawned, this->pos + this->dir, 0)->dir = this->dir;
 	}
 }
 
 static void orb(Monster *this, __attribute__((unused)) Coords d)
 {
 	this->was_requeued = true;
-	enemy_move(this, this->pos - this->prev_pos);
-	if (coords_eq(this->pos, this->prev_pos))
+	if (enemy_move(this, this->dir) != MOVE_SUCCESS)
 		monster_kill(this, DMG_NORMAL);
 }
 

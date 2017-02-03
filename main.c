@@ -409,6 +409,10 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 		if (m->state == 1)
 			break;
 		return true;
+	case ORB_1:
+	case ORB_2:
+	case ORB_3:
+		return true;
 	case DEVIL_1:
 	case DEVIL_2:
 		if (m->state)
