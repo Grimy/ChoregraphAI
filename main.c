@@ -148,10 +148,10 @@ void enemy_attack(Monster *attacker)
 	case MONKEY_2:
 	case CONF_MONKEY:
 	case TELE_MONKEY:
-		if (g.monkey)
-			break;
-		g.monkey = (u8) (attacker - g.monsters);
-		TILE(attacker->pos).monster = 0;
+		if (g.monkeyed)
+			break; // One monkey at a time, please
+		g.monkeyed = (u8) (attacker - g.monsters);
+		move(attacker, player.pos);
 		attacker->hp *= attacker->class == MONKEY_2 ? 3 : 4;
 		break;
 	case PIXIE:
@@ -161,10 +161,12 @@ void enemy_attack(Monster *attacker)
 		break;
 	case SHOVE_1:
 	case SHOVE_2:
-		if (forced_move(&player, d))
+		if (forced_move(&player, d)) {
 			move(attacker, attacker->pos + d);
-		else
+			g.player_moved = true;
+		} else {
 			damage(&player, 1, d, DMG_NORMAL);
+		}
 		break;
 	case BOMBER:
 		bomb_detonate(attacker, NO_DIR);
@@ -293,9 +295,16 @@ void tile_change(Coords pos, TileClass new_class)
 // Kills the given monster, handling on-death effects.
 void monster_kill(Monster *m, DamageType type)
 {
-	m->hp = 0;
-
 	switch (m->class) {
+	case MONKEY_1:
+	case MONKEY_2:
+	case CONF_MONKEY:
+	case TELE_MONKEY:
+		if (m == &g.monsters[g.monkeyed]) {
+			g.monkeyed = 0;
+			TILE(player.pos).monster = 1;
+		}
+		break;
 	case LIGHTSHROOM:
 		adjust_lights(m->pos, -1, 3);
 		break;
@@ -332,6 +341,7 @@ void monster_kill(Monster *m, DamageType type)
 		break;
 	}
 
+	m->hp = 0;
 	if (MONSTER(m->pos).hp == 0)
 		TILE(m->pos).monster = 0;
 
@@ -565,6 +575,9 @@ static void after_move(Coords dir, bool forced)
 		for (i64 i = 0; i < 4; ++i)
 			dig(player.pos + plus_shape[i], digging_power);
 	}
+
+	if (g.monkeyed)
+		move(&g.monsters[g.monkeyed], player.pos);
 }
 
 // Moves something by force (as caused by bounce traps, wind mages and knockback).
@@ -572,7 +585,7 @@ static void after_move(Coords dir, bool forced)
 bool forced_move(Monster *m, Coords dir)
 {
 	assert(m != &player || L1(dir));
-	if (m->freeze || is_bogged(m) || (m == &player && g.monkey))
+	if (m->freeze || is_bogged(m) || (m == &player && g.monkeyed))
 		return false;
 
 	if (&MONSTER(m->pos + dir) == &player) {
@@ -630,14 +643,12 @@ static void player_move(i8 x, i8 y)
 	Coords dir = {x, y};
 	i32 dmg = tile->class == OOZE ? 0 : g.inventory[JEWELED] ? 5 : 1;
 
-	if (player.confusion || (g.monkey && g.monsters[g.monkey].class == CONF_MONKEY))
+	if (player.confusion || g.monsters[g.monkeyed].class == CONF_MONKEY)
 		dir = -dir;
 
-	if (g.monkey) {
-		Monster *m = &g.monsters[g.monkey];
-		m->hp -= max(1, dmg);
-		if (m->hp <= 0)
-			g.monkey = 0;
+	if (g.monkeyed) {
+		Monster *m = &g.monsters[g.monkeyed];
+		damage(m, max(1, dmg), NO_DIR, DMG_NORMAL);
 		if (m->class == TELE_MONKEY)
 			monster_kill(&player, DMG_NORMAL);
 		else if (m->class != CONF_MONKEY)
@@ -681,7 +692,8 @@ void cone_of_cold(Coords pos, i8 dir)
 	for (u64 i = 0; i < ARRAY_SIZE(cone_shape); ++i) {
 		if (pos.x + dir * cone_shape[i].x >= 32)
 			return;
-		MONSTER(pos + dir * cone_shape[i]).freeze = 4;
+		Monster *m = &MONSTER(pos + dir * cone_shape[i]);
+		m->freeze = 4 + (m == &player);
 	}
 }
 
@@ -708,11 +720,6 @@ ItemClass pickup_item(ItemClass item)
 
 static void player_turn(u8 input)
 {
-	g.player_moved = false;
-
-	if (player.confusion)
-		--player.confusion;
-
 	switch (input) {
 	case 'e':
 		player_move(-1,  0);
@@ -737,20 +744,22 @@ static void player_turn(u8 input)
 		break;
 	}
 
-	// Ice and fire
-	if (player.freeze)
-		--player.freeze;
-
 	if (g.sliding_on_ice)
 		g.player_moved = forced_move(&player, DIRECTION(player.pos - player.prev_pos));
-	else if (!g.player_moved && TILE(player.pos).class == FIRE)
-		damage(&player, 2, NO_DIR, DMG_NORMAL);
-
-	g.sliding_on_ice = g.player_moved && TILE(player.pos).class == ICE
-		&& can_move(&player, DIRECTION(player.pos - player.prev_pos));
 
 	if (TILE(player.pos).item)
 		TILE(player.pos).item = pickup_item(TILE(player.pos).item);
+}
+
+static void ice_and_fire()
+{
+	g.sliding_on_ice = g.player_moved && TILE(player.pos).class == ICE
+		&& can_move(&player, DIRECTION(player.pos - player.prev_pos));
+
+	if (!g.player_moved && TILE(player.pos).class == FIRE)
+		damage(&player, 2, NO_DIR, DMG_NORMAL);
+
+	g.player_moved = false;
 }
 
 static bool check_aggro(Monster *m, Coords d, bool bomb_exploded)
@@ -843,11 +852,11 @@ i32 compare_priorities(const void *a, const void *b)
 // Enemies act in decreasing priority order. Traps have an arbitrary order.
 void do_beat(u8 input)
 {
-	g.input[g.current_beat & 31] = input;
+	g.input[g.current_beat++ & 31] = input;
 
 	player_turn(input);
 	if (player_won())
-		goto end;
+		return;
 	update_fov();
 
 	Monster *queue[64] = { 0 };
@@ -858,15 +867,7 @@ void do_beat(u8 input)
 		if (!CLASS(m).act || m->hp <= 0)
 			continue;
 
-		// Flag upkeep: done when frozen/delayed, but not when dead
 		m->knocked = false;
-		m->requeued = false;
-		m->was_requeued = false;
-		if (m->confusion)
-			--m->confusion;
-		if (m->exhausted && m->aggro)
-			--m->exhausted;
-
 		if (!m->aggro && !check_aggro(m, player.pos - m->pos, bomb_exploded))
 			continue;
 
@@ -884,8 +885,9 @@ void do_beat(u8 input)
 		Coords old_dir = m->dir;
 
 		if (m->freeze)
-			--m->freeze;
-		else if (m->delay)
+			continue;
+
+		if (m->delay)
 			--m->delay;
 		else
 			CLASS(m).act(m, d);
@@ -898,8 +900,23 @@ void do_beat(u8 input)
 		}
 	}
 
+	ice_and_fire();
+
 	for (Trap *t = g.traps; t->pos.x; ++t)
 		trap_turn(t);
 
-	end: ++g.current_beat;
+	// Flag upkeep
+	for (Monster *m = &player; m->class; ++m) {
+		if (m->hp <= 0)
+			continue;
+		m->knocked = false;
+		m->requeued = false;
+		m->was_requeued = false;
+		if (m->freeze)
+			--m->freeze;
+		if (m->confusion)
+			--m->confusion;
+		if (m->exhausted && m->aggro)
+			--m->exhausted;
+	}
 }

@@ -1,7 +1,3 @@
-TESTS:
-* 2+2 → 2+1 tiles from an unlit armadildo, w/ and w/o bomb-aggro
-* Check bomb-aggro on armadillos
-
 FEATURES:
 * metal doors (type=111)
 * lord enemies
@@ -9,20 +5,16 @@ FEATURES:
 * confusion de-aggroing enemies?
 
 BUGFIXES:
-* restore the bomb-aggro bug
 * beetle shedding isn’t quite right
 * banshees/skeletons should have different activation radii depending on the zone
-* shovemonsters pushing the player on ice shoud trigger a slide
 * charged breath attacks should have extreme priority
-* when monkeyed while trapped in tar, the player should stay trapped
-* monkey should tank explosions/fireballs for the player
 * clonking should hit both player and monkey
-* pixies should emit light
 * metrognomes should reset tracking dir when hit with weapons
-* bombs shouldn’t damage unaggroed enemies
-* pixie explosions are *weird*
+* restore the bomb-aggro bug
 * bombs shouldn’t damage fresh skull spawns
-* knocked should be reset before *and* after player’s turn
+* bombs shouldn’t damage unaggroed enemies
+* pixies should emit light
+* pixie explosions are *weird*
 
 REFACTORS:
 * GET AN ACTUAL BUILD SYSTEM FOR LINUS’ SAKE

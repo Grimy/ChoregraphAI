@@ -107,8 +107,8 @@ static void display_inventory(void)
 	LINE("Bard ");
 	display_hearts(&player);
 	LINE("%s%s%s%s%s",
-		g.monkey ? PURPLE "Monkeyed " : "",
-		player.confusion > 1 ? YELLOW "Confused " : "",
+		g.monkeyed ? PURPLE "Monkeyed " : "",
+		player.confusion ? YELLOW "Confused " : "",
 		player.freeze ? CYAN "Frozen " : "",
 		g.sliding_on_ice ? CYAN "Sliding " : "",
 		g.iframes > g.current_beat ? PINK "I-framed " : "");
@@ -187,7 +187,7 @@ static void display_enemy(Monster *m)
 		CLASS(m).glyph,
 		m->aggro ? ORANGE "!" : " ",
 		m->delay ? BLACK "◔" : " ",
-		m->confusion > 1 ? YELLOW "?" : " ",
+		m->confusion ? YELLOW "?" : " ",
 		m->freeze ? CYAN "=" : " ",
 		dir_to_arrow(m->dir));
 	display_hearts(m);

@@ -283,7 +283,7 @@ typedef struct {
 	u8 current_beat;
 	u8 locking_enemies;
 	u8 nightmare;
-	u8 monkey;
+	u8 monkeyed;
 	u8 mommy_spawn;
 	u8 sarco_spawn;
 	u8 last_monster;
