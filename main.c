@@ -218,7 +218,7 @@ MoveResult enemy_move(Monster *m, Coords dir)
 		dir = -dir;
 
 	// Attack
-	if (&MONSTER(m->pos + dir) == &player) {
+	if (coords_eq(m->pos + dir, player.pos)) {
 		enemy_attack(m);
 		return MOVE_ATTACK;
 	}
