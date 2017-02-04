@@ -4,7 +4,6 @@ TESTS:
 FEATURES:
 * metal doors (type=111)
 * lord enemies
-* use an insertion sort instead of qsort
 * confusion de-aggroing enemies?
 
 BUGFIXES:

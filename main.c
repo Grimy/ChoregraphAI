@@ -842,27 +842,21 @@ static void trap_turn(Trap *this)
 }
 
 // Compares the priorities of two monsters. Callback for qsort.
-static i32 compare_priorities(const void *a, const void *b)
+static bool has_priority(Monster *m1, Monster *m2)
 {
-	Monster *m1 = *(Monster * const *) a;
-	Monster *m2 = *(Monster * const *) b;
-
-	if (CLASS(m1).priority < CLASS(m2).priority)
-		return 1;
 	if (CLASS(m1).priority > CLASS(m2).priority)
-		return -1;
-
-	if (L2(m1->pos - player.pos) > L2(m2->pos - player.pos))
-		return 1;
-	if (L2(m1->pos - player.pos) < L2(m2->pos - player.pos))
-		return -1;
-
-	return 0;
+		return true;
+	if (CLASS(m1).priority < CLASS(m2).priority)
+		return false;
+	return (L1(m1->pos - m2->pos) < 5 && L2(m1->pos - player.pos) < L2(m2->pos - player.pos));
 }
 
-static void priority_insert(Monster **queue, u64 queue_length, Monster *m)
+static void __attribute__((noinline)) priority_insert(Monster **queue, u64 queue_length, Monster *m)
 {
-	queue[queue_length++] = m;
+	u64 i = queue_length;
+	for (; i > 0 && has_priority(m, queue[i - 1]); --i);
+	memmove(&queue[i + 1], &queue[i], (queue_length - i) * sizeof(Monster*));
+	queue[i] = m;
 }
 
 // Runs one full beat of the game.
@@ -894,8 +888,6 @@ void do_beat(u8 input)
 
 		priority_insert(queue, queue_length++, m);
 	}
-
-	qsort(queue, queue_length, sizeof(Monster *), compare_priorities);
 
 	for (u64 i = 0; i < queue_length; ++i) {
 		Monster *m = queue[i];
