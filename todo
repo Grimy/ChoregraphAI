@@ -13,7 +13,6 @@ BUGFIXES:
 * charged breath attacks should have extreme priority
 * clonking should hit both player and monkey
 * metrognomes should reset tracking dir when hit with weapons
-* restore the bomb-aggro bug
 * bombs shouldn’t damage fresh skull spawns
 * bombs shouldn’t damage unaggroed enemies
 * pixies should emit light

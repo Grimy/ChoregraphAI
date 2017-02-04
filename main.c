@@ -860,6 +860,11 @@ static i32 compare_priorities(const void *a, const void *b)
 	return 0;
 }
 
+static void priority_insert(Monster **queue, u64 queue_length, Monster *m)
+{
+	queue[queue_length++] = m;
+}
+
 // Runs one full beat of the game.
 // During each beat, the player acts first, enemies second and traps last.
 // Enemies act in decreasing priority order. Traps have an arbitrary order.
@@ -876,7 +881,7 @@ void do_beat(u8 input)
 	u64 queue_length = 0;
 	bool bomb_exploded = false;
 
-	for (Monster *m = &player + 1; m->class; ++m) {
+	for (Monster *m = &g.monsters[g.last_monster]; m > &player; --m) {
 		if (!CLASS(m).act || m->hp <= 0)
 			continue;
 
@@ -886,7 +891,8 @@ void do_beat(u8 input)
 
 		if (m->class == BOMB || m->class == BOMB_STATUE)
 			bomb_exploded = true;
-		queue[queue_length++] = m;
+
+		priority_insert(queue, queue_length++, m);
 	}
 
 	qsort(queue, queue_length, sizeof(Monster *), compare_priorities);
