@@ -787,6 +787,8 @@ const ClassInfos class_infos[256] = {
 	[PURPLE_SLIME] = {  3, 1, 0, 999, false, -1, 10301102, PURPLE "P", slime },
 	[CURSE]        = {  0, 1, 0,   9,  true, -1, 10001102, YELLOW "W", basic_seek },
 	[SHOP_MIMIC]   = {  2, 1, 0,   0, false, -1, 10201100, YELLOW "m", moore_mimic },
+	[STONE_STATUE] = {  1, 0, 0,   0, false, -1,        0, BLACK "S",  NULL },
+	[GOLD_STATUE]  = {  3, 0, 0,   0, false, -1,        0, BLACK "S",  NULL },
 
 	[DIREBAT_1]    = {  3, 2, 1,   9,  true, -1, 30302210, YELLOW "B", bat },
 	[DIREBAT_2]    = {  4, 3, 1,   9,  true, -1, 30403215, "B",        bat },

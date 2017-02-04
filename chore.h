@@ -131,6 +131,8 @@ typedef enum __attribute__((__packed__)) {
 	BLACK_SLIME, WHITE_SLIME,
 	MIMIC_4, MIMIC_5,
 	TAR_BALL,
+	STONE_STATUE,
+	GOLD_STATUE,
 
 	// Minibosses
 	DIREBAT_1, DIREBAT_2,
@@ -229,12 +231,12 @@ typedef struct {
 	u8 exhausted;
 	ItemClass item;
 	bool aggro;
-	bool untrapped;
-	bool knocked;
+	bool untrapped: 1;
 	bool electrified: 1;
+	bool knocked: 1;
 	bool requeued: 1;
 	bool was_requeued: 1;
-	bool padding: 5;
+	bool: 3;
 } Monster;
 
 typedef struct {
@@ -307,7 +309,6 @@ Monster* monster_spawn(MonsterClass type, Coords pos, u8 delay);
 void xml_parse(i32 argc, char **argv);
 void do_beat(u8 input);
 bool player_won(void);
-i32 compare_priorities(const void *a, const void *b);
 void cast_light(Tile *tile, i64 x, i64 y);
 void update_fov(void);
 ItemClass pickup_item(ItemClass item);

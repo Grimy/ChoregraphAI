@@ -155,6 +155,13 @@ static void xml_process_file(char *file, i64 level, void callback(xmlTextReader 
 	xmlFreeTextReader(xml);
 }
 
+static i32 compare_priorities(const void *a, const void *b)
+{
+	u64 pa = CLASS((const Monster*) a).priority;
+	u64 pb = CLASS((const Monster*) b).priority;
+	return (pb > pa) - (pb < pa);
+}
+
 // Initializes the game’s state based on the given custom dungeon file.
 // Aborts if the file doesn’t exist or isn’t valid XML.
 // Valid, non-dungeon XML yields undefined results (most likely, an empty dungeon).
@@ -171,8 +178,12 @@ void xml_parse(i32 argc, char **argv)
 	monster_spawn(PLAYER, spawn, 0);
 	xml_process_file(argv[1], level, xml_process_node);
 
-	for (Monster *m = g.monsters + 2; m->class; ++m)
-		m->aggro = false;
+	qsort(g.monsters + 1, g.last_monster, sizeof(Monster), compare_priorities);
+	for (u8 i = 1; g.monsters[i].class; ++i) {
+		g.monsters[i].aggro = false;
+		TILE(g.monsters[i].pos).monster = i;
+	}
+
 	assert(player.class == PLAYER);
 	update_fov();
 }

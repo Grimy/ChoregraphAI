@@ -1,3 +1,6 @@
+TESTS:
+* check electrified flag being cleared
+
 FEATURES:
 * metal doors (type=111)
 * lord enemies

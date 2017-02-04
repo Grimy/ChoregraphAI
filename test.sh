@@ -23,7 +23,7 @@ solve 2 3 'ffeeiiiefff'
 solve 3 1 'iiijjj jjj'
 solve 3 2 'jijififfi(fii|iie)jffee'
 solve 3 3 'ffei(ei|if)fff'
-solve 4 1 'fffffeeeeefijj'
+solve 4 1 'ffffeeijiifijj'
 # solve 4 2 'feeffffefeeefej'
 solve 4 3 'jjifjjjeeeeiije'
 

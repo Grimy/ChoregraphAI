@@ -18,6 +18,7 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type);
 
 static void monster_new(MonsterClass type, Coords pos, u8 delay)
 {
+	assert(g.last_monster < ARRAY_SIZE(g.monsters));
 	Monster *m = &g.monsters[++g.last_monster];
 	m->class = type;
 	m->hp = CLASS(m).max_hp;
@@ -177,7 +178,7 @@ void enemy_attack(Monster *attacker)
 	case GORGON_1:
 	case GORGON_2:
 		player.freeze = 3;
-		attacker->class = CRATE_1;
+		monster_kill(attacker, DMG_NORMAL);
 		break;
 	default:
 		damage(&player, CLASS(attacker).damage, d, DMG_NORMAL);
@@ -204,12 +205,10 @@ static bool is_bogged(Monster *m)
 // The return code indicates what action actually took place.
 MoveResult enemy_move(Monster *m, Coords dir)
 {
+	m->requeued = false;
 	m->prev_pos = m->pos;
 	m->delay = CLASS(m).beat_delay;
-	m->requeued = false;
-
-	if (m->hp <= 0)
-		return MOVE_FAIL;
+	assert(m->hp > 0);
 
 	if (is_bogged(m))
 		return MOVE_SPECIAL;
@@ -330,8 +329,14 @@ void monster_kill(Monster *m, DamageType type)
 		tile_change(m->pos, WATER);
 		break;
 	case GORGON_1:
+		m->class = STONE_STATUE;
+		m->freeze = 1;
+		m->hp = 1;
+		return;
 	case GORGON_2:
-		m->class = CRATE_1;
+		m->class = GOLD_STATUE;
+		m->freeze = 1;
+		m->hp = 3;
 		return;
 	case SARCO_1 ... SARCO_3:
 	case DIREBAT_1 ... EARTH_DRAGON:
@@ -388,6 +393,12 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 		if (type == DMG_WEAPON)
 			break;
 		return false;
+	case STONE_STATUE:
+		knockback(m, dir, 0);
+		return false;
+	case GOLD_STATUE:
+		dmg = 1;
+		break;
 	}
 
 	if (dmg == 0 || m->hp <= 0)
@@ -539,6 +550,8 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	case TELE_MONKEY:
 	case ASSASSIN_1:
 	case ASSASSIN_2:
+	case GORGON_2:
+	case GOLD_STATUE:
 	case DEVIL_1:
 	case DEVIL_2:
 	case BANSHEE_1:
@@ -829,7 +842,7 @@ static void trap_turn(Trap *this)
 }
 
 // Compares the priorities of two monsters. Callback for qsort.
-i32 compare_priorities(const void *a, const void *b)
+static i32 compare_priorities(const void *a, const void *b)
 {
 	Monster *m1 = *(Monster * const *) a;
 	Monster *m2 = *(Monster * const *) b;
@@ -880,12 +893,14 @@ void do_beat(u8 input)
 
 	for (u64 i = 0; i < queue_length; ++i) {
 		Monster *m = queue[i];
+		m->requeued = false;
+
+		if (m->hp <= 0 || m->freeze)
+			continue;
+
 		Coords d = player.pos - m->pos;
 		u8 old_state = m->state;
 		Coords old_dir = m->dir;
-
-		if (m->freeze)
-			continue;
 
 		if (m->delay)
 			--m->delay;
@@ -895,6 +910,7 @@ void do_beat(u8 input)
 		if (m->requeued) {
 			m->state = old_state;
 			m->dir = old_dir;
+			m->delay = 0;
 			m->was_requeued = true;
 			queue[queue_length++] = m;
 		}
@@ -909,8 +925,9 @@ void do_beat(u8 input)
 	for (Monster *m = &player; m->class; ++m) {
 		if (m->hp <= 0)
 			continue;
+		m->electrified = false;
 		m->knocked = false;
-		m->requeued = false;
+		assert(!m->requeued);
 		m->was_requeued = false;
 		if (m->freeze)
 			--m->freeze;

@@ -32,6 +32,15 @@ use List::Util qw(min max);
 my @light = (102, 102, 102, -1, 102, 102, -1, -1, 102,
 	94, 83, -1, -1, 53, -1, -1, 19, 10, 2);
 
+# wall torch: 4.25
+# light mushroom: 4.5
+# base torch (held): ?
+# bright torch (held): ?
+# luminous torch (held): ?
+# base torch (ground): ?
+# bright torch (ground): ?
+# luminous torch (ground): ?
+
 sub lit {
 	my $light = 0;
 	$light += int($a * (4.25 - sqrt)) for @$_;
