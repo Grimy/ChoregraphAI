@@ -354,6 +354,14 @@ void monster_kill(Monster *m, DamageType type)
 		TILE(m->pos).item = m->item;
 }
 
+static void skull_spawn(Monster *skull, Coords pos)
+{
+	if (IS_DIGGABLE(pos))
+		destroy_wall(pos);
+	else if (IS_EMPTY(pos))
+		monster_spawn(skull->class, pos, 1)->dir = skull->dir;
+}
+
 // Deals damage to the given monster. Handles on-damage effects.
 static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 {
@@ -504,16 +512,10 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 		m->class -= SKULL_2 - SKELETON_2;
 		m->delay = 1;
 		m->hp = CLASS(m).max_hp;
+		m->dir = CARDINAL(dir);
 		Coords spawn_dir = (Coords) { dir.x == 0, dir.x != 0 };
-
-		for (i8 i = -1; i <= 1; i += 2) {
-			Coords spawn_pos = m->pos + i * spawn_dir;
-			if (IS_DIGGABLE(spawn_pos))
-				destroy_wall(spawn_pos);
-			else if (!IS_EMPTY(spawn_pos))
-				continue;
-			monster_spawn(m->class, spawn_pos, 1)->dir = CARDINAL(dir);
-		}
+		skull_spawn(m, m->pos + spawn_dir);
+		skull_spawn(m, m->pos - spawn_dir);
 		return false;
 	case WIRE_ZOMBIE:
 		if (IS_WIRE(player.pos) || !(IS_WIRE(m->pos) || TILE(m->pos).class == STAIRS))
@@ -634,11 +636,11 @@ static void chain_lightning(Coords pos, Coords dir)
 	for (i64 i = 0; queue[i].x; ++i) {
 		for (i64 j = 0; j < 7; ++j) {
 			Monster *m = &MONSTER(queue[i] + arcs[j]);
-			if (m->hp > 0 && !m->electrified) {
-				m->electrified = true;
-				damage(m, 1, CARDINAL(arcs[j]), DMG_NORMAL);
-				queue[queue_length++] = queue[i] + arcs[j];
-			}
+			if (m->hp <= 0 || m->electrified)
+				continue;
+			m->electrified = true;
+			damage(m, 1, CARDINAL(arcs[j]), DMG_NORMAL);
+			queue[queue_length++] = queue[i] + arcs[j];
 		}
 	}
 }
@@ -764,17 +766,6 @@ static void player_turn(u8 input)
 		TILE(player.pos).item = pickup_item(TILE(player.pos).item);
 }
 
-static void ice_and_fire()
-{
-	g.sliding_on_ice = g.player_moved && TILE(player.pos).class == ICE
-		&& can_move(&player, DIRECTION(player.pos - player.prev_pos));
-
-	if (!g.player_moved && TILE(player.pos).class == FIRE)
-		damage(&player, 2, NO_DIR, DMG_NORMAL);
-
-	g.player_moved = false;
-}
-
 static bool check_aggro(Monster *m, Coords d, bool bomb_exploded)
 {
 	bool shadowed = g.nightmare && L2(m->pos - g.monsters[g.nightmare].pos) < 8;
@@ -851,10 +842,11 @@ static bool has_priority(Monster *m1, Monster *m2)
 	return (L1(m1->pos - m2->pos) < 5 && L2(m1->pos - player.pos) < L2(m2->pos - player.pos));
 }
 
-static void __attribute__((noinline)) priority_insert(Monster **queue, u64 queue_length, Monster *m)
+static void priority_insert(Monster **queue, u64 queue_length, Monster *m)
 {
 	u64 i = queue_length;
-	for (; i > 0 && has_priority(m, queue[i - 1]); --i);
+	while (i > 0 && has_priority(m, queue[i - 1]))
+		--i;
 	memmove(&queue[i + 1], &queue[i], (queue_length - i) * sizeof(Monster*));
 	queue[i] = m;
 }
@@ -864,13 +856,14 @@ static void __attribute__((noinline)) priority_insert(Monster **queue, u64 queue
 // Enemies act in decreasing priority order. Traps have an arbitrary order.
 void do_beat(u8 input)
 {
+	// Player’s turn
 	g.input[g.current_beat++ & 31] = input;
-
 	player_turn(input);
 	if (player_won())
 		return;
 	update_fov();
 
+	// Build a priority queue with all active enemies
 	Monster *queue[64] = { 0 };
 	u64 queue_length = 0;
 	bool bomb_exploded = false;
@@ -889,23 +882,27 @@ void do_beat(u8 input)
 		priority_insert(queue, queue_length++, m);
 	}
 
+	// Enemies’ turns
 	for (u64 i = 0; i < queue_length; ++i) {
 		Monster *m = queue[i];
 		m->requeued = false;
 
+		// We need to check again: an earlier enemy could have killed/frozen this one
 		if (m->hp <= 0 || m->freeze)
 			continue;
 
-		Coords d = player.pos - m->pos;
+		if (m->delay) {
+			--m->delay;
+			continue;
+		}
+
 		u8 old_state = m->state;
 		Coords old_dir = m->dir;
 
-		if (m->delay)
-			--m->delay;
-		else
-			CLASS(m).act(m, d);
+		CLASS(m).act(m, player.pos - m->pos);
 
 		if (m->requeued) {
+			// Undo all side-effects and add it to the back of the priority queue
 			m->state = old_state;
 			m->dir = old_dir;
 			m->delay = 0;
@@ -914,8 +911,16 @@ void do_beat(u8 input)
 		}
 	}
 
-	ice_and_fire();
+	// Ice and Fire
+	g.sliding_on_ice = g.player_moved && TILE(player.pos).class == ICE
+		&& can_move(&player, DIRECTION(player.pos - player.prev_pos));
 
+	if (!g.player_moved && TILE(player.pos).class == FIRE)
+		damage(&player, 2, NO_DIR, DMG_NORMAL);
+
+	g.player_moved = false;
+
+	// Traps’ turns
 	for (Trap *t = g.traps; t->pos.x; ++t)
 		trap_turn(t);
 

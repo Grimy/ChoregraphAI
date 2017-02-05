@@ -7,6 +7,7 @@ FEATURES:
 * confusion de-aggroing enemies?
 
 BUGFIXES:
+* double water ball
 * beetle shedding isn’t quite right
 * banshees/skeletons should have different activation radii depending on the zone
 * charged breath attacks should have extreme priority
@@ -19,6 +20,7 @@ BUGFIXES:
 
 REFACTORS:
 * GET AN ACTUAL BUILD SYSTEM FOR LINUS’ SAKE
+* Refactor chain_lightning
 * Go ECS or go home
 * Rename this → m
 * Rename _can_charge → something

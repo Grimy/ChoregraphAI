@@ -4,7 +4,7 @@
 
 #include <libxml/xmlreader.h>
 
-// Pointer to the end of the monsters array
+// Pointer to the end of the trap array
 static Trap *last_trap;
 
 // Returns the numeric value of a named attribute of the current node.
@@ -17,7 +17,7 @@ static i32 xml_attr(xmlTextReader *xml, char* attr)
 	return result;
 }
 
-static void xml_first_pass(xmlTextReader *xml)
+static void xml_find_spawn(xmlTextReader *xml)
 {
 	spawn.x = max(spawn.x, 1 - (i8) xml_attr(xml, "x"));
 	spawn.y = max(spawn.y, 1 - (i8) xml_attr(xml, "y"));
@@ -42,6 +42,28 @@ static ItemClass xml_item(xmlTextReader *xml, char* attr)
 	while (--class && !streq(item_name, item_names[class]));
 	free(item_name);
 	return class;
+}
+
+static u8 build_wall(Tile *tile, i8 hp, i32 zone)
+{
+	tile->hp = hp;
+	g.locking_enemies = 1 + (zone == 4);
+	if (zone == 4 && (hp == 1 || hp == 2))
+		return Z4WALL;
+	else if (zone == 2 && hp == 2)
+		return FIREWALL;
+	else if (zone == 3 && hp == 2)
+		return ICEWALL;
+	else
+		return WALL;
+}
+
+static Coords orient_zombie(Coords pos)
+{
+	for (int i = 3; i >= 0; --i)
+		if (IS_WIRE(pos + plus_shape[i]))
+			return plus_shape[i];
+	return (Coords) {1, 0};
 }
 
 // Converts a single XML node into an appropriate object (Trap, Tile or Monster).
@@ -84,21 +106,10 @@ static void xml_process_node(xmlTextReader *xml)
 
 	else if (streq(name, "tile")) {
 		TILE(pos).wired = type == 20 || type == 118;
-		if (type == 103 || type == 111 || type == 118) {
+		if (type == 103 || type == 111 || type == 118)
 			type = DOOR;
-		} else if (type >= 100) {
-			i8 hp = TILE(pos).hp = wall_hp[type - 100];
-			i32 zone = xml_attr(xml, "zone");
-			g.locking_enemies = 1 + (zone == 4);
-			if (zone == 4 && (hp == 1 || hp == 2))
-				type = Z4WALL;
-			else if (zone == 2 && hp == 2)
-				type = FIREWALL;
-			else if (zone == 3 && hp == 2)
-				type = ICEWALL;
-			else
-				type = WALL;
-		}
+		else if (type >= 100)
+			type = build_wall(&TILE(pos), wall_hp[type - 100], xml_attr(xml, "zone"));
 		TILE(pos).class = (u8) type;
 		TILE(pos).torch = (u8) xml_attr(xml, "torch");
 		if (type == STAIRS)
@@ -117,10 +128,7 @@ static void xml_process_node(xmlTextReader *xml)
 		else if (id == LIGHTSHROOM)
 			adjust_lights(pos, +1, 4.5);
 		else if (id == ZOMBIE || id == WIRE_ZOMBIE)
-			if (IS_WIRE(m->pos - ((Coords) {0, 1})))
-				m->dir.y = -1;
-			else
-				m->dir.x = 1;
+			m->dir = orient_zombie(pos);
 		else if (m->class == NIGHTMARE_1 || m->class == NIGHTMARE_2)
 			g.nightmare = g.last_monster;
 	}
@@ -177,7 +185,7 @@ void xml_parse(i32 argc, char **argv)
 	last_trap = g.traps;
 
 	LIBXML_TEST_VERSION;
-	xml_process_file(argv[1], level, xml_first_pass);
+	xml_process_file(argv[1], level, xml_find_spawn);
 	monster_spawn(PLAYER, spawn, 0);
 	xml_process_file(argv[1], level, xml_process_node);
 
