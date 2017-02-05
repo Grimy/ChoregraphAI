@@ -27,15 +27,19 @@ debugging or entertainment purposes.
 
 ## History
 
-* **2016-05-09** Initial (unusable) version of ChoregraphAI.
+* **2017-02-05** Finished updating ChoregraphAI to [handle DLC enemies](https://www.youtube.com/watch?v=3bm50q3bK8o&feature=youtu.be).
 
-* **2016-06-20** ChoregraphAI found [its first route](https://www.youtube.com/watch?v=dNYfj2hQ3kI&feature=youtu.be).
-
-* **2016-07-10** ChoregraphAI found [a surreal route](https://www.youtube.com/watch?v=XbH2m-7lfSk). It moves back and forth for a while, perfectly manipulating several unseen enemies in position so that there’s an easy way to the exit. This is two beats faster than any human-found route for this level.
+* **2017-01-24** The Amplified DLC for NecroDancer was released, adding many new enemies and game mechanics to simulate.
 
 * **2016-07-18** I [did an entire run](http://www.youtube.com/watch?v=7c5wCzQO5po) using ChoregraphAI strats, improving on my previous World Record by more than a second.
 
-* **2017-01-24** The Amplified DLC for NecroDancer was released, adding many new enemies and game mechanics to simulate.
+* **2016-07-10** ChoregraphAI found [a surreal route](https://www.youtube.com/watch?v=XbH2m-7lfSk). It moves back and forth for a while, perfectly manipulating several unseen enemies in position so that there’s an easy way to the exit. This is two beats faster than any human-found route for this level.
+
+* **2016-06-20** ChoregraphAI found [its first route](https://www.youtube.com/watch?v=dNYfj2hQ3kI&feature=youtu.be).
+
+* **2016-06-16** ChoregraphAI went open source, with the permission of NecroDancer’s creators. At this point it was only able to solve short levels, and didn’t know how to use any items.
+
+* **2016-05-09** Initial (unusable) version of ChoregraphAI.
 
 ## License
 

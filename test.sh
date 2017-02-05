@@ -26,6 +26,9 @@ solve 3 3 'ffei(ei|if)fff'
 solve 4 1 'ffffeeijiifijj'
 # solve 4 2 'feeffffefeeefej'
 solve 4 3 'jjifjjjeeeeiije'
+solve 5 1 'iifffeifffj'
+solve 5 2 'ifififfffff'
+solve 5 3 'jjfijjiieejii'
 
 mbps=$(echo "scale=3; $beats / $time / 1000000" | bc)
 echo "$beats beats in ${time}s ($mbps Mbps)"

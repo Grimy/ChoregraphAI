@@ -83,6 +83,7 @@ static void xml_process_node(xmlTextReader *xml)
 	}
 
 	else if (streq(name, "tile")) {
+		TILE(pos).wired = type == 20 || type == 118;
 		if (type == 103 || type == 111 || type == 118) {
 			type = DOOR;
 		} else if (type >= 100) {
@@ -98,7 +99,6 @@ static void xml_process_node(xmlTextReader *xml)
 			else
 				type = WALL;
 		}
-		TILE(pos).wired = type == 20 || type == 118;
 		TILE(pos).class = (u8) type;
 		TILE(pos).torch = (u8) xml_attr(xml, "torch");
 		if (type == STAIRS)
@@ -117,7 +117,10 @@ static void xml_process_node(xmlTextReader *xml)
 		else if (id == LIGHTSHROOM)
 			adjust_lights(pos, +1, 4.5);
 		else if (id == ZOMBIE || id == WIRE_ZOMBIE)
-			m->dir.x = 1;
+			if (IS_WIRE(m->pos - ((Coords) {0, 1})))
+				m->dir.y = -1;
+			else
+				m->dir.x = 1;
 		else if (m->class == NIGHTMARE_1 || m->class == NIGHTMARE_2)
 			g.nightmare = g.last_monster;
 	}

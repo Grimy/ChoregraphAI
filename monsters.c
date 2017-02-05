@@ -515,7 +515,7 @@ static void wire_zombie(Monster *this, __attribute__((unused)) Coords d)
 static void evil_eye(Monster *this, Coords d)
 {
 	if (!this->state) {
-		this->state = L1(d) <= 3 && _can_charge(this, d);
+		this->state = L1(d) <= 3 && _can_charge(this, player.pos);
 		return;
 	}
 	this->state = 0;
