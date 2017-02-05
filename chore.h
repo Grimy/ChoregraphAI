@@ -265,7 +265,7 @@ typedef struct {
 	i8 max_hp;
 	u8 beat_delay;
 	u8: 8;
-	u16 radius;
+	i16 radius;
 	bool flying;
 	i8 digging_power;
 	u64 priority;
