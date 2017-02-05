@@ -48,9 +48,9 @@ sub lit {
 	return $light;
 }
 
-while ($a < 10000) {
-	++$a;
+while ($a < 3000) {
+	$a += 4;
 	my $min = (min map lit, @ok);
 	my $max = (max map lit, @ko);
-	print "Yay $a: $min > $max!" if $min > $max && $min > 7777 && $max < 7777;
+	print "Yay $a: $min > $max!" if $min > $max * 1.002;
 }

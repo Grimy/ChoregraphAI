@@ -244,7 +244,7 @@ typedef struct {
 	i8 hp;
 	u8 monster;
 	ItemClass item;
-	i16 light;
+	u16 light;
 	bool revealed;
 	bool torch: 1;
 	bool destroyed: 1;
