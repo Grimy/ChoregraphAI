@@ -183,6 +183,7 @@ void xml_parse(i32 argc, char **argv)
 	i32 level = argc == 3 ? *argv[2] - '0' : 1;
 
 	last_trap = g.traps;
+	g.monsters[0].untrapped = true;
 
 	LIBXML_TEST_VERSION;
 	xml_process_file(argv[1], level, xml_find_spawn);

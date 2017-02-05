@@ -154,7 +154,7 @@ static void charge(Monster *this, __attribute__((unused)) Coords d)
 // Common code for wind-mages, liches and electro-liches.
 static bool magic(Monster *this, Coords d, bool condition)
 {
-	if (!condition || this->confusion || STUCK(this)) {
+	if (!condition || this->confusion || IS_BOGGED(this)) {
 		basic_seek(this, d);
 		return false;
 	} else {

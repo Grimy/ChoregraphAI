@@ -7,7 +7,6 @@ FEATURES:
 * confusion de-aggroing enemies?
 
 BUGFIXES:
-* double water ball
 * beetle shedding isn’t quite right
 * banshees/skeletons should have different activation radii depending on the zone
 * charged breath attacks should have extreme priority

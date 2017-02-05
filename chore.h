@@ -14,8 +14,9 @@
 #define IS_DOOR(pos) (TILE(pos).class == DOOR)
 
 #define RNG() ((g.seed = g.seed >> 2 ^ g.seed << 3 ^ g.seed >> 14) & 3)
-#define STUCK(m) (!CLASS(m).flying && (TILE((m)->pos).class == WATER \
-			|| (TILE((m)->pos).class == TAR && !(m)->untrapped)))
+#define IS_BOGGED(m) (!(m)->untrapped \
+	&& (TILE((m)->pos).class == WATER \
+	|| (TILE((m)->pos).class == TAR)))
 
 // Gets the ClassInfos entry of the given monster’s class
 #define CLASS(m) (class_infos[(m)->class])

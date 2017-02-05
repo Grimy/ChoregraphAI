@@ -22,6 +22,7 @@ static void monster_new(MonsterClass type, Coords pos, u8 delay)
 	Monster *m = &g.monsters[++g.last_monster];
 	m->class = type;
 	m->hp = CLASS(m).max_hp;
+	m->untrapped = CLASS(m).flying;
 	m->pos = pos;
 	m->prev_pos = pos;
 	m->delay = delay;
@@ -39,7 +40,7 @@ Monster* monster_spawn(MonsterClass type, Coords pos, u8 delay)
 static void move(Monster *m, Coords dest)
 {
 	TILE(m->pos).monster = 0;
-	m->untrapped = false;
+	m->untrapped = CLASS(m).flying;
 	m->pos = dest;
 	TILE(m->pos).monster = (u8) (m - g.monsters);
 }
@@ -185,17 +186,14 @@ void enemy_attack(Monster *attacker)
 	}
 }
 
-// Tests whether a monster’s movement is blocked by water or tar.
-// As a side effect, removes the water or frees the monster from tar, as appropriate.
-// Common to all movement types (player, enemy, forced).
-static bool is_bogged(Monster *m)
+// Tries to free a monster from water/tar, removing the water as appropriate.
+// Return code indicates success/failure.
+static bool unbog(Monster *m)
 {
-	if (TILE(m->pos).class == WATER && !CLASS(m).flying)
-		TILE(m->pos).class = FLOOR;
-	else if (TILE(m->pos).class == TAR && !CLASS(m).flying && !m->untrapped)
-		m->untrapped = true;
-	else
+	if (!IS_BOGGED(m))
 		return false;
+	TILE(m->pos).class = TILE(m->pos).class == TAR ? TAR : FLOOR;
+	m->untrapped = true;
 	return true;
 }
 
@@ -210,7 +208,7 @@ MoveResult enemy_move(Monster *m, Coords dir)
 	m->delay = CLASS(m).beat_delay;
 	assert(m->hp > 0);
 
-	if (is_bogged(m))
+	if (unbog(m))
 		return MOVE_SPECIAL;
 
 	if (m->confusion)
@@ -269,7 +267,7 @@ void update_fov(void)
 
 static void knockback(Monster *m, Coords dir, u8 delay)
 {
-	if (!m->knocked && !STUCK(m))
+	if (!m->knocked && !IS_BOGGED(m))
 		forced_move(m, dir);
 	m->knocked = true;
 	m->delay = delay;
@@ -600,7 +598,7 @@ static void after_move(Coords dir, bool forced)
 bool forced_move(Monster *m, Coords dir)
 {
 	assert(m != &player || L1(dir));
-	if (m->freeze || is_bogged(m) || (m == &player && g.monkeyed))
+	if (m->freeze || unbog(m) || (m == &player && g.monkeyed))
 		return false;
 
 	if (&MONSTER(m->pos + dir) == &player) {
@@ -670,7 +668,7 @@ static void player_move(i8 x, i8 y)
 			return;
 	}
 
-	if (is_bogged(&player))
+	if (unbog(&player))
 		return;
 
 	Coords dest = player.pos + dir;
@@ -799,7 +797,7 @@ static void trap_turn(Trap *this)
 		return;
 
 	Monster *m = &MONSTER(this->pos);
-	if (m->untrapped || CLASS(m).flying)
+	if (m->untrapped)
 		return;
 	m->untrapped = true;
 
