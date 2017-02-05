@@ -19,7 +19,7 @@ static i32 cost_function()
 	return g.current_beat
 		+ (initial_state.monsters[1].hp - g.monsters[1].hp)
 		+ (initial_state.inventory[BOMBS] - g.inventory[BOMBS])
-		+ 6 * (initial_state.inventory[JEWELED] - g.inventory[JEWELED]);
+		+ 4 * (initial_state.inventory[JEWELED] - g.inventory[JEWELED]);
 }
 
 // Estimates the number of beats it will take to clear the level.

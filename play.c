@@ -1,5 +1,6 @@
 // play.c - manages terminal input/output
-// All output code assumes an ANSI-compatible UTF-8 terminal.
+// Assumes an ANSI-compatible UTF-8 terminal with a black background.
+// ♪
 
 #include "chore.h"
 

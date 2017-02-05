@@ -40,7 +40,7 @@ Monster* monster_spawn(MonsterClass type, Coords pos, u8 delay)
 static void move(Monster *m, Coords dest)
 {
 	TILE(m->pos).monster = 0;
-	m->untrapped = CLASS(m).flying;
+	m->untrapped = CLASS(m).flying || m->lord;
 	m->pos = dest;
 	TILE(m->pos).monster = (u8) (m - g.monsters);
 }
@@ -467,7 +467,7 @@ static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	case SKELETANK_3:
 		if (!coords_eq(dir, -m->dir))
 			break;
-		if (dmg >= m->hp)
+		if (dmg >= CLASS(m).max_hp)
 			m->class = m->class - SKELETANK_1 + SKELETON_1;
 		knockback(m, dir, 1);
 		return false;

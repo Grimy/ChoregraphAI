@@ -232,12 +232,13 @@ typedef struct {
 	u8 exhausted;
 	ItemClass item;
 	bool aggro;
-	bool untrapped: 1;
+	bool lord;
+	bool untrapped;
 	bool electrified: 1;
 	bool knocked: 1;
 	bool requeued: 1;
 	bool was_requeued: 1;
-	bool: 3;
+	bool: 4;
 } Monster;
 
 typedef struct {

@@ -123,6 +123,9 @@ static void xml_process_node(xmlTextReader *xml)
 		if (id == GHAST || id == GHOUL || id == WRAITH || id == WIGHT)
 			return;
 		Monster *m = monster_spawn(id, pos, 0);
+		m->lord = !!xml_attr(xml, "lord");
+		if (m->lord)
+			m->hp *= 2;
 		if (id == RED_DRAGON || id == BLUE_DRAGON)
 			m->exhausted = 3;
 		else if (id == LIGHTSHROOM)
