@@ -150,6 +150,7 @@ typedef enum __attribute__((__packed__)) {
 	SHOPKEEPER,
 	PLAYER,
 	BOMB,
+	SHRINE,
 	HEADLESS, // a decapitated skeleton
 } MonsterClass;
 

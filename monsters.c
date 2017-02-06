@@ -807,4 +807,5 @@ const ClassInfos class_infos[256] = {
 	[SHOPKEEPER]   = { 20, 9, 0,   0, false, -1, 99999997, "@",        NULL },
 	[PLAYER]       = {  1, 1, 0,   0, false, -1,      ~0u, "@",        NULL },
 	[BOMB]         = {  4, 1, 0, 999, false, -1,      ~1u, ORANGE "●", bomb_detonate },
+	[SHRINE]       = {  0, 1, 0,   0, false, -1,        0, "_",        NULL },
 };

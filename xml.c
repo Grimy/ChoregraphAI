@@ -145,6 +145,10 @@ static void xml_process_node(xmlTextReader *xml)
 		monster_spawn(CRATE_2 + (u8) type, pos, 0)->item = xml_item(xml, "contents");
 	}
 
+	else if (streq(name, "shrine")) {
+		monster_spawn(SHRINE, pos, 0);
+	}
+
 	else if (streq(name, "item")) {
 		if (L1(pos - spawn))
 			TILE(pos).item = xml_item(xml, "type");

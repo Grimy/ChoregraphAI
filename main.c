@@ -420,6 +420,7 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	case FIRE_MIMIC:
 	case ICE_MIMIC:
 	case SHOP_MIMIC:
+	case SHRINE:
 		if (type == DMG_BOMB || m->state == 2)
 			break;
 		return true;
