@@ -26,14 +26,15 @@ static void xml_find_spawn(xmlTextReader *xml)
 static ItemClass xml_item(xmlTextReader *xml, char* attr)
 {
 	static const char* item_names[ITEM_LAST] = {
-		[BOMBS]      = "bomb",
-		[BOMBS_3]    = "bomb_3",
-		[HEART_1]    = "misc_heart_container",
-		[HEART_2]    = "misc_heart_container2",
-		[JEWELED]    = "weapon_dagger_jeweled",
-		[LUNGING]    = "feet_boots_lunging",
-		[MEMERS_CAP] = "head_miners_cap",
-		[PACEMAKER]  = "heart_transplant",
+		[BOMBS]         = "bomb",
+		[BOMBS_3]       = "bomb_3",
+		[HEART_1]       = "misc_heart_container",
+		[HEART_2]       = "misc_heart_container2",
+		[JEWELED]       = "weapon_dagger_jeweled",
+		[LUNGING]       = "feet_boots_lunging",
+		[MEMERS_CAP]    = "head_miners_cap",
+		[SCROLL_FREEZE] = "scroll_freeze_enemies",
+		[PACEMAKER]     = "heart_transplant",
 	};
 
 	char* item_name = (char*) xmlTextReaderGetAttribute(xml, (xmlChar*) attr);

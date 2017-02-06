@@ -747,6 +747,13 @@ static void player_turn(u8 input)
 	case 'j':
 		player_move( 0, -1);
 		break;
+	case 'z':
+		if (!g.inventory[SCROLL_FREEZE])
+			break;
+		--g.inventory[SCROLL_FREEZE];
+		for (Monster *m = &player + 1; m->class; ++m)
+			m->freeze = 16;
+		break;
 	case '<':
 		if (g.inventory[BOMBS]) {
 			--g.inventory[BOMBS];

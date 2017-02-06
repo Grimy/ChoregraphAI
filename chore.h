@@ -164,6 +164,7 @@ typedef enum __attribute__((__packed__)) {
 	LUNGING,
 	MEMERS_CAP,
 	PACEMAKER,
+	SCROLL_FREEZE,
 	ITEM_LAST,
 } ItemClass;
 
@@ -299,7 +300,7 @@ typedef struct {
 	bool sliding_on_ice;
 	bool boots_on;
 	u8 iframes;
-	u64: 32;
+	u64: 24;
 } GameState;
 
 extern const ClassInfos class_infos[256];
