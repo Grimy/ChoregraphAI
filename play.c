@@ -2,10 +2,10 @@
 // Assumes an ANSI-compatible UTF-8 terminal with a black background.
 // ♪
 
-#include "chore.h"
-
 #include <time.h>
 #include <unistd.h>
+
+#include "chore.h"
 
 #define LINE(...) printf("\033[u\033[B\033[s " __VA_ARGS__)
 

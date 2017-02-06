@@ -275,6 +275,15 @@ static void clone(Monster *this, __attribute__((unused)) Coords d)
 		enemy_move(this, DIRECTION(player.prev_pos - player.pos));
 }
 
+static void tarmonster(Monster *this, Coords d)
+{
+	if (this == &g.monsters[g.monkeyed])
+		damage(&player, CLASS(this).damage, d, DMG_NORMAL);
+	else if (this->state || L1(d) > 1)
+		basic_seek(this, d);
+	this->state = this->state ? 2 : L1(d) == 1;
+}
+
 static void mole(Monster *this, Coords d)
 {
 	if (this->state != (L1(d) == 1))
@@ -674,12 +683,12 @@ const ClassInfos class_infos[256] = {
 	[GHOST]        = {  2, 1, 0,   9,  true, -1, 10201102, "8",        ghost },
 	[ZOMBIE]       = {  2, 1, 1, 999, false, -1, 10201201, GREEN "Z",  zombie },
 	[WRAITH]       = {  1, 1, 0,   9,  true, -1, 10101102, RED "W",    basic_seek },
-	[MIMIC_1]      = {  2, 1, 0,   0, false, -1, 10201100, ORANGE "m", mimic },
-	[MIMIC_2]      = {  3, 1, 0,   0, false, -1, 10301100, BLUE "m",   mimic },
-	[MIMIC_3]      = {  2, 1, 0,   0, false, -1, 10201100, ORANGE "m", mimic },
-	[MIMIC_4]      = {  2, 1, 0,   0, false, -1, 10201100, ORANGE "m", mimic },
-	[MIMIC_5]      = {  2, 1, 0,   0, false, -1, 10201100, ORANGE "m", mimic },
-	[WHITE_MIMIC]  = {  3, 1, 0,   0, false, -1, 10301100, "m",        mimic },
+	[MIMIC_1]      = {  2, 1, 0,   1, false, -1, 10201100, ORANGE "m", mimic },
+	[MIMIC_2]      = {  3, 1, 0,   1, false, -1, 10301100, BLUE "m",   mimic },
+	[MIMIC_3]      = {  2, 1, 0,   1, false, -1, 10201100, ORANGE "m", mimic },
+	[MIMIC_4]      = {  2, 1, 0,   1, false, -1, 10201100, ORANGE "m", mimic },
+	[MIMIC_5]      = {  2, 1, 0,   1, false, -1, 10201100, ORANGE "m", mimic },
+	[WHITE_MIMIC]  = {  3, 1, 0,   1, false, -1, 10301100, "m",        mimic },
 	[HEADLESS]     = {  1, 1, 0,   0, false, -1, 10302203, "∠",        charge },
 
 	[SKELETANK_1]  = {  1, 1, 1,  25, false, -1, 10101202, "Ź",        basic_seek },
@@ -695,10 +704,10 @@ const ClassInfos class_infos[256] = {
 	[ARMADILLO_1]  = {  2, 1, 0,  -1, false,  2, 10201102, "q",        armadillo },
 	[ARMADILLO_2]  = {  3, 2, 0,  -1, false,  2, 10302105, YELLOW "q", armadillo },
 	[CLONE]        = {  3, 1, 0,  25, false, -1, 10301102, "@",        clone },
-	[TARMONSTER]   = {  3, 1, 0,   0, false, -1, 10304103, "t",        mimic },
+	[TARMONSTER]   = {  3, 1, 0,   1,  true, -1, 10304103, "t",        tarmonster },
 	[MOLE]         = {  2, 1, 0,  25,  true, -1,  1020113, "r",        mole },
 	[WIGHT]        = {  2, 1, 0,  25,  true, -1, 10201103, GREEN "W",  basic_seek },
-	[WALL_MIMIC]   = {  2, 1, 0,   0, false, -1, 10201103, GREEN "m",  mimic },
+	[WALL_MIMIC]   = {  2, 1, 0,   1, false, -1, 10201103, GREEN "m",  mimic },
 	[LIGHTSHROOM]  = {  0, 1, 0,   0, false, -1,        0, "%",        NULL },
 	[BOMBSHROOM]   = {  4, 1, 0,   0, false, -1,      ~2u, YELLOW "%", NULL },
 	[BOMBSHROOM_]  = {  4, 1, 0, 999, false, -1,      ~2u, RED "%",    bomb_detonate },
@@ -720,8 +729,8 @@ const ClassInfos class_infos[256] = {
 	[SHOVE_2]      = {  0, 3, 0,  49, false, -1, 10003102, BLACK "~",  basic_seek },
 	[YETI]         = {  3, 1, 3,  49,  true,  2, 20301403, CYAN "Y",   yeti },
 	[GHAST]        = {  2, 1, 0,  49,  true, -1, 10201102, PURPLE "W", basic_seek },
-	[FIRE_MIMIC]   = {  2, 1, 0,   0, false, -1, 10201102, RED "m",    mimic },
-	[ICE_MIMIC]    = {  2, 1, 0,   0, false, -1, 10201102, CYAN "m",   mimic },
+	[FIRE_MIMIC]   = {  2, 1, 0,   1, false, -1, 10201102, RED "m",    mimic },
+	[ICE_MIMIC]    = {  2, 1, 0,   1, false, -1, 10201102, CYAN "m",   mimic },
 	[FIRE_POT]     = {  0, 1, 0,   0, false, -1,        0, RED "(",    NULL },
 	[ICE_POT]      = {  0, 1, 0,   0, false, -1,        0, CYAN "(",   NULL },
 
@@ -749,7 +758,7 @@ const ClassInfos class_infos[256] = {
 	[WARLOCK_2]    = {  4, 2, 1,   9, false, -1, 10401302, YELLOW "w", basic_seek },
 	[MUMMY]        = {  2, 1, 1,   9, false, -1, 30201103, "M",        moore_seek },
 	[WIND_STATUE]  = {  4, 1, 0,   0, false, -1, 10401102, CYAN "g",   wind_statue },
-	[MIMIC_STATUE] = {  4, 1, 0,   0, false, -1, 10401102, BLACK "g",  mimic },
+	[MIMIC_STATUE] = {  4, 1, 0,   1, false, -1, 10401102, BLACK "g",  mimic },
 	[BOMB_STATUE]  = {  4, 1, 0,   0, false, -1, 10401102, YELLOW "g", bomb_statue },
 	[MINE_STATUE]  = {  4, 1, 0,   0, false, -1,        0, RED "g",    NULL },
 	[CRATE_1]      = {  0, 1, 0,   0, false, -1,        0, "(",        NULL },
@@ -782,7 +791,7 @@ const ClassInfos class_infos[256] = {
 	[DEVIL_2]      = {  4, 2, 2,   9, false, -1, 10402305, GREEN "&",  devil },
 	[PURPLE_SLIME] = {  3, 1, 0, 999, false, -1, 10301102, PURPLE "P", slime },
 	[CURSE]        = {  0, 1, 0,   9,  true, -1, 10001102, YELLOW "W", basic_seek },
-	[SHOP_MIMIC]   = {  2, 1, 0,   0, false, -1, 10201100, YELLOW "m", moore_mimic },
+	[SHOP_MIMIC]   = {  2, 1, 0,   2, false, -1, 10201100, YELLOW "m", moore_mimic },
 	[STONE_STATUE] = {  0, 1, 0,   0, false, -1,        0, BLACK "S",  NULL },
 	[GOLD_STATUE]  = {  0, 3, 0,   0, false, -1,        0, BLACK "S",  NULL },
 

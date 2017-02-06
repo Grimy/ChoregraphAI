@@ -1,8 +1,8 @@
 // xml.c - deals with custom dungeon XML files
 
-#include "chore.h"
-
 #include <libxml/xmlreader.h>
+
+#include "chore.h"
 
 // Pointer to the end of the trap array
 static Trap *last_trap;

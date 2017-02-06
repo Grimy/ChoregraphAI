@@ -48,6 +48,8 @@ bool can_move(Monster *m, Coords dir)
 {
 	assert(m != &player || L1(dir));
 	Coords dest = m->pos + dir;
+	if (m->class == TARMONSTER && m->state == 0)
+		return TILE(dest).class == TAR;
 	if (TILE(dest).monster)
 		return &MONSTER(m->pos + dir) == &player;
 	if (m->class == SPIDER)
@@ -141,6 +143,7 @@ static void enemy_attack(Monster *attacker)
 	case MONKEY_2:
 	case CONF_MONKEY:
 	case TELE_MONKEY:
+	case TARMONSTER:
 		if (g.monkeyed)
 			break; // One monkey at a time, please
 		g.monkeyed = (u8) (attacker - g.monsters);
@@ -291,6 +294,9 @@ void monster_kill(Monster *m, DamageType type)
 		TILE(m->pos).item = m->item;
 
 	switch (m->class) {
+	case TARMONSTER:
+		tile_change(m->pos, TAR);
+		// FALLTHROUGH
 	case MONKEY_1:
 	case MONKEY_2:
 	case CONF_MONKEY:
