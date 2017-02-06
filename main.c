@@ -123,7 +123,7 @@ void bomb_detonate(Monster *this, __attribute__((unused)) Coords d)
 		Tile *tile = &TILE(this->pos + square_shape[i]);
 		tile->class = tile->class == WATER ? FLOOR : tile->class == ICE ? WATER : tile->class;
 		destroy_wall(this->pos + square_shape[i]);
-		damage(&MONSTER(this->pos), 4, square_shape[i], DMG_BOMB);
+		damage(&MONSTER(this->pos + square_shape[i]), 4, square_shape[i], DMG_BOMB);
 		tile->destroyed = true;
 	}
 
@@ -322,23 +322,16 @@ void monster_kill(Monster *m, DamageType type)
 			move(&player, m->pos);
 		break;
 	case BOMBER:
-		m->class = BOMB;
-		m->freeze = 1;
-		m->hp = 1;
-		m->delay = 3;
-		return;
+		monster_new(BOMB, m->pos, 3);
+		break;
 	case WATER_BALL:
 		tile_change(m->pos, WATER);
 		break;
 	case GORGON_1:
-		m->class = STONE_STATUE;
-		m->freeze = 1;
-		m->hp = 1;
+		monster_spawn(STONE_STATUE, m->pos, 0);
 		return;
 	case GORGON_2:
-		m->class = GOLD_STATUE;
-		m->freeze = 1;
-		m->hp = 3;
+		monster_spawn(GOLD_STATUE, m->pos, 0);
 		return;
 	case SARCO_1 ... SARCO_3:
 	case DIREBAT_1 ... EARTH_DRAGON:
@@ -351,12 +344,12 @@ void monster_kill(Monster *m, DamageType type)
 	TILE(m->pos).monster = 0;
 }
 
-static void skull_spawn(Monster *skull, Coords pos)
+static void skull_spawn(MonsterClass class, Coords pos, Coords dir)
 {
 	if (IS_DIGGABLE(pos))
 		destroy_wall(pos);
-	else if (IS_EMPTY(pos))
-		monster_spawn(skull->class, pos, 1)->dir = skull->dir;
+	if (IS_EMPTY(pos))
+		monster_spawn(class, pos, 1)->dir = dir;
 }
 
 // Deals damage to the given monster. Handles on-damage effects.
@@ -506,13 +499,11 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 		// FALLTHROUGH
 	case SKULL_2:
 	case SKULL_3:
-		m->class -= SKULL_2 - SKELETON_2;
-		m->delay = 1;
-		m->hp = CLASS(m).max_hp;
-		m->dir = CARDINAL(dir);
+		monster_kill(m, type);
+		MonsterClass class = m->class - (SKULL_2 - SKELETON_2);
 		Coords spawn_dir = (Coords) { dir.x == 0, dir.x != 0 };
-		skull_spawn(m, m->pos + spawn_dir);
-		skull_spawn(m, m->pos - spawn_dir);
+		for (i8 i = -1; i <= 1; ++i)
+			skull_spawn(class, m->pos + i * spawn_dir, -CARDINAL(dir));
 		return false;
 	case WIRE_ZOMBIE:
 		if (IS_WIRE(player.pos) || !(IS_WIRE(m->pos) || TILE(m->pos).class == STAIRS))
@@ -781,7 +772,7 @@ static bool check_aggro(Monster *m, Coords d, bool bomb_exploded)
 		&& (TILE(m->pos).light >= 7777
 			|| shadowed
 			|| (m->class >= DIREBAT_1 && m->class <= EARTH_DRAGON)
-			|| L2(player.pos - m->pos) < 9);
+			|| L2(player.pos - m->pos) < 8);
 
 	if (m->aggro && (m->class == BLUE_DRAGON || m->class == EARTH_DRAGON))
 		return true;
@@ -914,6 +905,8 @@ void do_beat(u8 input)
 			m->delay = 0;
 			m->was_requeued = true;
 			queue[queue_length++] = m;
+		} else if (L2(player.pos - m->pos) < 8) {
+			m->aggro = true;
 		}
 	}
 
@@ -944,5 +937,9 @@ void do_beat(u8 input)
 			--m->confusion;
 		if (m->exhausted && m->aggro)
 			--m->exhausted;
+		if (m->class == EFREET)
+			tile_change(m->pos, FIRE);
+		else if (m->class == DJINN)
+			tile_change(m->pos, ICE);
 	}
 }

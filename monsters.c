@@ -286,13 +286,6 @@ static void mole(Monster *this, Coords d)
 
 // Z3 //
 
-static void elemental(Monster *this, Coords d)
-{
-	tile_change(this->pos, this->class == EFREET ? FIRE : ICE);
-	basic_seek(this, d);
-	tile_change(this->pos, this->class == EFREET ? FIRE : ICE);
-}
-
 static void assassin(Monster *this, Coords d)
 {
 	this->state = L1(d) == 1 || (L1(d) + this->state) > L1(player.prev_pos - this->pos);
@@ -715,8 +708,8 @@ const ClassInfos class_infos[256] = {
 	[RIDER_1]      = {  2, 1, 0,  49,  true, -1, 10201102, "&",        basic_seek },
 	[RIDER_2]      = {  4, 2, 0,  49,  true, -1, 10402104, YELLOW "&", basic_seek },
 	[RIDER_3]      = {  6, 3, 0,  49,  true, -1, 10603106, BLACK "&",  basic_seek },
-	[EFREET]       = {  3, 2, 2,  49,  true,  2, 20302302, RED "E",    elemental },
-	[DJINN]        = {  3, 2, 2,  49,  true,  2, 20302302, CYAN "E",   elemental },
+	[EFREET]       = {  3, 2, 2,  49,  true,  2, 20302302, RED "E",    basic_seek },
+	[DJINN]        = {  3, 2, 2,  49,  true,  2, 20302302, CYAN "E",   basic_seek },
 	[ASSASSIN_1]   = {  4, 1, 0,  49, false, -1, 10401103, PURPLE "o", assassin },
 	[ASSASSIN_2]   = {  6, 2, 0,  49, false, -1, 10602105, BLACK "o",  assassin },
 	[FIRE_BEETLE]  = {  3, 3, 1,  49, false, -1, 10303202, RED "a",    beetle },
@@ -746,7 +739,7 @@ const ClassInfos class_infos[256] = {
 	[LICH_3]       = {  4, 3, 1,   0, false, -1, 10404402, BLACK "L",  lich },
 	[CONF_MONKEY]  = {  0, 1, 0,   9, false, -1, 10004103, GREEN "Y",  basic_seek },
 	[TELE_MONKEY]  = {  0, 2, 0,   9, false, -1, 10002103, PINK "Y",   basic_seek },
-	[PIXIE]        = {  4, 1, 0,   9,  true, -1, 10401102, "n",        basic_seek },
+	[PIXIE]        = {  4, 1, 0,   0,  true, -1, 10401102, "n",        basic_seek },
 	[SARCO_1]      = {  0, 1, 7,   9, false, -1, 10101805, "|",        sarcophagus },
 	[SARCO_2]      = {  0, 2, 9,   9, false, -1, 10102910, YELLOW "|", sarcophagus },
 	[SARCO_3]      = {  0, 3, 11,  9, false, -1, 10103915, BLACK "|",  sarcophagus },
@@ -790,8 +783,8 @@ const ClassInfos class_infos[256] = {
 	[PURPLE_SLIME] = {  3, 1, 0, 999, false, -1, 10301102, PURPLE "P", slime },
 	[CURSE]        = {  0, 1, 0,   9,  true, -1, 10001102, YELLOW "W", basic_seek },
 	[SHOP_MIMIC]   = {  2, 1, 0,   0, false, -1, 10201100, YELLOW "m", moore_mimic },
-	[STONE_STATUE] = {  1, 0, 0,   0, false, -1,        0, BLACK "S",  NULL },
-	[GOLD_STATUE]  = {  3, 0, 0,   0, false, -1,        0, BLACK "S",  NULL },
+	[STONE_STATUE] = {  0, 1, 0,   0, false, -1,        0, BLACK "S",  NULL },
+	[GOLD_STATUE]  = {  0, 3, 0,   0, false, -1,        0, BLACK "S",  NULL },
 
 	[DIREBAT_1]    = {  3, 2, 1,   9,  true, -1, 30302210, YELLOW "B", bat },
 	[DIREBAT_2]    = {  4, 3, 1,   9,  true, -1, 30403215, "B",        bat },

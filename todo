@@ -1,20 +1,5 @@
 TESTS:
-* why is last commit a huge perf hit?
 * check electrified flag being cleared
-* elemental tile changes
-* can harpies fly over shrines?
-* kill miniboss w/ bomb_statue
-* trampling/clonking vs hidden mimics
-* get los to an unlit tile, then later add light it (pixie)
-* L2 == 8, L2 == 9, with and without Miner’s
-* trampling vs z4wall
-* bombing+clonking a skull
-* clonking/fireballing an electric orb
-* check lunging at bomb statues
-* lunging at live gorgons: knockback?
-* bombing open a wire_door
-* killing frozen skull
-* pushing frozen crates / frozen dead gorgons
 
 FEATURES:
 * metal doors (type=111)
@@ -34,7 +19,6 @@ BUGFIXES:
 
 REFACTORS:
 * GET AN ACTUAL BUILD SYSTEM FOR LINUS’ SAKE
-* Generic class_change function for skulls/gorgons/bombers?
 * Set delay before acting
 * Refactor chain_lightning
 * Go ECS or go home
