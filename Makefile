@@ -13,7 +13,7 @@ LDFLAGS += -lxml2 -lm
 .PHONY: all debug report stat
 .SECONDARY:
 
-all: dbin/play bin/solve
+all: dbin/play dbin/solve
 
 los.c: los.pl
 	./$< >$@

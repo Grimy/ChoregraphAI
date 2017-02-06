@@ -1,5 +1,9 @@
 TESTS:
 * check electrified flag being cleared
+* elemental tile changes
+* can harpies fly over shrines?
+* kill miniboss w/ bomb_statue
+* trampling/clonking vs hidden mimics
 
 FEATURES:
 * metal doors (type=111)

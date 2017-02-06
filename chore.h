@@ -44,6 +44,7 @@ typedef i8 Coords __attribute__((ext_vector_type(2)));
 // *Square* of the L² norm of a vector (mostly used for aggro/lighting).
 #define L2(d) ((d).x * (d).x + (d).y * (d).y)
 
+// Tests whether two Coords are equal.
 #define coords_eq(d1, d2) ((d1).x == (d2).x && (d1).y == (d2).y)
 
 // Monster types.
