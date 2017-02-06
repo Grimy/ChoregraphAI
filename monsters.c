@@ -253,7 +253,7 @@ static void wind_mage(Monster *this, Coords d)
 static void mushroom(Monster *this, Coords d)
 {
 	if (L2(d) < 4)
-		enemy_attack(this);
+		damage(&player, CLASS(this).damage, d, DMG_NORMAL);
 	this->delay = CLASS(this).beat_delay;
 }
 
@@ -320,7 +320,7 @@ static void yeti(Monster *this, Coords d)
 	bool has_moved = L1((this)->pos - (this)->prev_pos) != 0;
 	basic_seek(this, d);
 	if (has_moved && L2(player.pos - this->pos) < 4)
-		enemy_attack(this);
+		damage(&player, CLASS(this).damage, d, DMG_NORMAL);
 }
 
 // Z4 //
@@ -640,8 +640,11 @@ static void ogre(Monster *this, Coords d)
 {
 	if (this->state == 2) {
 		Coords clonk_dir = DIRECTION(player.prev_pos - this->pos);
-		for (i8 i = 1; i <= 3; ++i)
-			damage_tile(this->pos + i * clonk_dir, this->pos, 5, DMG_NORMAL);
+		for (i8 i = 1; i <= 3; ++i) {
+			Coords pos = this->pos + i * clonk_dir;
+			destroy_wall(pos);
+			damage(&MONSTER(pos), 5, clonk_dir, DMG_NORMAL);
+		}
 		this->state = 1;
 		this->delay = 2;
 	} else if (d.x * d.y == 0 && abs(d.x + d.y) <= 3) {

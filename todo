@@ -4,6 +4,12 @@ TESTS:
 * can harpies fly over shrines?
 * kill miniboss w/ bomb_statue
 * trampling/clonking vs hidden mimics
+* get los to an unlit tile, then later add light it (pixie)
+* L2 == 8, L2 == 9, with and without Miner’s
+* trampling vs z4wall
+* bombing+clonking a skull
+* clonking/fireballing an electric orb
+* check lunging at bomb statues
 
 FEATURES:
 * metal doors (type=111)
@@ -22,6 +28,7 @@ BUGFIXES:
 
 REFACTORS:
 * GET AN ACTUAL BUILD SYSTEM FOR LINUS’ SAKE
+* Set delay before acting
 * Refactor chain_lightning
 * Go ECS or go home
 * Rename this → m

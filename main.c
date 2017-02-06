@@ -14,8 +14,6 @@ __extension__ __thread GameState g = {
 	.boots_on = true,
 };
 
-static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type);
-
 static void monster_new(MonsterClass type, Coords pos, u8 delay)
 {
 	assert(g.last_monster < ARRAY_SIZE(g.monsters));
@@ -68,11 +66,12 @@ void adjust_lights(Coords pos, i8 diff, double radius)
 			TILE(pos + d).light += diff * max(0, (int) (6100 * (radius - sqrt(L2(d)))));
 }
 
-static void destroy_wall(Coords pos)
+void destroy_wall(Coords pos)
 {
-	assert(IS_DIGGABLE(pos));
-	Tile *wall = &TILE(pos);
+	if (!IS_DIGGABLE(pos))
+		return;
 
+	Tile *wall = &TILE(pos);
 	wall->class &= ICE;
 
 	if (MONSTER(pos).class == SPIDER) {
@@ -109,13 +108,6 @@ static bool dig(Coords pos, i32 digging_power)
 	return true;
 }
 
-void damage_tile(Coords pos, Coords origin, i64 dmg, DamageType type)
-{
-	if (IS_DIGGABLE(pos))
-		destroy_wall(pos);
-	damage(&MONSTER(pos), dmg, CARDINAL(pos - origin), type);
-}
-
 void bomb_detonate(Monster *this, __attribute__((unused)) Coords d)
 {
 	static const Coords square_shape[] = {
@@ -130,7 +122,8 @@ void bomb_detonate(Monster *this, __attribute__((unused)) Coords d)
 	for (i64 i = 0; i < 9; ++i) {
 		Tile *tile = &TILE(this->pos + square_shape[i]);
 		tile->class = tile->class == WATER ? FLOOR : tile->class == ICE ? WATER : tile->class;
-		damage_tile(this->pos + square_shape[i], this->pos, 4, DMG_BOMB);
+		destroy_wall(this->pos + square_shape[i]);
+		damage(&MONSTER(this->pos), 4, square_shape[i], DMG_BOMB);
 		tile->destroyed = true;
 	}
 
@@ -139,7 +132,7 @@ void bomb_detonate(Monster *this, __attribute__((unused)) Coords d)
 
 // Handles an enemy attacking the player.
 // Usually boils down to damaging the player, but some enemies are special-cased.
-void enemy_attack(Monster *attacker)
+static void enemy_attack(Monster *attacker)
 {
 	Coords d = player.pos - attacker->pos;
 
@@ -236,8 +229,11 @@ MoveResult enemy_move(Monster *m, Coords dir)
 	// Trampling
 	i32 digging_power = m->confusion ? -1 : CLASS(m).digging_power;
 	if (!m->aggro && digging_power == 4) {
-		for (i64 i = 0; i < 4; ++i)
-			damage_tile(m->pos + plus_shape[i], m->pos, 4, DMG_NORMAL);
+		for (i64 i = 0; i < 4; ++i) {
+			Coords pos = m->pos + plus_shape[i];
+			destroy_wall(pos);
+			damage(&MONSTER(pos), 4, plus_shape[i], DMG_NORMAL);
+		}
 		return MOVE_SPECIAL;
 	}
 
@@ -361,7 +357,7 @@ static void skull_spawn(Monster *skull, Coords pos)
 }
 
 // Deals damage to the given monster. Handles on-damage effects.
-static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
+bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 {
 	// Crates and gargoyles can be pushed even with 0 damage
 	switch (m->class) {
