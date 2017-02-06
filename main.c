@@ -286,6 +286,10 @@ void tile_change(Coords pos, TileClass new_class)
 // Kills the given monster, handling on-death effects.
 void monster_kill(Monster *m, DamageType type)
 {
+	m->hp = 0;
+	if (m->item)
+		TILE(m->pos).item = m->item;
+
 	switch (m->class) {
 	case MONKEY_1:
 	case MONKEY_2:
@@ -294,6 +298,7 @@ void monster_kill(Monster *m, DamageType type)
 		if (m == &g.monsters[g.monkeyed]) {
 			g.monkeyed = 0;
 			TILE(player.pos).monster = 1;
+			return;
 		}
 		break;
 	case LIGHTSHROOM:
@@ -317,8 +322,11 @@ void monster_kill(Monster *m, DamageType type)
 			move(&player, m->pos);
 		break;
 	case BOMBER:
-		monster_new(BOMB, m->pos, 3);
-		break;
+		m->class = BOMB;
+		m->freeze = 1;
+		m->hp = 1;
+		m->delay = 3;
+		return;
 	case WATER_BALL:
 		tile_change(m->pos, WATER);
 		break;
@@ -340,12 +348,7 @@ void monster_kill(Monster *m, DamageType type)
 		break;
 	}
 
-	m->hp = 0;
-	if (MONSTER(m->pos).hp == 0)
-		TILE(m->pos).monster = 0;
-
-	if (m->item)
-		TILE(m->pos).item = m->item;
+	TILE(m->pos).monster = 0;
 }
 
 static void skull_spawn(Monster *skull, Coords pos)
@@ -403,7 +406,7 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 		break;
 	}
 
-	if (dmg == 0 || m->hp <= 0)
+	if (!dmg || !m->hp)
 		return false;
 
 	// Before-damage triggers
@@ -523,12 +526,14 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 		break;
 	}
 
-	// Finally, deal the damage!
-	m->hp -= dmg;
-	if (m->hp <= 0) {
+	// Handle death
+	if (dmg >= m->hp) {
 		monster_kill(m, type);
 		return false;
 	}
+
+	// Finally, deal the damage!
+	m->hp -= dmg;
 
 	// After-damage triggers
 	switch (m->class) {
@@ -630,7 +635,7 @@ static void chain_lightning(Coords pos, Coords dir)
 	for (i64 i = 0; queue[i].x; ++i) {
 		for (i64 j = 0; j < 7; ++j) {
 			Monster *m = &MONSTER(queue[i] + arcs[j]);
-			if (m->hp <= 0 || m->electrified)
+			if (m->electrified)
 				continue;
 			m->electrified = true;
 			damage(m, 1, CARDINAL(arcs[j]), DMG_NORMAL);
@@ -863,7 +868,7 @@ void do_beat(u8 input)
 	bool bomb_exploded = false;
 
 	for (Monster *m = &g.monsters[g.last_monster]; m > &player; --m) {
-		if (!CLASS(m).act || m->hp <= 0)
+		if (!CLASS(m).act || !m->hp)
 			continue;
 
 		m->knocked = false;
@@ -882,7 +887,7 @@ void do_beat(u8 input)
 		m->requeued = false;
 
 		// We need to check again: an earlier enemy could have killed/frozen this one
-		if (m->hp <= 0 || m->freeze)
+		if (!m->hp || m->freeze)
 			continue;
 
 		if (m->delay) {
@@ -920,7 +925,7 @@ void do_beat(u8 input)
 
 	// Flag upkeep
 	for (Monster *m = &player; m->class; ++m) {
-		if (m->hp <= 0)
+		if (!m->hp)
 			continue;
 		m->electrified = false;
 		m->knocked = false;

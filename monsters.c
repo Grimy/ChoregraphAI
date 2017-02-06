@@ -624,7 +624,7 @@ static void mommy(Monster *this, Coords d)
 	bool has_moved = L1((this)->pos - (this)->prev_pos) != 0;
 	basic_seek(this, d);
 
-	if (has_moved && g.monsters[g.mommy_spawn].hp <= 0) {
+	if (has_moved && !g.monsters[g.mommy_spawn].hp) {
 		for (spawn_dir = spawn_dirs; !IS_EMPTY(this->pos + *spawn_dir); ++spawn_dir);
 		monster_spawn(MUMMY, this->pos + *spawn_dir, 1);
 		g.mommy_spawn = g.last_monster;

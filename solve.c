@@ -74,7 +74,7 @@ static void explore(GameState const *route, bool omp)
 		}
 
 		i32 cost = cost_function();
-		if (cost >= best_cost || player.hp <= 0)
+		if (cost >= best_cost || !player.hp)
 			continue;
 
 		i32 distance = WORK_FACTOR + initial_distance - distance_function();

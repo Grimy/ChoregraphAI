@@ -182,7 +182,7 @@ static const char* additional_info(Monster *m)
 
 static void display_enemy(Monster *m)
 {
-	if (m->hp <= 0)
+	if (!m->hp)
 		return;
 	LINE("%s %s%s%s%s" WHITE "%s ",
 		CLASS(m).glyph,
