@@ -354,8 +354,11 @@ static void skull_spawn(MonsterClass class, Coords pos, Coords dir)
 {
 	if (IS_DIGGABLE(pos))
 		destroy_wall(pos);
-	if (IS_EMPTY(pos))
-		monster_spawn(class, pos, 1)->dir = dir;
+	if (IS_EMPTY(pos)) {
+		Monster *m = monster_spawn(class, pos, 1);
+		m->dir = dir;
+		m->electrified = true;
+	}
 }
 
 // Deals damage to the given monster. Handles on-damage effects.
@@ -543,7 +546,7 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 			break;
 		m->class = HEADLESS;
 		m->delay = 0;
-		m->prev_pos = player.pos;
+		m->prev_pos = m->pos - dir;
 		return false;
 	case MONKEY_2:
 	case TELE_MONKEY:
@@ -616,7 +619,7 @@ bool forced_move(Monster *m, Coords dir)
 
 static void chain_lightning(Coords pos, Coords dir)
 {
-	Coords queue[32] = { pos + dir };
+	Coords queue[32] = { pos };
 	i64 queue_length = 1;
 	Coords arcs[7] = {
 		{ dir.x, dir.y },
@@ -628,7 +631,7 @@ static void chain_lightning(Coords pos, Coords dir)
 		{ -dir.y - dir.x, dir.x - dir.y },
 	};
 
-	MONSTER(pos + dir).electrified = true;
+	MONSTER(pos).electrified = true;
 
 	for (i64 i = 0; queue[i].x; ++i) {
 		for (i64 j = 0; j < 7; ++j) {
@@ -676,8 +679,9 @@ static void player_move(i8 x, i8 y)
 		dig(player.pos + dir, TILE(player.pos).class == OOZE ? 0 : 2);
 	} else if (TILE(dest).monster) {
 		damage(&MONSTER(dest), dmg, dir, DMG_WEAPON);
+		player.electrified = true;
 		if (IS_WIRE(player.pos))
-			chain_lightning(player.pos, dir);
+			chain_lightning(dest, dir);
 	} else {
 		g.player_moved = true;
 		move(&player, player.pos + dir);

@@ -1,6 +1,3 @@
-TESTS:
-* check electrified flag being cleared
-
 FEATURES:
 * metal doors (type=111)
 * confusion de-aggroing enemies?
@@ -14,6 +11,7 @@ BUGFIXES:
 * bombs shouldn’t damage fresh skull spawns
 * bombs shouldn’t damage unaggroed enemies
 * pixies should emit light
+* chain lightning should emit light
 * pixie explosions are *weird*
 
 REFACTORS:
