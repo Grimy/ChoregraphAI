@@ -6,7 +6,7 @@
 
 // Returns the numeric value of a named attribute of the current node.
 // If the attribute is absent, it defaults to 0.
-static i32 xml_attr(xmlTextReader *xml, char* attr)
+static i32 xml_attr(xmlTextReader *xml, const char* attr)
 {
 	char* value = (char*) xmlTextReaderGetAttribute(xml, (xmlChar*) (attr));
 	i32 result = value ? atoi(value) : 0;
@@ -20,7 +20,7 @@ static void xml_find_spawn(xmlTextReader *xml, __attribute__((unused)) const cha
 	spawn.y = max(spawn.y, 1 - (i8) xml_attr(xml, "y"));
 }
 
-static ItemClass xml_item(xmlTextReader *xml, char* attr)
+static u8 xml_item(xmlTextReader *xml, const char* attr)
 {
 	static const char* item_names[ITEM_LAST] = {
 		[BOMBS]         = "bomb",
@@ -36,10 +36,10 @@ static ItemClass xml_item(xmlTextReader *xml, char* attr)
 
 	char* item_name = (char*) xmlTextReaderGetAttribute(xml, (xmlChar*) attr);
 
-	ItemClass class = ITEM_LAST;
-	while (--class && !streq(item_name, item_names[class]));
+	u8 type = ITEM_LAST;
+	while (--type && !streq(item_name, item_names[type]));
 	free(item_name);
-	return class;
+	return type;
 }
 
 static void trap_init(Coords pos, i32 type, i32 subtype)
@@ -55,7 +55,7 @@ static void trap_init(Coords pos, i32 type, i32 subtype)
 		return;
 	}
 	Trap *trap = &g.traps[trap_count++];
-	trap->class = subtype == 8 ? OMNIBOUNCE : (u8) type;
+	trap->type = subtype == 8 ? OMNIBOUNCE : (u8) type;
 	trap->pos = pos;
 	trap->dir = trap_dirs[subtype & 7];
 }
@@ -81,7 +81,7 @@ static void tile_init(Coords pos, i32 type, i32 zone, bool torch)
 		g.locking_enemies = 1 + (zone == 4);
 	}
 
-	TILE(pos).class = (u8) type;
+	TILE(pos).type = (u8) type;
 }
 
 static Coords orient_zombie(Coords pos)
@@ -120,7 +120,7 @@ static void enemy_init(Coords pos, i32 type, bool lord)
 		adjust_lights(pos, +1, 4.5);
 	else if (id == ZOMBIE || id == WIRE_ZOMBIE)
 		m->dir = orient_zombie(pos);
-	else if (m->class == NIGHTMARE_1 || m->class == NIGHTMARE_2)
+	else if (m->type == NIGHTMARE_1 || m->type == NIGHTMARE_2)
 		g.nightmare = g.last_monster;
 }
 
@@ -175,8 +175,8 @@ static void xml_process_file(char *file, i64 level, void callback(xmlTextReader 
 
 static i32 compare_priorities(const void *a, const void *b)
 {
-	u64 pa = CLASS((const Monster*) a).priority;
-	u64 pb = CLASS((const Monster*) b).priority;
+	u64 pa = TYPE((const Monster*) a).priority;
+	u64 pb = TYPE((const Monster*) b).priority;
 	return (pa > pb) - (pa < pb);
 }
 
@@ -187,7 +187,7 @@ void xml_parse(i32 argc, char **argv)
 {
 	if (argc < 2)
 		FATAL("Usage: %s dungeon_file.xml [level]", argv[0]);
-	i32 level = argc == 3 ? *argv[2] - '0' : 1;
+	i32 level = argc >= 3 ? *argv[2] - '0' : 1;
 
 	g.monsters[0].untrapped = true;
 
@@ -197,12 +197,12 @@ void xml_parse(i32 argc, char **argv)
 	xml_process_file(argv[1], level, xml_process_node);
 
 	qsort(g.monsters + 2, g.last_monster - 1, sizeof(Monster), compare_priorities);
-	for (u8 i = 1; g.monsters[i].class; ++i) {
+	for (u8 i = 1; g.monsters[i].type; ++i) {
 		g.monsters[i].aggro = false;
 		TILE(g.monsters[i].pos).monster = i;
 	}
 
-	assert(player.class == PLAYER);
+	assert(player.type == PLAYER);
 	if (character == BARD) {
 		do_beat('X');
 		--g.current_beat;

@@ -2,28 +2,28 @@
 
 #include "chore.h"
 
-#define MOVE(x, y) (enemy_move(this, (Coords) {(x), (y)}))
+#define MOVE(x, y) (enemy_move(m, (Coords) {(x), (y)}))
 
 // Many things in the game follow the so-called “bomb order”:
 // 147
 // 258
 // 369
-// Most monster AIs use this as a tiebreaker: when several destination tiles fit
+// Most monster AIs use m as a tiebreaker: when several destination tiles fit
 // all criteria equally well, monsters pick the one that comes first in bomb-order.
 
 // Helpers //
 
 // Tests whether the condition for a breath attack are met.
 // This requires an unbroken line-of-sight, but can go through other monsters.
-static bool can_breathe(Monster *this, Coords d)
+static bool can_breathe(Monster *m, Coords d)
 {
-	if (this->class == BLUE_DRAGON && (abs(d.x) > 3 || abs(d.y) >= abs(d.x) || player.freeze))
+	if (m->type == BLUE_DRAGON && (abs(d.x) > 3 || abs(d.y) >= abs(d.x) || player.freeze))
 		return false;
-	if (this->class != BLUE_DRAGON && d.y)
+	if (m->type != BLUE_DRAGON && d.y)
 		return false;
 
 	Coords move = DIRECTION(d);
-	for (Coords pos = this->pos + move; pos.x != player.pos.x; pos += move)
+	for (Coords pos = m->pos + move; pos.x != player.pos.x; pos += move)
 		if (BLOCKS_LOS(pos))
 			return false;
 	return true;
@@ -32,32 +32,32 @@ static bool can_breathe(Monster *this, Coords d)
 // Tests whether the given monster can charge toward the given position.
 // This requires a straight path without walls nor monsters.
 // /!\ side-effect: sets prev_pos
-static bool _can_charge(Monster *this, Coords dest)
+static bool _can_charge(Monster *m, Coords dest)
 {
-	Coords d = dest - this->pos;
-	if (d.x * d.y != 0 && !(this->class == ARMADILDO && abs(d.x) == abs(d.y)))
+	Coords d = dest - m->pos;
+	if (d.x * d.y != 0 && !(m->type == ARMADILDO && abs(d.x) == abs(d.y)))
 		return false;
 
 	Coords move = DIRECTION(d);
-	for (Coords pos = this->pos + move; !coords_eq(pos, dest); pos += move)
+	for (Coords pos = m->pos + move; !coords_eq(pos, dest); pos += move)
 		if (!IS_EMPTY(pos))
 			return false;
 
-	this->prev_pos = this->pos - DIRECTION(d);
+	m->prev_pos = m->pos - DIRECTION(d);
 	return true;
 }
 
 // Tests whether the given monster can charge at the player’s current
 // or previous position.
-static bool can_charge(Monster *this)
+static bool can_charge(Monster *m)
 {
-	return _can_charge(this, player.pos) ||
-		(g.player_moved && _can_charge(this, player.prev_pos));
+	return _can_charge(m, player.pos) ||
+		(g.player_moved && _can_charge(m, player.prev_pos));
 }
 
 // The direction a basic_seek enemy would move in.
 // Helper function for basic_seek and its variants.
-static Coords seek_dir(Monster *this, Coords d)
+static Coords seek_dir(Monster *m, Coords d)
 {
 	// Ignore the player’s previous position if they moved more than one tile
 	Coords prev_pos = L1(player.pos - player.prev_pos) > 1 ? player.pos : player.prev_pos;
@@ -70,22 +70,22 @@ static Coords seek_dir(Monster *this, Coords d)
 		d.x == 0 ? 1 :
 
 		// #2: avoid obstacles
-		!can_move(this, vertical) ?
-		!can_move(this, horizontal) && abs(d.y) > abs(d.x) :
-		!can_move(this, horizontal) ? 1 :
+		!can_move(m, vertical) ?
+		!can_move(m, horizontal) && abs(d.y) > abs(d.x) :
+		!can_move(m, horizontal) ? 1 :
 
 		// #3: move toward the player’s previous position
-		this->pos.y == prev_pos.y ? 0 :
-		this->pos.x == prev_pos.x ? 1 :
+		m->pos.y == prev_pos.y ? 0 :
+		m->pos.x == prev_pos.x ? 1 :
 
 		// #4: weird edge cases
-		this->prev_pos.y == player.pos.y ? 0 :
-		this->prev_pos.x == player.pos.x ? 1 :
-		this->prev_pos.y == prev_pos.y ? abs(d.x) == 1 :
-		this->prev_pos.x == prev_pos.x ? abs(d.y) != 1 :
+		m->prev_pos.y == player.pos.y ? 0 :
+		m->prev_pos.x == player.pos.x ? 1 :
+		m->prev_pos.y == prev_pos.y ? abs(d.x) == 1 :
+		m->prev_pos.x == prev_pos.x ? abs(d.y) != 1 :
 
 		// #5: keep moving along the same axis
-		this->dir.y != 0;
+		m->dir.y != 0;
 
 	return axis ? vertical : horizontal;
 }
@@ -95,15 +95,15 @@ static Coords seek_dir(Monster *this, Coords d)
 // Move cardinally toward the player, avoiding obstacles.
 // Try to keep moving along the same axis, unless the monster’s current or
 // previous position is aligned with the player’s current or previous position.
-static void basic_seek(Monster *this, Coords d)
+static void basic_seek(Monster *m, Coords d)
 {
-	this->dir = seek_dir(this, d);
-	enemy_move(this, this->dir);
+	m->dir = seek_dir(m, d);
+	enemy_move(m, m->dir);
 }
 
 // Move away from the player.
 // Tiebreak by L2 distance, then bomb-order.
-static void basic_flee(Monster *this, Coords d)
+static void basic_flee(Monster *m, Coords d)
 {
 	if (d.y == 0)
 		MOVE(-SIGN(d.x), 0) || MOVE(0, -1) || MOVE(0, 1);
@@ -116,7 +116,7 @@ static void basic_flee(Monster *this, Coords d)
 }
 
 // Move diagonally toward the player. Tiebreak by *reverse* bomb-order.
-static void diagonal_seek(Monster *this, Coords d)
+static void diagonal_seek(Monster *m, Coords d)
 {
 	if (d.y == 0)
 		MOVE(SIGN(d.x), 1) || MOVE(SIGN(d.x), -1);
@@ -129,7 +129,7 @@ static void diagonal_seek(Monster *this, Coords d)
 }
 
 // Move toward the player either cardinally or diagonally.
-static void moore_seek(Monster *this, Coords d)
+static void moore_seek(Monster *m, Coords d)
 {
 	if (MOVE(SIGN(d.x), SIGN(d.y)) || d.x == 0 || d.y == 0)
 		return;
@@ -140,27 +140,27 @@ static void moore_seek(Monster *this, Coords d)
 }
 
 // Keep moving in the same direction
-static void charge(Monster *this, __attribute__((unused)) Coords d)
+static void charge(Monster *m, __attribute__((unused)) Coords d)
 {
-	Coords charging_dir = this->pos - this->prev_pos;
-	if (this->class != ARMADILDO && this->class != BARREL)
+	Coords charging_dir = m->pos - m->prev_pos;
+	if (m->type != ARMADILDO && m->type != BARREL)
 		charging_dir = CARDINAL(charging_dir);
-	if (enemy_move(this, charging_dir) != MOVE_SUCCESS)
-		this->state = 0;
-	if (this->class != BARREL)
-		this->prev_pos = this->pos - charging_dir;
+	if (enemy_move(m, charging_dir) != MOVE_SUCCESS)
+		m->state = 0;
+	if (m->type != BARREL)
+		m->prev_pos = m->pos - charging_dir;
 }
 
 // Common code for wind-mages, liches and electro-liches.
 // None of them can cast while stuck in water/tar or confused.
-static bool magic(Monster *this, Coords d, bool condition)
+static bool magic(Monster *m, Coords d, bool condition)
 {
-	if (!condition || this->confusion || IS_BOGGED(this)) {
-		basic_seek(this, d);
+	if (!condition || m->confusion || IS_BOGGED(m)) {
+		basic_seek(m, d);
 		return false;
 	} else {
-		this->delay = 1;
-		this->dir = DIRECTION(d);
+		m->delay = 1;
+		m->dir = DIRECTION(d);
 		return true;
 	}
 }
@@ -168,7 +168,7 @@ static bool magic(Monster *this, Coords d, bool condition)
 // Z1 //
 
 // Move in a repeating pattern.
-static void slime(Monster *this, __attribute__((unused)) Coords d)
+static void slime(Monster *m, __attribute__((unused)) Coords d)
 {
 	static const Coords moves[][4] = {
 		{{ 1,  0}, { 1, 1}, {-1,  0}, {-1, -1}}, // black
@@ -180,160 +180,160 @@ static void slime(Monster *this, __attribute__((unused)) Coords d)
 		{{-1,  1}, { 1, 1}, { 1, -1}, {-1, -1}}, // fire
 		{{ 1,  1}, {-1, 1}, {-1, -1}, { 1, -1}}, // ice
 	};
-	if (enemy_move(this, moves[this->class & 7][this->state]) == MOVE_SUCCESS)
-		this->state = (this->state + 1) & 3;
+	if (enemy_move(m, moves[m->type & 7][m->state]) == MOVE_SUCCESS)
+		m->state = (m->state + 1) & 3;
 }
 
 // Move in a straight line, turn around when blocked.
-static void zombie(Monster *this, __attribute__((unused)) Coords d)
+static void zombie(Monster *m, __attribute__((unused)) Coords d)
 {
-	if (enemy_move(this, this->dir) < MOVE_ATTACK && !this->requeued) {
-		this->dir = -this->dir;
-		this->delay = 1;
+	if (enemy_move(m, m->dir) < MOVE_ATTACK && !m->requeued) {
+		m->dir = -m->dir;
+		m->delay = 1;
 	}
 }
 
 // Move in a random direction.
 // If the chosen direction is blocked, cycles through the other directions
 // in the order right > left > down > up (mnemonic: Ryan Loves to Dunk Us).
-static void bat(Monster *this, Coords d)
+static void bat(Monster *m, Coords d)
 {
 	static const Coords moves[] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
-	if (this->confusion) {
-		basic_seek(this, d);
+	if (m->confusion) {
+		basic_seek(m, d);
 		return;
 	}
 	if (!g.seed) {
-		monster_kill(this, DMG_NORMAL);
+		monster_kill(m, DMG_NORMAL);
 		return;
 	}
 	i64 rng = RNG();
 	for (i64 i = 0; i < 4; ++i)
-		if (enemy_move(this, moves[(rng + i) & 3]))
+		if (enemy_move(m, moves[(rng + i) & 3]))
 			return;
 }
 
 // Move in a randomer direction.
-static void green_bat(Monster *this, Coords d)
+static void green_bat(Monster *m, Coords d)
 {
 	static const Coords moves[] = {
 		{1, 0}, {-1, 0}, {0, 1}, {0, -1},
 		{1, -1}, {1, 1}, {-1, -1}, {-1, 1},
 	};
-	if (this->confusion) {
-		basic_seek(this, d);
+	if (m->confusion) {
+		basic_seek(m, d);
 		return;
 	}
 	if (!g.seed) {
-		monster_kill(this, DMG_NORMAL);
+		monster_kill(m, DMG_NORMAL);
 		return;
 	}
 	i64 rng = RNG() * 2 + RNG();
 	for (i64 i = 0; i < 8; ++i)
-		if (enemy_move(this, moves[(rng + i) & 7]))
+		if (enemy_move(m, moves[(rng + i) & 7]))
 			return;
 }
 
 // Move toward the player when they’re retreating, stand still otherwise.
-static void ghost(Monster *this, Coords d)
+static void ghost(Monster *m, Coords d)
 {
-	this->state = (L1(d) + this->state) > L1(player.prev_pos - this->pos);
-	if (this->state)
-		basic_seek(this, d);
+	m->state = (L1(d) + m->state) > L1(player.prev_pos - m->pos);
+	if (m->state)
+		basic_seek(m, d);
 }
 
 // Z2 //
 
-static void wind_mage(Monster *this, Coords d)
+static void wind_mage(Monster *m, Coords d)
 {
-	if (magic(this, d, L2(d) == 4 && can_move(this, DIRECTION(d))))
+	if (magic(m, d, L2(d) == 4 && can_move(m, DIRECTION(d))))
 		forced_move(&player, -DIRECTION(d));
 }
 
 // Attack in a 3x3 zone without moving.
-static void mushroom(Monster *this, Coords d)
+static void mushroom(Monster *m, Coords d)
 {
 	if (L2(d) < 4)
-		damage(&player, CLASS(this).damage, d, DMG_NORMAL);
-	this->delay = CLASS(this).beat_delay;
+		damage(&player, TYPE(m).damage, d, DMG_NORMAL);
+	m->delay = TYPE(m).beat_delay;
 }
 
 // State 0: passive
 // State 1: charging
-static void armadillo(Monster *this, Coords d)
+static void armadillo(Monster *m, Coords d)
 {
-	if (this->state == 0)
-		this->state = can_charge(this);
-	if (this->state == 1) {
-		charge(this, d);
-		this->delay = this->state ? 0 : 2;
+	if (m->state == 0)
+		m->state = can_charge(m);
+	if (m->state == 1) {
+		charge(m, d);
+		m->delay = m->state ? 0 : 2;
 	}
 }
 
-static void clone(Monster *this, __attribute__((unused)) Coords d)
+static void clone(Monster *m, __attribute__((unused)) Coords d)
 {
 	if (g.player_moved)
-		enemy_move(this, DIRECTION(player.prev_pos - player.pos));
+		enemy_move(m, DIRECTION(player.prev_pos - player.pos));
 }
 
-static void tarmonster(Monster *this, Coords d)
+static void tarmonster(Monster *m, Coords d)
 {
-	if (this == &g.monsters[g.monkeyed])
-		damage(&player, CLASS(this).damage, d, DMG_NORMAL);
-	else if (this->state || L1(d) > 1)
-		basic_seek(this, d);
-	this->state = this->state ? 2 : L1(d) == 1;
+	if (m == &g.monsters[g.monkeyed])
+		damage(&player, TYPE(m).damage, d, DMG_NORMAL);
+	else if (m->state || L1(d) > 1)
+		basic_seek(m, d);
+	m->state = m->state ? 2 : L1(d) == 1;
 }
 
-static void mole(Monster *this, Coords d)
+static void mole(Monster *m, Coords d)
 {
-	if (this->state != (L1(d) == 1))
-		this->state ^= 1;
+	if (m->state != (L1(d) == 1))
+		m->state ^= 1;
 	else
-		basic_seek(this, d);
-	TILE(this->pos).destroyed = true;
+		basic_seek(m, d);
+	TILE(m->pos).destroyed = true;
 }
 
 // Z3 //
 
-static void assassin(Monster *this, Coords d)
+static void assassin(Monster *m, Coords d)
 {
-	this->state = L1(d) == 1 || (L1(d) + this->state) > L1(player.prev_pos - this->pos);
-	(this->state ? basic_seek : basic_flee)(this, d);
+	m->state = L1(d) == 1 || (L1(d) + m->state) > L1(player.prev_pos - m->pos);
+	(m->state ? basic_seek : basic_flee)(m, d);
 }
 
-static void beetle_shed(Monster *this)
+static void beetle_shed(Monster *m)
 {
-	tile_change(this->pos, this->class == FIRE_BEETLE ? FIRE : ICE);
-	this->class = BEETLE;
+	tile_change(m->pos, m->type == FIRE_BEETLE ? FIRE : ICE);
+	m->type = BEETLE;
 }
 
-static void beetle(Monster *this, Coords d)
+static void beetle(Monster *m, Coords d)
 {
 	if (L1(d) == 1)
-		beetle_shed(this);
-	basic_seek(this, d);
-	if (L1(player.pos - this->pos) == 1)
-		beetle_shed(this);
+		beetle_shed(m);
+	basic_seek(m, d);
+	if (L1(player.pos - m->pos) == 1)
+		beetle_shed(m);
 }
 
 // Chase the player, then attack in a 3x3 zone.
-static void yeti(Monster *this, Coords d)
+static void yeti(Monster *m, Coords d)
 {
-	bool has_moved = !coords_eq(this->pos, this->prev_pos);
-	basic_seek(this, d);
-	if (has_moved && L2(player.pos - this->pos) < 4)
-		damage(&player, CLASS(this).damage, d, DMG_NORMAL);
+	bool has_moved = !coords_eq(m->pos, m->prev_pos);
+	basic_seek(m, d);
+	if (has_moved && L2(player.pos - m->pos) < 4)
+		damage(&player, TYPE(m).damage, d, DMG_NORMAL);
 }
 
 // Z4 //
 
-static void digger(Monster *this, Coords d)
+static void digger(Monster *m, Coords d)
 {
-	if (this->state == 0) {
+	if (m->state == 0) {
 		if (L2(d) <= 9) {
-			this->state = 1;
-			this->delay = 3;
+			m->state = 1;
+			m->delay = 3;
 		}
 		return;
 	}
@@ -343,36 +343,36 @@ static void digger(Monster *this, Coords d)
 	bool vertical = abs(d.y) > (abs(d.x) + 1) / 3;
 	for (i64 i = 0; i < 3; ++i) {
 		move = moves[i ^ vertical];
-		if (!TILE(this->pos + move).monster && TILE(this->pos + move).class != EDGE)
+		if (!TILE(m->pos + move).monster && TILE(m->pos + move).type != EDGE)
 			break;
 	}
 
-	if (enemy_move(this, move) < MOVE_ATTACK)
-		this->delay = 3;
+	if (enemy_move(m, move) < MOVE_ATTACK)
+		m->delay = 3;
 }
 
 // Attack the player if possible, otherwise move randomly.
-static void black_bat(Monster *this, Coords d)
+static void black_bat(Monster *m, Coords d)
 {
 	if (L1(d) == 1)
-		enemy_move(this, d);
+		enemy_move(m, d);
 	else
-		bat(this, d);
+		bat(m, d);
 }
 
 // After parrying a melee hit, lunge two tiles in the direction the hit came from.
-static void blademaster(Monster *this, Coords d)
+static void blademaster(Monster *m, Coords d)
 {
-	if (this->state == 2) {
-		this->state = 0;
-	} else if (this->state == 1 && can_move(this, DIRECTION(player.prev_pos - this->prev_pos))) {
-		enemy_move(this, DIRECTION(player.prev_pos - this->prev_pos));
-		enemy_move(this, DIRECTION(player.prev_pos - this->prev_pos));
-		this->delay = 0;
-		this->state = 2;
-		this->requeued = false;
+	if (m->state == 2) {
+		m->state = 0;
+	} else if (m->state == 1 && can_move(m, DIRECTION(player.prev_pos - m->prev_pos))) {
+		enemy_move(m, DIRECTION(player.prev_pos - m->prev_pos));
+		enemy_move(m, DIRECTION(player.prev_pos - m->prev_pos));
+		m->delay = 0;
+		m->state = 2;
+		m->requeued = false;
 	} else {
-		basic_seek(this, d);
+		basic_seek(m, d);
 	}
 }
 
@@ -385,7 +385,7 @@ static void blademaster(Monster *this, Coords d)
 //  IDBDL
 //   JFK
 //    N
-static void harpy(Monster *this, Coords d)
+static void harpy(Monster *m, Coords d)
 {
 	static const Coords moves[] = {
 		{-1, 0}, {0, -1}, {0, 1}, {1, 0},
@@ -395,7 +395,7 @@ static void harpy(Monster *this, Coords d)
 		{-3, 0}, {0, -3}, {0, 3}, {3, 0},
 	};
 	if (L1(d) == 1) {
-		enemy_move(this, d);
+		enemy_move(m, d);
 		return;
 	}
 	Coords best_move = {0, 0};
@@ -403,170 +403,170 @@ static void harpy(Monster *this, Coords d)
 	for (u64 i = 0; i < ARRAY_SIZE(moves); ++i) {
 		Coords move = moves[i];
 		i64 score = L1(d - move);
-		if (!score || score >= min || !can_move(this, move))
+		if (!score || score >= min || !can_move(m, move))
 			continue;
 		if ((L2(move) == 9 || L2(move) == 4)
-		    && (BLOCKS_LOS(this->pos + DIRECTION(move))
-		    || BLOCKS_LOS(this->pos + 2*DIRECTION(move))))
+		    && (BLOCKS_LOS(m->pos + DIRECTION(move))
+		    || BLOCKS_LOS(m->pos + 2*DIRECTION(move))))
 			continue;
 		if (L2(move) == 5
-		    && BLOCKS_LOS(this->pos + move / 2)
-		    && (BLOCKS_LOS(this->pos + DIRECTION(move))
-		    || BLOCKS_LOS(this->pos + DIRECTION(move) - move / 2)))
+		    && BLOCKS_LOS(m->pos + move / 2)
+		    && (BLOCKS_LOS(m->pos + DIRECTION(move))
+		    || BLOCKS_LOS(m->pos + DIRECTION(move) - move / 2)))
 			continue;
 		min = score;
 		best_move = move;
 		if (score == 1 || score == L1(d) - 3)
 			break;
 	}
-	enemy_move(this, best_move);
+	enemy_move(m, best_move);
 }
 
-static void lich(Monster *this, Coords d)
+static void lich(Monster *m, Coords d)
 {
-	if (magic(this, d, L2(d) == 4 && can_move(this, DIRECTION(d)) && !player.confusion))
+	if (magic(m, d, L2(d) == 4 && can_move(m, DIRECTION(d)) && !player.confusion))
 		player.confusion = 5;
 }
 
 // Unlike bats, sarcophagi aren’t biased.
-static void sarcophagus(Monster *this, __attribute__((unused)) Coords d)
+static void sarcophagus(Monster *m, __attribute__((unused)) Coords d)
 {
-	static const MonsterClass types[] = {SKELETON_1, SKELETANK_1, WINDMAGE_1, RIDER_1};
+	static const MonsterType types[] = {SKELETON_1, SKELETANK_1, WINDMAGE_1, RIDER_1};
 
-	this->delay = CLASS(this).beat_delay;
+	m->delay = TYPE(m).beat_delay;
 	if (g.monsters[g.sarco_spawn].hp || !g.seed)
 		return;
 
 	// Try at random up to 4 times, then try in order
 	for (u64 i = 0; i < 8; ++i) {
 		Coords spawn_dir = plus_shape[i < 4 ? RNG() : i & 3];
-		if (!IS_EMPTY(this->pos + spawn_dir))
+		if (!IS_EMPTY(m->pos + spawn_dir))
 			continue;
-		MonsterClass spawned = types[RNG()] + this->class - SARCO_1;
-		monster_spawn(spawned, this->pos + spawn_dir, 1);
+		u8 spawned = types[RNG()] + m->type - SARCO_1;
+		monster_spawn(spawned, m->pos + spawn_dir, 1);
 		g.sarco_spawn = g.last_monster;
 		return;
 	}
 }
 
-static void wind_statue(__attribute__((unused)) Monster *this, Coords d)
+static void wind_statue(__attribute__((unused)) Monster *m, Coords d)
 {
 	if (L1(d) == 1)
 		forced_move(&player, d);
 }
 
-static void bomb_statue(Monster *this, Coords d)
+static void bomb_statue(Monster *m, Coords d)
 {
-	if (this->state)
-		bomb_detonate(this, d);
+	if (m->state)
+		bomb_detonate(m, d);
 	else if (L1(d) == 1)
-		this->state = 1;
+		m->state = 1;
 }
 
-static void firepig(Monster *this, Coords d)
+static void firepig(Monster *m, Coords d)
 {
-	if (this->state) {
-		fireball(this->pos, this->dir.x);
-		this->state = 0;
-		this->delay = 4;
-	} else if (abs(d.x) <= 5 && SIGN(d.x) == this->dir.x && can_breathe(this, d)) {
-		this->state = 1;
+	if (m->state) {
+		fireball(m->pos, m->dir.x);
+		m->state = 0;
+		m->delay = 4;
+	} else if (abs(d.x) <= 5 && SIGN(d.x) == m->dir.x && can_breathe(m, d)) {
+		m->state = 1;
 	}
 }
 
 // Z5 //
 
-static void electro_lich(Monster *this, Coords d)
+static void electro_lich(Monster *m, Coords d)
 {
-	Coords true_prev_pos = this->prev_pos;
+	Coords true_prev_pos = m->prev_pos;
 
-	if (magic(this, d, L1(d) > 1 && can_charge(this))) {
-		this->dir = this->pos - this->prev_pos;
-		MonsterClass spawned = this->class + (ORB_1 - ELECTRO_1);
-		monster_spawn(spawned, this->pos + this->dir, 0)->dir = this->dir;
+	if (magic(m, d, L1(d) > 1 && can_charge(m))) {
+		m->dir = m->pos - m->prev_pos;
+		u8 spawned = m->type + (ORB_1 - ELECTRO_1);
+		monster_spawn(spawned, m->pos + m->dir, 0)->dir = m->dir;
 	}
 
-	this->prev_pos = true_prev_pos;
+	m->prev_pos = true_prev_pos;
 }
 
-static void orb(Monster *this, __attribute__((unused)) Coords d)
+static void orb(Monster *m, __attribute__((unused)) Coords d)
 {
-	this->was_requeued = true;
-	if (enemy_move(this, this->dir) != MOVE_SUCCESS)
-		monster_kill(this, DMG_NORMAL);
+	m->was_requeued = true;
+	if (enemy_move(m, m->dir) != MOVE_SUCCESS)
+		monster_kill(m, DMG_NORMAL);
 }
 
-static void wire_zombie(Monster *this, __attribute__((unused)) Coords d)
+static void wire_zombie(Monster *m, __attribute__((unused)) Coords d)
 {
-	if (enemy_move(this, this->dir) < MOVE_ATTACK && !this->requeued)
-		this->dir = -this->dir;
+	if (enemy_move(m, m->dir) < MOVE_ATTACK && !m->requeued)
+		m->dir = -m->dir;
 
-	this->delay = IS_WIRE(this->pos) ? 0 : 1;
+	m->delay = IS_WIRE(m->pos) ? 0 : 1;
 
-	if (this->delay == 0 && !TILE(this->pos + this->dir).wired) {
-		Coords right = { -this->dir.y, this->dir.x };
-		Coords left = { this->dir.y, -this->dir.x };
-		if (TILE(this->pos + right).wired ^ TILE(this->pos + left).wired) {
-			this->dir = TILE(this->pos + right).wired ? right : left;
+	if (m->delay == 0 && !TILE(m->pos + m->dir).wired) {
+		Coords right = { -m->dir.y, m->dir.x };
+		Coords left = { m->dir.y, -m->dir.x };
+		if (TILE(m->pos + right).wired ^ TILE(m->pos + left).wired) {
+			m->dir = TILE(m->pos + right).wired ? right : left;
 		} else {
-			this->dir = -this->dir;
-			this->delay = 1;
+			m->dir = -m->dir;
+			m->delay = 1;
 		}
 	}
 }
 
-static void evil_eye(Monster *this, Coords d)
+static void evil_eye(Monster *m, Coords d)
 {
-	if (!this->state) {
-		this->state = L1(d) <= 3 && _can_charge(this, player.pos);
+	if (!m->state) {
+		m->state = L1(d) <= 3 && _can_charge(m, player.pos);
 		return;
 	}
-	this->state = 0;
-	Coords dir = this->pos - this->prev_pos;
-	this->was_requeued = true;
+	m->state = 0;
+	Coords dir = m->pos - m->prev_pos;
+	m->was_requeued = true;
 	for (i64 i = 0; i < 3; ++i)
-		if (enemy_move(this, dir) != MOVE_SUCCESS)
+		if (enemy_move(m, dir) != MOVE_SUCCESS)
 			return;
 }
 
-static void orc(Monster *this, Coords d)
+static void orc(Monster *m, Coords d)
 {
-	Coords old_dir = this->dir;
-	this->dir = seek_dir(this, d);
-	if (coords_eq(this->dir, old_dir))
-		basic_seek(this, d);
+	Coords old_dir = m->dir;
+	m->dir = seek_dir(m, d);
+	if (coords_eq(m->dir, old_dir))
+		basic_seek(m, d);
 	else
-		this->prev_pos = this->pos;
+		m->prev_pos = m->pos;
 }
 
-static void devil(Monster *this, Coords d)
+static void devil(Monster *m, Coords d)
 {
-	moore_seek(this, d);
-	if (this->state)
-		this->delay = 0;
+	moore_seek(m, d);
+	if (m->state)
+		m->delay = 0;
 }
 
 // State 0: camouflaged
 // State 1: invulnerable (right after waking up)
 // State 2: chasing the player
-static void mimic(Monster *this, Coords d)
+static void mimic(Monster *m, Coords d)
 {
-	if (this->state) {
-		this->state = 2;
-		basic_seek(this, d);
+	if (m->state) {
+		m->state = 2;
+		basic_seek(m, d);
 	} else if (L1(d) == 1) {
-		this->state = 1;
+		m->state = 1;
 	}
 }
 
 // Like a mimic, but can also move or wake up diagonally.
-static void moore_mimic(Monster *this, Coords d)
+static void moore_mimic(Monster *m, Coords d)
 {
-	if (this->state) {
-		this->state = 2;
-		moore_seek(this, d);
+	if (m->state) {
+		m->state = 2;
+		moore_seek(m, d);
 	} else if (L2(d) <= 2) {
-		this->state = 1;
+		m->state = 1;
 	}
 }
 
@@ -576,38 +576,38 @@ static void moore_mimic(Monster *this, Coords d)
 // However, as soon as the player is in breath range, they’ll charge a breath attack,
 // then fire it on the next beat.
 // They then resume chasing, but can’t charge another breath in the next two beats.
-static void dragon(Monster *this, Coords d)
+static void dragon(Monster *m, Coords d)
 {
 	i8 direction = 1;
 
-	switch (this->state) {
+	switch (m->state) {
 	case 0:
-		basic_seek(this, d);
-		this->state = this->delay;
-		this->delay = 0;
+		basic_seek(m, d);
+		m->state = m->delay;
+		m->delay = 0;
 		break;
 	case 1:
-		this->state = 0;
+		m->state = 0;
 		break;
 	case 2:
 		direction = -1;
-		// FALLTHROUGH
+		[[clang::fallthrough]];
 	case 3:
-		(this->class == RED_DRAGON ? fireball : cone_of_cold)(this->pos, direction);
-		this->exhausted = 3;
-		this->state = 1;
+		(m->type == RED_DRAGON ? fireball : cone_of_cold)(m->pos, direction);
+		m->exhausted = 3;
+		m->state = 1;
 		break;
 	}
-	if (!this->exhausted && can_breathe(this, player.pos - this->pos))
-		this->state = 2 + (d.x > 0);
+	if (!m->exhausted && can_breathe(m, player.pos - m->pos))
+		m->state = 2 + (d.x > 0);
 }
 
 // Charge the player when possible, otherwise default to basic_seek.
-static void minotaur(Monster *this, Coords d)
+static void minotaur(Monster *m, Coords d)
 {
-	armadillo(this, d);
-	if (this->state == 0 && this->delay == 0)
-		basic_seek(this, d);
+	armadillo(m, d);
+	if (m->state == 0 && m->delay == 0)
+		basic_seek(m, d);
 }
 
 // Move toward the player, then spawn a mummy on the empty tile closest
@@ -616,7 +616,7 @@ static void minotaur(Monster *this, Coords d)
 // .E@F.
 // IBACJ
 // .GDH.
-static void mommy(Monster *this, Coords d)
+static void mommy(Monster *m, Coords d)
 {
 	static const Coords spawn_dirs[] = {
 		{0, 1}, {-1, 1}, {1, 1}, {0, 2}, {-1, 0}, {1, 0},
@@ -624,12 +624,12 @@ static void mommy(Monster *this, Coords d)
 	};
 	const Coords *spawn_dir;
 
-	bool has_moved = !coords_eq(this->pos, this->prev_pos);
-	basic_seek(this, d);
+	bool has_moved = !coords_eq(m->pos, m->prev_pos);
+	basic_seek(m, d);
 
 	if (has_moved && !g.monsters[g.mommy_spawn].hp) {
-		for (spawn_dir = spawn_dirs; !IS_EMPTY(this->pos + *spawn_dir); ++spawn_dir);
-		monster_spawn(MUMMY, this->pos + *spawn_dir, 1);
+		for (spawn_dir = spawn_dirs; !IS_EMPTY(m->pos + *spawn_dir); ++spawn_dir);
+		monster_spawn(MUMMY, m->pos + *spawn_dir, 1);
 		g.mommy_spawn = g.last_monster;
 	}
 }
@@ -639,36 +639,36 @@ static void mommy(Monster *this, Coords d)
 // State 0 = 4th beat (can move or clonk)
 // State 1 = 3rd beat (can clonk, but not move).
 // State 2 = clonking
-static void ogre(Monster *this, Coords d)
+static void ogre(Monster *m, Coords d)
 {
-	if (this->state == 2) {
-		Coords clonk_dir = DIRECTION(player.prev_pos - this->pos);
+	if (m->state == 2) {
+		Coords clonk_dir = DIRECTION(player.prev_pos - m->pos);
 		for (i8 i = 1; i <= 3; ++i) {
-			Coords pos = this->pos + i * clonk_dir;
+			Coords pos = m->pos + i * clonk_dir;
 			destroy_wall(pos);
 			damage(&MONSTER(pos), 5, clonk_dir, DMG_NORMAL);
 		}
-		this->state = 1;
-		this->delay = 2;
+		m->state = 1;
+		m->delay = 2;
 	} else if (d.x * d.y == 0 && abs(d.x + d.y) <= 3) {
 		// Clonk!
-		this->state = 2;
-	} else if (this->state == 1) {
-		this->state = 0;
+		m->state = 2;
+	} else if (m->state == 1) {
+		m->state = 0;
 	} else {
-		basic_seek(this, d);
-		this->state = 1;
+		basic_seek(m, d);
+		m->state = 1;
 	}
 }
 
 // Move three times, then attack like a mushroom
-static void metrognome(Monster *this, Coords d)
+static void metrognome(Monster *m, Coords d)
 {
-	this->state = (this->state + 1) & 3;
-	(this->state ? basic_seek : mushroom)(this, d);
+	m->state = (m->state + 1) & 3;
+	(m->state ? basic_seek : mushroom)(m, d);
 }
 
-const ClassInfos class_infos[256] = {
+const TypeInfos type_infos[256] = {
 	// [Name] = { damage, max_hp, beat_delay, radius, flying, dig, priority, glyph, act }
 	[GREEN_SLIME]  = { 99, 1, 0, 999, false, -1, 19901101, GREEN "P",  slime },
 	[BLUE_SLIME]   = {  2, 2, 1, 999, false, -1, 10202202, BLUE "P",   slime },

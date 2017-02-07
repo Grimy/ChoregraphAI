@@ -57,7 +57,7 @@ static void handle_victory()
 // Recursively try all possible inputs, starting at the given point.
 static void explore(GameState const *route, bool omp)
 {
-	static const u8 symbols[6] = "efij< ";
+	static const u8 symbols[6] = {'e', 'f', 'i', 'j', '<', ' '};
 
 	simulated_beats += ARRAY_SIZE(symbols);
 	// printf("%s\n", g.input);

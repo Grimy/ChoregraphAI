@@ -46,9 +46,9 @@ static const char* dir_to_arrow(Coords dir)
 // For example, when tiles to the bottom and right are walls too, use '┌'.
 static void display_wall(Coords pos)
 {
-	if (TILE(pos).class == FIREWALL)
+	if (TILE(pos).type == FIREWALL)
 		printf(RED);
-	else if (TILE(pos).class == ICEWALL)
+	else if (TILE(pos).type == ICEWALL)
 		printf(CYAN);
 	else if (TILE(pos).hp == 3)
 		printf(BLACK);
@@ -74,13 +74,13 @@ static void display_tile(Coords pos)
 {
 	Tile *tile = &TILE(pos);
 
-	if (tile->class == EDGE || !tile->revealed)
+	if (tile->type == EDGE || !tile->revealed)
 		return;
 
 	cursor_to(pos.x, pos.y);
 
 	if (tile->monster)
-		printf("%s", CLASS(&MONSTER(pos)).glyph);
+		printf("%s", TYPE(&MONSTER(pos)).glyph);
 	else if (IS_DOOR(pos))
 		putchar('+');
 	else if (IS_DIGGABLE(pos))
@@ -90,7 +90,7 @@ static void display_tile(Coords pos)
 	else if (tile->item)
 		putchar('*');
 	else if (L2(pos - g.monsters[g.nightmare].pos) >= 8)
-		printf("%s", floor_glyphs[tile->class]);
+		printf("%s", floor_glyphs[tile->type]);
 
 	printf(WHITE);
 }
@@ -125,7 +125,7 @@ static void display_inventory(void)
 
 static const char* additional_info(Monster *m)
 {
-	switch (m->class) {
+	switch (m->type) {
 	case BARREL:
 		return m->state ? "rolling" : "";
 	case ARMADILLO_1:
@@ -185,7 +185,7 @@ static void display_enemy(Monster *m)
 	if (!m->hp)
 		return;
 	LINE("%s %s%s%s%s" WHITE "%s ",
-		CLASS(m).glyph,
+		TYPE(m).glyph,
 		m->aggro ? ORANGE "!" : " ",
 		m->delay ? BLACK "◔" : " ",
 		m->confusion ? YELLOW "?" : " ",
@@ -200,7 +200,7 @@ static void display_trap(Trap *t)
 	if (TILE(t->pos).monster)
 		return;
 	cursor_to(t->pos.x, t->pos.y);
-	printf("%s" WHITE, t->class == BOUNCE ? dir_to_arrow(t->dir) : trap_glyphs[t->class]);
+	printf("%s" WHITE, t->type == BOUNCE ? dir_to_arrow(t->dir) : trap_glyphs[t->type]);
 }
 
 // Clears and redraws the entire interface.
@@ -219,7 +219,7 @@ static void display_all(void)
 	cursor_to(64, 0);
 	printf("\033[s");
 
-	for (Monster *m = &player + 1; m->class; ++m)
+	for (Monster *m = &player + 1; m->type; ++m)
 		if (m->aggro || TILE(m->pos).revealed)
 			display_enemy(m);
 
