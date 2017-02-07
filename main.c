@@ -202,7 +202,6 @@ MoveResult enemy_move(Monster *m, Coords dir)
 {
 	m->requeued = false;
 	m->prev_pos = m->pos;
-	m->delay = TYPE(m).beat_delay;
 	assert(m->hp > 0);
 
 	if (unbog(m))
@@ -903,7 +902,7 @@ bool do_beat(u8 input)
 
 		u8 old_state = m->state;
 		Coords old_dir = m->dir;
-
+		m->delay = TYPE(m).beat_delay;
 		TYPE(m).act(m, player.pos - m->pos);
 
 		if (m->requeued) {
