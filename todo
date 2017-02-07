@@ -1,3 +1,6 @@
+TESTS:
+* Mages casting through orbs
+
 FEATURES:
 * metal doors (type=111)
 * confusion de-aggroing enemies?
@@ -15,7 +18,6 @@ BUGFIXES:
 * pixie explosions are *weird*
 
 REFACTORS:
-* GET AN ACTUAL BUILD SYSTEM FOR LINUS’ SAKE
 * Set delay before acting
 * Refactor chain_lightning
 * Go ECS or go home

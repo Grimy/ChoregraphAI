@@ -1,8 +1,8 @@
-MAKEFLAGS += --no-builtin-rules --no-builtin-variables --quiet --jobs=4
-CC = clang
+MAKEFLAGS += --no-builtin-rules --no-builtin-variables --quiet
 OBJECTS = main.o monsters.o xml.o los.o
 ARGS := BARDZ4.xml 3
 
+CC = clang
 CFLAGS += -std=c99 -Weverything -Werror -march=native -mtune=native
 CFLAGS += -fstrict-aliasing -fstrict-overflow -fno-asynchronous-unwind-tables
 CFLAGS += -Wno-c++-compat -Wno-switch -Wno-switch-enum -Wno-gnu-statement-expression -Wno-gnu-case-range -Wno-disabled-macro-expansion
@@ -13,7 +13,8 @@ LDFLAGS += -lxml2 -lm
 .PHONY: all debug report stat
 .SECONDARY:
 
-all: dbin/play dbin/solve
+all:
+	make -j dbin/play dbin/solve
 
 los.c: los.pl
 	./$< >$@

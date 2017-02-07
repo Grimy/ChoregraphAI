@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Convenient name for integer types
+// Convenient names for integer types
 typedef enum __attribute__((__packed__)) {false, true} bool;
 
 typedef uint8_t  u8;
@@ -22,17 +22,12 @@ typedef int64_t  i64;
 // Some basic math macros
 #define ARRAY_SIZE(arr) ((i64) (sizeof(arr) / sizeof((arr)[0])))
 
+#define SWAP(a, b) do { __typeof(a) _swap = (a); (a) = (b); (b) = _swap; } while (0)
+
 #define SIGN(x) (((x) > 0) - ((x) < 0))
 
-#define min(x, y) ({ \
-	__typeof(x) _min1 = (x), _min2 = (y); \
-	(__typeof(x)) (_min1 < _min2 ? _min1 : _min2); })
-
-#define max(x, y) ({ \
-	__typeof(x) _max1 = (x), _max2 = (y); \
-	(__typeof(x)) (_max1 > _max2 ? _max1 : _max2); })
-
-#define SWAP(a, b) do { __typeof(a) _swap = (a); (a) = (b); (b) = _swap; } while (0)
+#define min(x, y) ({ __typeof(x) X = (x), Y = (y); (__typeof(x)) (X < Y ? X : Y); })
+#define max(x, y) ({ __typeof(x) X = (x), Y = (y); (__typeof(x)) (X > Y ? X : Y); })
 
 #define streq(a, b) (!strcmp((a), (b)))
 
