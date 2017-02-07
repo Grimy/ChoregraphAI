@@ -1,9 +1,9 @@
 TESTS:
+* All slimes
 * Mages casting through orbs
 * Mummies/yetis stuck against a wall
 
 FEATURES:
-* handle white/black slimes
 * metal doors (type=111)
 * confusion de-aggroing enemies?
 

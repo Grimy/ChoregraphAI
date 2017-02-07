@@ -152,6 +152,7 @@ static void charge(Monster *this, __attribute__((unused)) Coords d)
 }
 
 // Common code for wind-mages, liches and electro-liches.
+// None of them can cast while stuck in water/tar or confused.
 static bool magic(Monster *this, Coords d, bool condition)
 {
 	if (!condition || this->confusion || IS_BOGGED(this)) {
@@ -170,17 +171,17 @@ static bool magic(Monster *this, Coords d, bool condition)
 static void slime(Monster *this, __attribute__((unused)) Coords d)
 {
 	static const Coords moves[][4] = {
-		{{ 0,  0}, { 0, 0}, { 0,  0}, { 0,  0}}, // unassigned
+		{{ 1,  0}, { 1, 1}, {-1,  0}, {-1, -1}}, // black
 		{{ 0,  0}, { 0, 0}, { 0,  0}, { 0,  0}}, // green
 		{{ 0, -1}, { 0, 1}, { 0, -1}, { 0,  1}}, // blue
 		{{ 1,  0}, { 0, 1}, {-1,  0}, { 0, -1}}, // yellow
-		{{ 0,  0}, { 0, 0}, { 0,  0}, { 0,  0}}, // unassigned
 		{{-1,  1}, { 1, 0}, {-1, -1}, { 1,  0}}, // purple
+		{{ 0,  0}, { 0, 0}, { 0,  0}, { 0,  0}}, // unassigned
 		{{-1,  1}, { 1, 1}, { 1, -1}, {-1, -1}}, // fire
 		{{ 1,  1}, {-1, 1}, {-1, -1}, { 1, -1}}, // ice
 	};
-	this->state += enemy_move(this, moves[this->class & 7][this->state]) == MOVE_SUCCESS;
-	this->state &= 3;
+	if (enemy_move(this, moves[this->class & 7][this->state]) == MOVE_SUCCESS)
+		this->state = (this->state + 1) & 3;
 }
 
 // Move in a straight line, turn around when blocked.
