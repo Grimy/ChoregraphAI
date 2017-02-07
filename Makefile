@@ -41,3 +41,9 @@ report: bin/solve
 
 stat: bin/solve
 	perf stat -d -e{task-clock,page-faults,cycles,instructions,branch,branch-misses} ./test.sh
+
+long-funcs:
+	perl -nE '/^\w.*?(\w+)\(/?$$-=print$$1:/^}$$/?say": $$-":++$$-' *.c | sort -rnk2 | sed 31q
+
+long-lines:
+	perl -CADS -ple '/^if/||s|^|y///c+7*y/\t//." "|e' *.c | sort -rn | sed 31q
