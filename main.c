@@ -10,25 +10,25 @@ Coords stairs;
 CharId character;
 
 __extension__ __thread GameState g = {
-	.board = {[0 ... 31] = {[0 ... 31] = {.class = EDGE}}},
+	.board = {[0 ... 31] = {[0 ... 31] = {.type = EDGE}}},
 	.inventory = { [BOMBS] = 3 },
 	.boots_on = true,
 };
 
-static void monster_new(MonsterClass type, Coords pos, u8 delay)
+static void monster_new(MonsterType type, Coords pos, u8 delay)
 {
 	assert(g.last_monster < ARRAY_SIZE(g.monsters));
 	Monster *m = &g.monsters[++g.last_monster];
-	m->class = type;
-	m->hp = CLASS(m).max_hp;
-	m->untrapped = CLASS(m).flying;
+	m->type = type;
+	m->hp = TYPE(m).max_hp;
+	m->untrapped = TYPE(m).flying;
 	m->pos = pos;
 	m->prev_pos = pos;
 	m->delay = delay;
 	m->aggro = true;
 }
 
-Monster* monster_spawn(MonsterClass type, Coords pos, u8 delay)
+Monster* monster_spawn(MonsterType type, Coords pos, u8 delay)
 {
 	monster_new(type, pos, delay);
 	TILE(pos).monster = g.last_monster;
@@ -39,7 +39,7 @@ Monster* monster_spawn(MonsterClass type, Coords pos, u8 delay)
 static void move(Monster *m, Coords dest)
 {
 	TILE(m->pos).monster = 0;
-	m->untrapped = CLASS(m).flying || m->lord;
+	m->untrapped = TYPE(m).flying || m->lord;
 	m->pos = dest;
 	TILE(m->pos).monster = (u8) (m - g.monsters);
 }
@@ -49,13 +49,13 @@ bool can_move(Monster *m, Coords dir)
 {
 	assert(m != &player || L1(dir));
 	Coords dest = m->pos + dir;
-	if (m->class == TARMONSTER && m->state == 0)
-		return TILE(dest).class == TAR;
+	if (m->type == TARMONSTER && m->state == 0)
+		return TILE(dest).type == TAR;
 	if (TILE(dest).monster)
 		return &MONSTER(m->pos + dir) == &player;
-	if (m->class == SPIDER)
+	if (m->type == SPIDER)
 		return IS_DIGGABLE(dest) && !IS_DOOR(dest) && !TILE(dest).torch;
-	if (m->class == MOLE && (TILE(dest).class == WATER || TILE(dest).class == TAR))
+	if (m->type == MOLE && (TILE(dest).type == WATER || TILE(dest).type == TAR))
 		return false;
 	return !BLOCKS_LOS(dest);
 }
@@ -75,10 +75,10 @@ void destroy_wall(Coords pos)
 		return;
 
 	Tile *wall = &TILE(pos);
-	wall->class &= ICE;
+	wall->type &= ICE;
 
-	if (MONSTER(pos).class == SPIDER) {
-		MONSTER(pos).class = FREE_SPIDER;
+	if (MONSTER(pos).type == SPIDER) {
+		MONSTER(pos).type = FREE_SPIDER;
 		MONSTER(pos).delay = 1;
 	}
 
@@ -92,7 +92,7 @@ void destroy_wall(Coords pos)
 
 static void z4dig(Coords pos, i32 digging_power)
 {
-	if (TILE(pos).class == Z4WALL && TILE(pos).hp <= digging_power)
+	if (TILE(pos).type == Z4WALL && TILE(pos).hp <= digging_power)
 		destroy_wall(pos);
 }
 
@@ -103,7 +103,7 @@ static bool dig(Coords pos, i32 digging_power)
 	if (!IS_DIGGABLE(pos) || TILE(pos).hp > digging_power)
 		return false; // Dink!
 
-	if (TILE(pos).class == Z4WALL)
+	if (TILE(pos).type == Z4WALL)
 		for (i64 i = 0; i < 4; ++i)
 			z4dig(pos + plus_shape[i], digging_power);
 
@@ -111,7 +111,7 @@ static bool dig(Coords pos, i32 digging_power)
 	return true;
 }
 
-void bomb_detonate(Monster *this, __attribute__((unused)) Coords d)
+void bomb_detonate(Monster *m, __attribute__((unused)) Coords d)
 {
 	static const Coords square_shape[] = {
 		{-1, -1}, {-1, 0}, {-1, 1},
@@ -119,18 +119,18 @@ void bomb_detonate(Monster *this, __attribute__((unused)) Coords d)
 		{1, -1}, {1, 0}, {1, 1},
 	};
 
-	if (&MONSTER(this->pos) == this)
-		TILE(this->pos).monster = 0;
+	if (&MONSTER(m->pos) == m)
+		TILE(m->pos).monster = 0;
 
 	for (i64 i = 0; i < 9; ++i) {
-		Tile *tile = &TILE(this->pos + square_shape[i]);
-		tile->class = tile->class == WATER ? FLOOR : tile->class == ICE ? WATER : tile->class;
-		destroy_wall(this->pos + square_shape[i]);
-		damage(&MONSTER(this->pos + square_shape[i]), 4, square_shape[i], DMG_BOMB);
+		Tile *tile = &TILE(m->pos + square_shape[i]);
+		tile->type = tile->type == WATER ? FLOOR : tile->type == ICE ? WATER : tile->type;
+		destroy_wall(m->pos + square_shape[i]);
+		damage(&MONSTER(m->pos + square_shape[i]), 4, square_shape[i], DMG_BOMB);
 		tile->destroyed = true;
 	}
 
-	this->hp = 0;
+	m->hp = 0;
 }
 
 // Handles an enemy attacking the player.
@@ -139,7 +139,7 @@ static void enemy_attack(Monster *attacker)
 {
 	Coords d = player.pos - attacker->pos;
 
-	switch (attacker->class) {
+	switch (attacker->type) {
 	case MONKEY_1:
 	case MONKEY_2:
 	case CONF_MONKEY:
@@ -149,7 +149,7 @@ static void enemy_attack(Monster *attacker)
 			break; // One monkey at a time, please
 		g.monkeyed = (u8) (attacker - g.monsters);
 		move(attacker, player.pos);
-		attacker->hp *= attacker->class == MONKEY_2 ? 3 : 4;
+		attacker->hp *= attacker->type == MONKEY_2 ? 3 : 4;
 		break;
 	case PIXIE:
 		TILE(attacker->pos).monster = 0;
@@ -179,7 +179,7 @@ static void enemy_attack(Monster *attacker)
 		monster_kill(attacker, DMG_NORMAL);
 		break;
 	default:
-		damage(&player, CLASS(attacker).damage, d, DMG_NORMAL);
+		damage(&player, TYPE(attacker).damage, d, DMG_NORMAL);
 	}
 }
 
@@ -189,7 +189,7 @@ static bool unbog(Monster *m)
 {
 	if (!IS_BOGGED(m))
 		return false;
-	TILE(m->pos).class = TILE(m->pos).class == TAR ? TAR : FLOOR;
+	TILE(m->pos).type = TILE(m->pos).type == TAR ? TAR : FLOOR;
 	m->untrapped = true;
 	return true;
 }
@@ -202,7 +202,7 @@ MoveResult enemy_move(Monster *m, Coords dir)
 {
 	m->requeued = false;
 	m->prev_pos = m->pos;
-	m->delay = CLASS(m).beat_delay;
+	m->delay = TYPE(m).beat_delay;
 	assert(m->hp > 0);
 
 	if (unbog(m))
@@ -225,13 +225,13 @@ MoveResult enemy_move(Monster *m, Coords dir)
 
 	// Try the move again after other monsters have moved
 	Monster *blocker = &MONSTER(m->pos + dir);
-	if (!m->was_requeued || (blocker->requeued && CLASS(blocker).priority < CLASS(m).priority)) {
+	if (!m->was_requeued || (blocker->requeued && TYPE(blocker).priority < TYPE(m).priority)) {
 		m->requeued = true;
 		return MOVE_FAIL;
 	}
 
 	// Trampling
-	i32 digging_power = m->confusion ? -1 : CLASS(m).digging_power;
+	i32 digging_power = m->confusion ? -1 : TYPE(m).digging_power;
 	if (!m->aggro && digging_power == 4) {
 		for (i64 i = 0; i < 4; ++i) {
 			Coords pos = m->pos + plus_shape[i];
@@ -242,7 +242,7 @@ MoveResult enemy_move(Monster *m, Coords dir)
 	}
 
 	// Digging
-	digging_power += (m->class == MINOTAUR_1 || m->class == MINOTAUR_2) && m->state;
+	digging_power += (m->type == MINOTAUR_1 || m->type == MINOTAUR_2) && m->state;
 	if (dig(m->pos + dir, digging_power)) {
 		return MOVE_SPECIAL;
 	}
@@ -275,15 +275,15 @@ static void knockback(Monster *m, Coords dir, u8 delay)
 
 // Overrides a tile with a given floor hazard. Also destroys traps on the tile.
 // Special cases: stairs are immune, fire+ice => water, fire+water => nothing.
-void tile_change(Coords pos, TileClass new_class)
+void tile_change(Coords pos, TileType new_type)
 {
 	Tile *tile = &TILE(pos);
-	tile->class =
-		tile->class == STAIRS ? STAIRS :
-		BLOCKS_LOS(pos) ? tile->class :
-		tile->class * new_class == FIRE * ICE ? WATER :
-		tile->class == WATER && new_class == FIRE ? FLOOR :
-		new_class;
+	tile->type =
+		tile->type == STAIRS ? STAIRS :
+		BLOCKS_LOS(pos) ? tile->type :
+		tile->type * new_type == FIRE * ICE ? WATER :
+		tile->type == WATER && new_type == FIRE ? FLOOR :
+		new_type;
 	tile->destroyed = true;
 }
 
@@ -294,7 +294,7 @@ void monster_kill(Monster *m, DamageType type)
 	if (m->item)
 		TILE(m->pos).item = m->item;
 
-	switch (m->class) {
+	switch (m->type) {
 	case TARMONSTER:
 		tile_change(m->pos, TAR);
 		// FALLTHROUGH
@@ -343,7 +343,7 @@ void monster_kill(Monster *m, DamageType type)
 	case SARCO_1 ... SARCO_3:
 	case DIREBAT_1 ... EARTH_DRAGON:
 		--g.locking_enemies;
-		if (m->class == NIGHTMARE_1 || m->class == NIGHTMARE_2)
+		if (m->type == NIGHTMARE_1 || m->type == NIGHTMARE_2)
 			g.nightmare = 0;
 		break;
 	}
@@ -351,12 +351,12 @@ void monster_kill(Monster *m, DamageType type)
 	TILE(m->pos).monster = 0;
 }
 
-static void skull_spawn(MonsterClass class, Coords pos, Coords dir)
+static void skull_spawn(MonsterType type, Coords pos, Coords dir)
 {
 	if (IS_DIGGABLE(pos))
 		destroy_wall(pos);
 	if (IS_EMPTY(pos)) {
-		Monster *m = monster_spawn(class, pos, 1);
+		Monster *m = monster_spawn(type, pos, 1);
 		m->dir = dir;
 		m->electrified = true;
 	}
@@ -366,7 +366,7 @@ static void skull_spawn(MonsterClass class, Coords pos, Coords dir)
 bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 {
 	// Crates and gargoyles can be pushed even with 0 damage
-	switch (m->class) {
+	switch (m->type) {
 	case MINE_STATUE:
 		bomb_detonate(m, NO_DIR);
 		return false;
@@ -413,9 +413,9 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 		return false;
 
 	// Before-damage triggers
-	switch (m->class) {
+	switch (m->type) {
 	case BOMBSHROOM:
-		m->class = BOMBSHROOM_;
+		m->type = BOMBSHROOM_;
 		m->delay = 3;
 		return false;
 	case TARMONSTER:
@@ -462,7 +462,7 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	case RIDER_1:
 	case RIDER_2:
 	case RIDER_3:
-		m->class -= RIDER_1 - SKELETANK_1;
+		m->type -= RIDER_1 - SKELETANK_1;
 		knockback(m, dir, 1);
 		return false;
 	case SKELETANK_1:
@@ -470,8 +470,8 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	case SKELETANK_3:
 		if (!coords_eq(dir, -m->dir))
 			break;
-		if (dmg >= CLASS(m).max_hp)
-			m->class = m->class - SKELETANK_1 + SKELETON_1;
+		if (dmg >= TYPE(m).max_hp)
+			m->type = m->type - SKELETANK_1 + SKELETON_1;
 		knockback(m, dir, 1);
 		return false;
 	case ARMADILLO_1:
@@ -484,7 +484,7 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	case ICE_BEETLE:
 	case FIRE_BEETLE:
 		knockback(m, L1(m->pos - player.pos) == 1 ? NO_DIR : dir, 1);
-		TileClass hazard = m->class == FIRE_BEETLE ? FIRE : ICE;
+		TileType hazard = m->type == FIRE_BEETLE ? FIRE : ICE;
 		for (i64 i = 0; i < 5; ++i)
 			tile_change(m->pos + plus_shape[i], hazard);
 		return false;
@@ -506,18 +506,18 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 		knockback(m, dir, 1);
 		return false;
 	case SKULL_1:
-		m->class = SKULL_2 - 1;
+		m->type = SKULL_2 - 1;
 		// FALLTHROUGH
 	case SKULL_2:
 	case SKULL_3:
 		monster_kill(m, type);
-		MonsterClass class = m->class - (SKULL_2 - SKELETON_2);
+		m->type -= (SKULL_2 - SKELETON_2);
 		Coords spawn_dir = (Coords) { dir.x == 0, dir.x != 0 };
 		for (i8 i = -1; i <= 1; ++i)
-			skull_spawn(class, m->pos + i * spawn_dir, -CARDINAL(dir));
+			skull_spawn(m->type, m->pos + i * spawn_dir, -CARDINAL(dir));
 		return false;
 	case WIRE_ZOMBIE:
-		if (IS_WIRE(player.pos) || !(IS_WIRE(m->pos) || TILE(m->pos).class == STAIRS))
+		if (IS_WIRE(player.pos) || !(IS_WIRE(m->pos) || TILE(m->pos).type == STAIRS))
 			break;
 		knockback(m, dir, 2);
 		return false;
@@ -538,14 +538,14 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	m->hp -= dmg;
 
 	// After-damage triggers
-	switch (m->class) {
+	switch (m->type) {
 	case SKELETON_2:
 	case SKELETON_3:
 	case SKELETANK_2:
 	case SKELETANK_3:
 		if (m->hp > 1)
 			break;
-		m->class = HEADLESS;
+		m->type = HEADLESS;
 		m->delay = 0;
 		m->prev_pos = m->pos - dir;
 		return false;
@@ -587,7 +587,7 @@ static void after_move(Coords dir, bool forced)
 	}
 
 	if (g.inventory[MEMERS_CAP]) {
-		i32 digging_power = TILE(player.pos).class == OOZE ? 0 : 2;
+		i32 digging_power = TILE(player.pos).type == OOZE ? 0 : 2;
 		for (i64 i = 0; i < 4; ++i)
 			dig(player.pos + plus_shape[i], digging_power);
 	}
@@ -657,17 +657,17 @@ static void player_move(i8 x, i8 y)
 	Tile *tile = &TILE(player.pos);
 	player.prev_pos = player.pos;
 	Coords dir = {x, y};
-	i32 dmg = tile->class == OOZE ? 0 : g.inventory[JEWELED] ? 5 : 1;
+	i32 dmg = tile->type == OOZE ? 0 : g.inventory[JEWELED] ? 5 : 1;
 
-	if (player.confusion || g.monsters[g.monkeyed].class == CONF_MONKEY)
+	if (player.confusion || g.monsters[g.monkeyed].type == CONF_MONKEY)
 		dir = -dir;
 
 	if (g.monkeyed) {
 		Monster *m = &g.monsters[g.monkeyed];
 		damage(m, max(1, dmg), NO_DIR, DMG_NORMAL);
-		if (m->class == TELE_MONKEY)
+		if (m->type == TELE_MONKEY)
 			monster_kill(&player, DMG_NORMAL);
-		else if (m->class != CONF_MONKEY)
+		else if (m->type != CONF_MONKEY)
 			return;
 	}
 
@@ -677,7 +677,7 @@ static void player_move(i8 x, i8 y)
 	Coords dest = player.pos + dir;
 
 	if (BLOCKS_LOS(dest)) {
-		dig(player.pos + dir, TILE(player.pos).class == OOZE ? 0 : 2);
+		dig(player.pos + dir, TILE(player.pos).type == OOZE ? 0 : 2);
 	} else if (TILE(dest).monster) {
 		damage(&MONSTER(dest), dmg, dir, DMG_WEAPON);
 		player.electrified = true;
@@ -716,7 +716,7 @@ void cone_of_cold(Coords pos, i8 dir)
 
 // Adds an item to the player’s inventory.
 // Returns the item the player had in that slot.
-ItemClass pickup_item(ItemClass item)
+ItemType pickup_item(ItemType item)
 {
 	if (item == BOMBS_3)
 		g.inventory[BOMBS] += 3;
@@ -748,7 +748,7 @@ static void player_turn(u8 input)
 		if (!g.inventory[SCROLL_FREEZE])
 			break;
 		--g.inventory[SCROLL_FREEZE];
-		for (Monster *m = &player + 1; m->class; ++m)
+		for (Monster *m = &player + 1; m->type; ++m)
 			m->freeze = 16;
 		break;
 	case '<':
@@ -777,42 +777,43 @@ static bool check_aggro(Monster *m, Coords d, bool bomb_exploded)
 		&& TILE(m->pos).revealed
 		&& (TILE(m->pos).light >= 7777
 			|| shadowed
-			|| (m->class >= DIREBAT_1 && m->class <= EARTH_DRAGON)
+			|| (m->type >= DIREBAT_1 && m->type <= EARTH_DRAGON)
 			|| L2(player.pos - m->pos) < 8);
 
-	if (m->aggro && (m->class == BLUE_DRAGON || m->class == EARTH_DRAGON))
+	if (m->aggro && (m->type == BLUE_DRAGON || m->type == EARTH_DRAGON))
 		return true;
 
 	// The nightmare-bomb-aggro bug
-	if (m->aggro && (bomb_exploded || shadowed) && CLASS(m).radius)
+	if (m->aggro && (bomb_exploded || shadowed) && TYPE(m).radius)
 		return true;
 
-	if (L2(d) <= CLASS(m).radius) {
-		if (m->class >= SARCO_1 && m->class <= SARCO_3)
-			m->delay = CLASS(m).beat_delay;
+	if (L2(d) <= TYPE(m).radius) {
+		if (m->type >= SARCO_1 && m->type <= SARCO_3)
+			m->delay = TYPE(m).beat_delay;
 		return true;
 	}
 
 	return false;
 }
 
-static void trap_turn(Trap *this)
+static void trap_turn(Trap *trap)
 {
-	if (TILE(this->pos).destroyed)
+	if (TILE(trap->pos).destroyed)
 		return;
 
-	Monster *m = &MONSTER(this->pos);
+	Monster *m = &MONSTER(trap->pos);
+
 	if (m->untrapped)
 		return;
 	m->untrapped = true;
 
-	switch (this->class) {
+	switch (trap->type) {
 	case OMNIBOUNCE:
 		if (L1(m->pos - m->prev_pos))
 			forced_move(m, DIRECTION(m->pos - m->prev_pos));
 		break;
 	case BOUNCE:
-		forced_move(m, this->dir);
+		forced_move(m, trap->dir);
 		break;
 	case SPIKE:
 		damage(m, 4, NO_DIR, DMG_NORMAL);
@@ -822,7 +823,7 @@ static void trap_turn(Trap *this)
 		monster_kill(m, DMG_NORMAL);
 		break;
 	case CONFUSE:
-		if (!m->confusion && m->class != BARREL)
+		if (!m->confusion && m->type != BARREL)
 			m->confusion = 10;
 		break;
 	case BOMBTRAP:
@@ -838,9 +839,9 @@ static void trap_turn(Trap *this)
 // Compares the priorities of two monsters. Callback for qsort.
 static bool has_priority(Monster *m1, Monster *m2)
 {
-	if (CLASS(m1).priority > CLASS(m2).priority)
+	if (TYPE(m1).priority > TYPE(m2).priority)
 		return true;
-	if (CLASS(m1).priority < CLASS(m2).priority)
+	if (TYPE(m1).priority < TYPE(m2).priority)
 		return false;
 	return (L1(m1->pos - m2->pos) < 5 && L2(m1->pos - player.pos) < L2(m2->pos - player.pos));
 }
@@ -862,7 +863,7 @@ bool do_beat(u8 input)
 	// Player’s turn
 	g.input[g.current_beat++ & 31] = input;
 	player_turn(input);
-	if (TILE(player.pos).class == STAIRS && g.locking_enemies == 0)
+	if (TILE(player.pos).type == STAIRS && g.locking_enemies == 0)
 		return true;
 	update_fov();
 
@@ -872,14 +873,14 @@ bool do_beat(u8 input)
 	bool bomb_exploded = false;
 
 	for (Monster *m = &g.monsters[g.last_monster]; m > &player; --m) {
-		if (!CLASS(m).act || !m->hp)
+		if (!TYPE(m).act || !m->hp)
 			continue;
 
 		m->knocked = false;
 		if (!m->aggro && !check_aggro(m, player.pos - m->pos, bomb_exploded))
 			continue;
 
-		if (m->class == BOMB || m->class == BOMB_STATUE)
+		if (m->type == BOMB || m->type == BOMB_STATUE)
 			bomb_exploded = true;
 
 		priority_insert(queue, queue_length++, m);
@@ -902,7 +903,7 @@ bool do_beat(u8 input)
 		u8 old_state = m->state;
 		Coords old_dir = m->dir;
 
-		CLASS(m).act(m, player.pos - m->pos);
+		TYPE(m).act(m, player.pos - m->pos);
 
 		if (m->requeued) {
 			// Undo all side-effects and add it to the back of the priority queue
@@ -917,10 +918,10 @@ bool do_beat(u8 input)
 	}
 
 	// Ice and Fire
-	g.sliding_on_ice = g.player_moved && TILE(player.pos).class == ICE
+	g.sliding_on_ice = g.player_moved && TILE(player.pos).type == ICE
 		&& can_move(&player, DIRECTION(player.pos - player.prev_pos));
 
-	if (!g.player_moved && TILE(player.pos).class == FIRE)
+	if (!g.player_moved && TILE(player.pos).type == FIRE)
 		damage(&player, 2, NO_DIR, DMG_NORMAL);
 
 	g.player_moved = false;
@@ -930,7 +931,7 @@ bool do_beat(u8 input)
 		trap_turn(t);
 
 	// Flag upkeep
-	for (Monster *m = &player; m->class; ++m) {
+	for (Monster *m = &player; m->type; ++m) {
 		if (!m->hp)
 			continue;
 		m->electrified = false;
@@ -943,9 +944,9 @@ bool do_beat(u8 input)
 			--m->confusion;
 		if (m->exhausted && m->aggro)
 			--m->exhausted;
-		if (m->class == EFREET)
+		if (m->type == EFREET)
 			tile_change(m->pos, FIRE);
-		else if (m->class == DJINN)
+		else if (m->type == DJINN)
 			tile_change(m->pos, ICE);
 	}
 

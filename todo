@@ -23,6 +23,5 @@ REFACTORS:
 * Set delay before acting
 * Refactor chain_lightning
 * Go ECS or go home
-* Rename this → m
 * Rename _can_charge → something
 * Use WIRE/WIRE_DOOR classes instead of .wired ???
