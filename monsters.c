@@ -319,7 +319,7 @@ static void beetle(Monster *this, Coords d)
 // Chase the player, then attack in a 3x3 zone.
 static void yeti(Monster *this, Coords d)
 {
-	bool has_moved = L1((this)->pos - (this)->prev_pos) != 0;
+	bool has_moved = !coords_eq(this->pos, this->prev_pos);
 	basic_seek(this, d);
 	if (has_moved && L2(player.pos - this->pos) < 4)
 		damage(&player, CLASS(this).damage, d, DMG_NORMAL);
@@ -623,7 +623,7 @@ static void mommy(Monster *this, Coords d)
 	};
 	const Coords *spawn_dir;
 
-	bool has_moved = L1((this)->pos - (this)->prev_pos) != 0;
+	bool has_moved = !coords_eq(this->pos, this->prev_pos);
 	basic_seek(this, d);
 
 	if (has_moved && !g.monsters[g.mommy_spawn].hp) {

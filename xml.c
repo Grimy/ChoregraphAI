@@ -4,9 +4,6 @@
 
 #include "chore.h"
 
-// Pointer to the end of the trap array
-static Trap *last_trap;
-
 // Returns the numeric value of a named attribute of the current node.
 // If the attribute is absent, it defaults to 0.
 static i32 xml_attr(xmlTextReader *xml, char* attr)
@@ -17,7 +14,7 @@ static i32 xml_attr(xmlTextReader *xml, char* attr)
 	return result;
 }
 
-static void xml_find_spawn(xmlTextReader *xml)
+static void xml_find_spawn(xmlTextReader *xml, __attribute__((unused)) const char *name)
 {
 	spawn.x = max(spawn.x, 1 - (i8) xml_attr(xml, "x"));
 	spawn.y = max(spawn.y, 1 - (i8) xml_attr(xml, "y"));
@@ -45,18 +42,46 @@ static ItemClass xml_item(xmlTextReader *xml, char* attr)
 	return class;
 }
 
-static u8 build_wall(Tile *tile, i8 hp, i32 zone)
+static void trap_init(Coords pos, i32 type, i32 subtype)
 {
-	tile->hp = hp;
-	g.locking_enemies = 1 + (zone == 4);
-	if (zone == 4 && (hp == 1 || hp == 2))
-		return Z4WALL;
-	else if (zone == 2 && hp == 2)
-		return FIREWALL;
-	else if (zone == 3 && hp == 2)
-		return ICEWALL;
-	else
-		return WALL;
+	static const Coords trap_dirs[] = {
+		{1, 0}, {-1, 0}, {0, 1}, {0, -1},
+		{1, 1}, {-1, 1}, {-1, -1}, {1, -1},
+	};
+	static u64 trap_count;
+
+	if (type == 10) {
+		monster_spawn(FIREPIG, pos, 0)->dir.x = subtype ? -1 : 1;
+		return;
+	}
+	Trap *trap = &g.traps[trap_count++];
+	trap->class = subtype == 8 ? OMNIBOUNCE : (u8) type;
+	trap->pos = pos;
+	trap->dir = trap_dirs[subtype & 7];
+}
+
+static void tile_init(Coords pos, i32 type, i32 zone, bool torch)
+{
+	static const i8 wall_hp[19] = {1, 1, 5, 0, 4, 4, 0, 2, 3, 5, 4, 0};
+
+	TILE(pos).wired = type == 20 || type == 118;
+	TILE(pos).torch = torch;
+	if (torch)
+		adjust_lights(pos, +1, 4.25);
+
+	if (type >= 100) {
+		i8 hp = wall_hp[type - 100];
+		TILE(pos).hp = hp;
+		type = zone == 4 && (hp == 1 || hp == 2) ? Z4WALL :
+			zone == 2 && hp == 2 ? FIREWALL :
+			zone == 3 && hp == 2 ? ICEWALL :
+			hp ? WALL : DOOR;
+	} else if (type == STAIRS) {
+		stairs = pos;
+		g.locking_enemies = 1 + (zone == 4);
+	}
+
+	TILE(pos).class = (u8) type;
 }
 
 static Coords orient_zombie(Coords pos)
@@ -67,13 +92,8 @@ static Coords orient_zombie(Coords pos)
 	return (Coords) {1, 0};
 }
 
-// Converts a single XML node into an appropriate object (Trap, Tile or Monster).
-static void xml_process_node(xmlTextReader *xml)
+static void enemy_init(Coords pos, i32 type, bool lord)
 {
-	static const Coords trap_dirs[] = {
-		{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, 1}, {-1, -1}, {1, -1}
-	};
-	static const i8 wall_hp[] = {1, 1, 5, 0, 4, 4, 0, 2, 3, 5, 4, 0};
 	static const u8 enemy_id[] = {
 		GREEN_SLIME,   // Z1
 		SKELETANK_1,   // Z2
@@ -85,7 +105,28 @@ static void xml_process_node(xmlTextReader *xml)
 		CRYSTAL_1,     // Z5
 	};
 
-	const char *name = (const char*) xmlTextReaderConstName(xml);
+	u8 id = enemy_id[type / 100] + type % 100;
+	if (id == GHAST || id == GHOUL || id == WRAITH || id == WIGHT)
+		return;
+
+	Monster *m = monster_spawn(id, pos, 0);
+	m->lord = lord;
+	if (lord)
+		m->hp *= 2;
+
+	if (id == RED_DRAGON || id == BLUE_DRAGON)
+		m->exhausted = 3;
+	else if (id == LIGHTSHROOM)
+		adjust_lights(pos, +1, 4.5);
+	else if (id == ZOMBIE || id == WIRE_ZOMBIE)
+		m->dir = orient_zombie(pos);
+	else if (m->class == NIGHTMARE_1 || m->class == NIGHTMARE_2)
+		g.nightmare = g.last_monster;
+}
+
+// Converts a single XML node into an appropriate object (trap, tile, monster or item).
+static void xml_process_node(xmlTextReader *xml, const char *name)
+{
 	i32 type = xml_attr(xml, "type");
 	Coords pos = {(i8) xml_attr(xml, "x"), (i8) xml_attr(xml, "y")};
 
@@ -93,80 +134,38 @@ static void xml_process_node(xmlTextReader *xml)
 	if (pos.x >= ARRAY_SIZE(g.board) - 1 || pos.y >= ARRAY_SIZE(*g.board) - 1)
 		return;
 
-	if (streq(name, "trap")) {
-		i32 subtype = xml_attr(xml, "subtype");
-		if (type == 10) {
-			monster_spawn(FIREPIG, pos, 0)->dir.x = subtype ? -1 : 1;
-			return;
-		}
-		last_trap->class = subtype == 8 ? OMNIBOUNCE : (u8) type;
-		last_trap->pos = pos;
-		last_trap->dir = trap_dirs[subtype & 7];
-		++last_trap;
-	}
-
-	else if (streq(name, "tile")) {
-		TILE(pos).wired = type == 20 || type == 118;
-		if (type == 103 || type == 111 || type == 118)
-			type = DOOR;
-		else if (type >= 100)
-			type = build_wall(&TILE(pos), wall_hp[type - 100], xml_attr(xml, "zone"));
-		TILE(pos).class = (u8) type;
-		TILE(pos).torch = (u8) xml_attr(xml, "torch");
-		if (type == STAIRS)
-			stairs = pos;
-		if (TILE(pos).torch)
-			adjust_lights(pos, +1, 4.25);
-	}
-
-	else if (streq(name, "enemy")) {
-		u8 id = enemy_id[type / 100] + type % 100;
-		if (id == GHAST || id == GHOUL || id == WRAITH || id == WIGHT)
-			return;
-		Monster *m = monster_spawn(id, pos, 0);
-		m->lord = !!xml_attr(xml, "lord");
-		if (m->lord)
-			m->hp *= 2;
-		if (id == RED_DRAGON || id == BLUE_DRAGON)
-			m->exhausted = 3;
-		else if (id == LIGHTSHROOM)
-			adjust_lights(pos, +1, 4.5);
-		else if (id == ZOMBIE || id == WIRE_ZOMBIE)
-			m->dir = orient_zombie(pos);
-		else if (m->class == NIGHTMARE_1 || m->class == NIGHTMARE_2)
-			g.nightmare = g.last_monster;
-	}
-
-	else if (streq(name, "chest")) {
+	if (streq(name, "trap"))
+		trap_init(pos, type, xml_attr(xml, "subtype"));
+	else if (streq(name, "tile"))
+		tile_init(pos, type, xml_attr(xml, "zone"), !!xml_attr(xml, "torch"));
+	else if (streq(name, "enemy"))
+		enemy_init(pos, type, !!xml_attr(xml, "lord"));
+	else if (streq(name, "chest"))
 		monster_spawn(CHEST, pos, 0)->item = xml_item(xml, "contents");
-	}
-
-	else if (streq(name, "crate")) {
+	else if (streq(name, "crate"))
 		monster_spawn(CRATE_2 + (u8) type, pos, 0)->item = xml_item(xml, "contents");
-	}
-
-	else if (streq(name, "shrine")) {
+	else if (streq(name, "shrine"))
 		monster_spawn(SHRINE, pos, 0);
-	}
-
-	else if (streq(name, "item")) {
-		if (L1(pos - spawn))
-			TILE(pos).item = xml_item(xml, "type");
-		else
-			pickup_item(xml_item(xml, "type"));
-	}
+	else if (streq(name, "item"))
+		TILE(pos).item = coords_eq(pos, spawn) ? pickup_item(xml_item(xml, "type")) : xml_item(xml, "type");
 }
 
-static void xml_process_file(char *file, i64 level, void callback(xmlTextReader *xml))
+static void xml_process_file(char *file, i64 level, void callback(xmlTextReader *xml, const char *name))
 {
 	xmlTextReader *xml = xmlReaderForFile(file, NULL, 0);
+	if (!xml)
+		FATAL("Cannot open file: %s", file);
 
 	while (xmlTextReaderRead(xml) == 1) {
 		if (xmlTextReaderNodeType(xml) != 1)
 			continue;
-		level -= streq((const char*) xmlTextReaderConstName(xml), "level");
-		if (!level)
-			callback(xml);
+		const char* name = (const char*) xmlTextReaderConstName(xml);
+		if (streq(name, "dungeon"))
+			character = xml_attr(xml, "character") % 1000;
+		else if (streq(name, "level"))
+			--level;
+		else if (!level)
+			callback(xml, name);
 	}
 
 	if (xmlTextReaderRead(xml) < 0)
@@ -190,7 +189,6 @@ void xml_parse(i32 argc, char **argv)
 		FATAL("Usage: %s dungeon_file.xml [level]", argv[0]);
 	i32 level = argc == 3 ? *argv[2] - '0' : 1;
 
-	last_trap = g.traps;
 	g.monsters[0].untrapped = true;
 
 	LIBXML_TEST_VERSION;
@@ -205,5 +203,10 @@ void xml_parse(i32 argc, char **argv)
 	}
 
 	assert(player.class == PLAYER);
-	update_fov();
+	if (character == BARD) {
+		do_beat('X');
+		--g.current_beat;
+	} else {
+		update_fov();
+	}
 }

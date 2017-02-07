@@ -7,6 +7,7 @@
 const Coords plus_shape[] = {{-1, 0}, {0, -1}, {0, 1}, {1, 0}, {0, 0}};
 Coords spawn;
 Coords stairs;
+CharId character;
 
 __extension__ __thread GameState g = {
 	.board = {[0 ... 31] = {[0 ... 31] = {.class = EDGE}}},

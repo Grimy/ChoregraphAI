@@ -93,10 +93,6 @@ static void explore(GameState const *route, bool omp)
 int main(i32 argc, char **argv)
 {
 	xml_parse(argc, argv);
-	if (true) { // character == Bard
-		do_beat('X');
-		--g.current_beat;
-	}
 	initial_state = g;
 	initial_distance = distance_function();
 	best_cost = initial_distance + 2 + WORK_FACTOR;
