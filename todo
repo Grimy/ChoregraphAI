@@ -1,13 +1,9 @@
-TESTS:
-* All slimes
-* Mages casting through orbs
-* Mummies/yetis stuck against a wall
-
 FEATURES:
 * metal doors (type=111)
 * confusion de-aggroing enemies?
 
 BUGFIXES:
+* yetis/mummies/sarcos: should have been aggroed for a full turn
 * beetle shedding isn’t quite right
 * banshees/skeletons should have different activation radii depending on the zone
 * charged breath attacks should have extreme priority
@@ -20,7 +16,6 @@ BUGFIXES:
 * pixie explosions are *weird*
 
 REFACTORS:
-* Set delay before acting
 * Refactor chain_lightning
 * Go ECS or go home
 * Rename _can_charge → something

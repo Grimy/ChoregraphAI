@@ -159,7 +159,6 @@ static bool magic(Monster *m, Coords d, bool condition)
 		basic_seek(m, d);
 		return false;
 	} else {
-		m->delay = 1;
 		m->dir = DIRECTION(d);
 		return true;
 	}
@@ -171,14 +170,14 @@ static bool magic(Monster *m, Coords d, bool condition)
 static void slime(Monster *m, __attribute__((unused)) Coords d)
 {
 	static const Coords moves[][4] = {
-		{{ 1,  0}, { 1, 1}, {-1,  0}, {-1, -1}}, // black
-		{{ 0,  0}, { 0, 0}, { 0,  0}, { 0,  0}}, // green
-		{{ 0, -1}, { 0, 1}, { 0, -1}, { 0,  1}}, // blue
-		{{ 1,  0}, { 0, 1}, {-1,  0}, { 0, -1}}, // yellow
-		{{-1,  1}, { 1, 0}, {-1, -1}, { 1,  0}}, // purple
-		{{ 0,  0}, { 0, 0}, { 0,  0}, { 0,  0}}, // unassigned
-		{{-1,  1}, { 1, 1}, { 1, -1}, {-1, -1}}, // fire
-		{{ 1,  1}, {-1, 1}, {-1, -1}, { 1, -1}}, // ice
+		{{ 1, 0}, {-1,  1}, {-1,  0}, { 1, -1}}, // black
+		{{ 0, 0}, { 0,  0}, { 0,  0}, { 0,  0}}, // green
+		{{ 0, 1}, { 0, -1}, { 0,  1}, { 0, -1}}, // blue
+		{{ 1, 0}, { 0,  1}, {-1,  0}, { 0, -1}}, // yellow
+		{{-1, 1}, { 1,  0}, {-1, -1}, { 1,  0}}, // purple
+		{{ 0, 0}, { 0,  0}, { 0,  0}, { 0,  0}}, // unassigned
+		{{-1, 1}, { 1,  1}, { 1, -1}, {-1, -1}}, // fire
+		{{ 1, 1}, {-1,  1}, {-1, -1}, { 1, -1}}, // ice
 	};
 	if (enemy_move(m, moves[m->type & 7][m->state]) == MOVE_SUCCESS)
 		m->state = (m->state + 1) & 3;
@@ -187,10 +186,8 @@ static void slime(Monster *m, __attribute__((unused)) Coords d)
 // Move in a straight line, turn around when blocked.
 static void zombie(Monster *m, __attribute__((unused)) Coords d)
 {
-	if (enemy_move(m, m->dir) < MOVE_ATTACK && !m->requeued) {
+	if (enemy_move(m, m->dir) < MOVE_ATTACK && !m->requeued)
 		m->dir = -m->dir;
-		m->delay = 1;
-	}
 }
 
 // Move in a random direction.
@@ -255,7 +252,6 @@ static void mushroom(Monster *m, Coords d)
 {
 	if (L2(d) < 4)
 		damage(&player, TYPE(m).damage, d, DMG_NORMAL);
-	m->delay = TYPE(m).beat_delay;
 }
 
 // State 0: passive
@@ -433,7 +429,6 @@ static void sarcophagus(Monster *m, __attribute__((unused)) Coords d)
 {
 	static const MonsterType types[] = {SKELETON_1, SKELETANK_1, WINDMAGE_1, RIDER_1};
 
-	m->delay = TYPE(m).beat_delay;
 	if (g.monsters[g.sarco_spawn].hp || !g.seed)
 		return;
 
@@ -582,9 +577,8 @@ static void dragon(Monster *m, Coords d)
 
 	switch (m->state) {
 	case 0:
-		basic_seek(m, d);
-		m->state = m->delay;
-		m->delay = 0;
+		m->dir = seek_dir(m, d);
+		m->state = enemy_move(m, m->dir) != MOVE_FAIL;
 		break;
 	case 1:
 		m->state = 0;
@@ -658,6 +652,7 @@ static void ogre(Monster *m, Coords d)
 	} else {
 		basic_seek(m, d);
 		m->state = 1;
+		m->delay = 2;
 	}
 }
 
@@ -791,6 +786,8 @@ const TypeInfos type_infos[256] = {
 	[DEVIL_1]      = {  2, 1, 2,   9, false, -1, 10201303, RED "&",    devil },
 	[DEVIL_2]      = {  4, 2, 2,   9, false, -1, 10402305, GREEN "&",  devil },
 	[PURPLE_SLIME] = {  3, 1, 0, 999, false, -1, 10301102, PURPLE "P", slime },
+	[BLACK_SLIME]  = {  3, 1, 0, 999, false, -1, 10301102, BLACK "P",  slime },
+	[WHITE_SLIME]  = {  3, 1, 0, 999, false, -1, 10301102, "P",        slime },
 	[CURSE]        = {  0, 1, 0,   9,  true, -1, 10001102, YELLOW "W", basic_seek },
 	[SHOP_MIMIC]   = {  2, 1, 0,   2, false, -1, 10201100, YELLOW "m", moore_mimic },
 	[STONE_STATUE] = {  0, 1, 0,   0, false, -1,        0, BLACK "S",  NULL },
@@ -799,8 +796,8 @@ const TypeInfos type_infos[256] = {
 	[DIREBAT_1]    = {  3, 2, 1,   9,  true, -1, 30302210, YELLOW "B", bat },
 	[DIREBAT_2]    = {  4, 3, 1,   9,  true, -1, 30403215, "B",        bat },
 	[DRAGON]       = {  4, 4, 1,  49,  true,  4, 30404210, GREEN "D",  basic_seek },
-	[RED_DRAGON]   = {  6, 6, 1, 100,  true,  4, 99999999, RED "D",    dragon },
-	[BLUE_DRAGON]  = {  6, 6, 1,   0,  true,  4, 99999997, BLUE "D",   dragon },
+	[RED_DRAGON]   = {  6, 6, 0, 100,  true,  4, 99999999, RED "D",    dragon },
+	[BLUE_DRAGON]  = {  6, 6, 0,   0,  true,  4, 99999997, BLUE "D",   dragon },
 	[EARTH_DRAGON] = {  6, 8, 1,   0,  true,  4, 30608215, BROWN "D",  basic_seek },
 	[BANSHEE_1]    = {  4, 3, 0,  25,  true, -1, 30403110, BLUE "8",   basic_seek },
 	[BANSHEE_2]    = {  6, 4, 0,   9,  true, -1, 30604115, GREEN "8",  basic_seek },
@@ -809,7 +806,7 @@ const TypeInfos type_infos[256] = {
 	[NIGHTMARE_1]  = {  4, 3, 1,  81,  true,  4, 30403210, BLACK "u",  basic_seek },
 	[NIGHTMARE_2]  = {  5, 5, 1,  81,  true,  4, 30505215, RED "u",    basic_seek },
 	[MOMMY]        = {  4, 6, 3,   9,  true, -1, 30405215, BLACK "@",  mommy },
-	[OGRE]         = {  5, 5, 2,   9,  true,  2, 30505115, GREEN "O",  ogre },
+	[OGRE]         = {  5, 5, 0,   9,  true,  2, 30505115, GREEN "O",  ogre },
 	[METROGNOME_1] = {  4, 3, 0,   9,  true,  1, 30403115, YELLOW "G", metrognome },
 	[METROGNOME_2] = {  5, 5, 0,   9,  true,  1, 30505115, GREEN "G",  metrognome },
 
