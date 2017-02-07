@@ -433,7 +433,7 @@ static void sarcophagus(Monster *this, __attribute__((unused)) Coords d)
 	static const MonsterClass types[] = {SKELETON_1, SKELETANK_1, WINDMAGE_1, RIDER_1};
 
 	this->delay = CLASS(this).beat_delay;
-	if (g.monsters[g.sarco_spawn].hp > 0 || !g.seed)
+	if (g.monsters[g.sarco_spawn].hp || !g.seed)
 		return;
 
 	// Try at random up to 4 times, then try in order

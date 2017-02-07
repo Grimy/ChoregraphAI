@@ -227,7 +227,7 @@ static void display_all(void)
 	cursor_to(0, 0);
 }
 
-// `play` entry point: alternatively updates the interface and prompts the user for a command.
+// `play` entry point: an interactive interface to the simulation.
 int main(i32 argc, char **argv)
 {
 	xml_parse(argc, argv);
@@ -239,16 +239,17 @@ int main(i32 argc, char **argv)
 	system("stty -echo -icanon eol \1");
 	printf("\033[?1049h");
 
-	while (player.hp > 0 && !player_won()) {
+	while (player.hp) {
 		display_all();
 		int c = getchar();
 		if (c == 't')
 			execv(*argv, argv);
-		if (c == EOF || c == 'q')
+		else if (c == EOF || c == 'q')
+			player.hp = 0;
+		else if (do_beat((u8) c))
 			break;
-		do_beat((u8) c);
 	}
 
 	printf("\033[?1049l");
-	printf("%s!\n", player_won() ? "You won" : "See you soon");
+	printf("%s!\n", player.hp ? "You won" : "See you soon");
 }

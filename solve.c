@@ -44,8 +44,7 @@ static void handle_victory()
 		g = initial_state;
 		g.seed = i;
 		for (i64 beat = 0; beat < length && player.hp > 0; ++beat)
-			do_beat(input[beat]);
-		ok += player_won();
+			ok += do_beat(input[beat]);
 		if ((ok + 2) * 4 < i)
 			return;
 	}
@@ -55,7 +54,7 @@ static void handle_victory()
 	printf("%2d/%-2d%4.0f%%\t%s\n", cost, length, ok / 2.56, input);
 }
 
-// Recursively try all possible inputs, starting at the given point
+// Recursively try all possible inputs, starting at the given point.
 static void explore(GameState const *route, bool omp)
 {
 	static const u8 symbols[6] = "efij< ";
@@ -66,9 +65,8 @@ static void explore(GameState const *route, bool omp)
 	for (u8 i = 0; i < ARRAY_SIZE(symbols); ++i) {
 		if (i || omp)
 			g = *route;
-		do_beat(symbols[i]);
 
-		if (player_won()) {
+		if (do_beat(symbols[i])) {
 			handle_victory();
 			continue;
 		}

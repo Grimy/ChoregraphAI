@@ -328,10 +328,9 @@ extern __thread GameState g;
 
 Monster* monster_spawn(MonsterClass type, Coords pos, u8 delay);
 void xml_parse(i32 argc, char **argv);
-void do_beat(u8 input);
+bool do_beat(u8 input);
 void destroy_wall(Coords pos);
 bool damage(Monster *m, i64 dmg, Coords dir, DamageType type);
-bool player_won(void);
 void cast_light(Tile *tile, i64 x, i64 y);
 void update_fov(void);
 ItemClass pickup_item(ItemClass item);

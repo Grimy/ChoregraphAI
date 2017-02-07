@@ -714,12 +714,6 @@ void cone_of_cold(Coords pos, i8 dir)
 	}
 }
 
-// Tests whether the level has been cleared
-bool player_won()
-{
-	return TILE(player.pos).class == STAIRS && g.locking_enemies == 0;
-}
-
 // Adds an item to the player’s inventory.
 // Returns the item the player had in that slot.
 ItemClass pickup_item(ItemClass item)
@@ -863,13 +857,13 @@ static void priority_insert(Monster **queue, u64 queue_length, Monster *m)
 // Runs one full beat of the game.
 // During each beat, the player acts first, enemies second and traps last.
 // Enemies act in decreasing priority order. Traps have an arbitrary order.
-void do_beat(u8 input)
+bool do_beat(u8 input)
 {
 	// Player’s turn
 	g.input[g.current_beat++ & 31] = input;
 	player_turn(input);
-	if (player_won())
-		return;
+	if (TILE(player.pos).class == STAIRS && g.locking_enemies == 0)
+		return true;
 	update_fov();
 
 	// Build a priority queue with all active enemies
@@ -954,4 +948,6 @@ void do_beat(u8 input)
 		else if (m->class == DJINN)
 			tile_change(m->pos, ICE);
 	}
+
+	return false;
 }
