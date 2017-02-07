@@ -25,7 +25,47 @@
 // * A point, representing an absolute position within the grid (usually named `pos`)
 // * A vector, representing the relative position of another entity (usually named `d`)
 // * A unit vector, representing a direction of movement (usually named `dir` or `move`)
-typedef i8 Coords __attribute__((ext_vector_type(2)));
+class Coords {
+public:
+	i8 x;
+	i8 y;
+	constexpr Coords() : x(0), y(0) { }
+	constexpr Coords(i8 _x, i8 _y) : x(_x), y(_y) { }
+
+	inline Coords& operator+=(const Coords& that) {
+		this->x += that.x;
+		this->y += that.y;
+		return *this;
+	}
+
+	constexpr Coords operator-() const {
+		return Coords(-this->x, -this->y);
+	}
+
+	constexpr Coords operator+(const Coords &that) const {
+		return Coords(this->x + that.x, this->y + that.y);
+	}
+
+	constexpr Coords operator-(const Coords &that) const {
+		return Coords(this->x - that.x, this->y - that.y);
+	}
+
+	constexpr Coords operator*(i8 scalar) const {
+		return Coords(this->x * scalar, this->y * scalar);
+	}
+
+	constexpr Coords operator/(i8 scalar) const {
+		return Coords(this->x / scalar, this->y / scalar);
+	}
+
+	constexpr bool operator==(const Coords &that) const {
+		return this->x == that.x && this->y == that.y;
+	}
+
+	constexpr bool operator!=(const Coords &that) const {
+		return this->x != that.x || this->y != that.y;
+	}
+};
 
 // The direction of non-directional damage.
 #define NO_DIR ((Coords) {0, 0})
@@ -43,9 +83,6 @@ typedef i8 Coords __attribute__((ext_vector_type(2)));
 
 // *Square* of the L² norm of a vector (mostly used for aggro/lighting).
 #define L2(d) ((d).x * (d).x + (d).y * (d).y)
-
-// Tests whether two Coords are equal.
-#define coords_eq(d1, d2) ((d1).x == (d2).x && (d1).y == (d2).y)
 
 // Playable characters.
 typedef enum {
@@ -325,7 +362,7 @@ extern Coords spawn;
 extern Coords stairs;
 extern u64 character;
 extern const Coords plus_shape[];
-extern __thread GameState g;
+extern thread_local GameState g;
 
 Monster* monster_spawn(u8 type, Coords pos, u8 delay);
 void xml_parse(i32 argc, char **argv);

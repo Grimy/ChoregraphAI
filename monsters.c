@@ -39,7 +39,7 @@ static bool _can_charge(Monster *m, Coords dest)
 		return false;
 
 	Coords move = DIRECTION(d);
-	for (Coords pos = m->pos + move; !coords_eq(pos, dest); pos += move)
+	for (Coords pos = m->pos + move; pos != dest; pos += move)
 		if (!IS_EMPTY(pos))
 			return false;
 
@@ -320,7 +320,7 @@ static void beetle(Monster *m, Coords d)
 // Chase the player, then attack in a 3x3 zone.
 static void yeti(Monster *m, Coords d)
 {
-	bool has_moved = !coords_eq(m->pos, m->prev_pos);
+	bool has_moved = m->pos != m->prev_pos;
 	basic_seek(m, d);
 	if (has_moved && L2(player.pos - m->pos) < 4)
 		damage(&player, TYPE(m).damage, d, DMG_NORMAL);
@@ -407,7 +407,7 @@ static void harpy(Monster *m, Coords d)
 			continue;
 		if ((L2(move) == 9 || L2(move) == 4)
 		    && (BLOCKS_LOS(m->pos + DIRECTION(move))
-		    || BLOCKS_LOS(m->pos + 2*DIRECTION(move))))
+		    || BLOCKS_LOS(m->pos + DIRECTION(move) * 2)))
 			continue;
 		if (L2(move) == 5
 		    && BLOCKS_LOS(m->pos + move / 2)
@@ -533,7 +533,7 @@ static void orc(Monster *m, Coords d)
 {
 	Coords old_dir = m->dir;
 	m->dir = seek_dir(m, d);
-	if (coords_eq(m->dir, old_dir))
+	if (m->dir == old_dir)
 		basic_seek(m, d);
 	else
 		m->prev_pos = m->pos;
@@ -624,7 +624,7 @@ static void mommy(Monster *m, Coords d)
 	};
 	const Coords *spawn_dir;
 
-	bool has_moved = !coords_eq(m->pos, m->prev_pos);
+	bool has_moved = m->pos != m->prev_pos;
 	basic_seek(m, d);
 
 	if (has_moved && !g.monsters[g.mommy_spawn].hp) {
@@ -644,7 +644,7 @@ static void ogre(Monster *m, Coords d)
 	if (m->state == 2) {
 		Coords clonk_dir = DIRECTION(player.prev_pos - m->pos);
 		for (i8 i = 1; i <= 3; ++i) {
-			Coords pos = m->pos + i * clonk_dir;
+			Coords pos = m->pos + clonk_dir * i;
 			destroy_wall(pos);
 			damage(&MONSTER(pos), 5, clonk_dir, DMG_NORMAL);
 		}

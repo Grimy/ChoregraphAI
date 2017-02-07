@@ -9,7 +9,7 @@ Coords spawn;
 Coords stairs;
 u64 character;
 
-__extension__ __thread GameState g = {
+__extension__ thread_local GameState g = {
 	.board = {[0 ... 31] = {[0 ... 31] = {.type = EDGE}}},
 	.inventory = { [BOMBS] = 3 },
 	.boots_on = true,
@@ -212,7 +212,7 @@ MoveResult enemy_move(Monster *m, Coords dir)
 		dir = -dir;
 
 	// Attack
-	if (coords_eq(m->pos + dir, player.pos)) {
+	if (m->pos + dir == player.pos) {
 		enemy_attack(m);
 		return MOVE_ATTACK;
 	}
@@ -356,7 +356,7 @@ static void skull_spawn(Monster *skull, Coords spawn_dir, Coords dir)
 	monster_kill(skull, DMG_NORMAL);
 	u8 spawn_type = skull->type - SKULL_2 + SKELETON_2;
 	for (i8 i = -1; i <= 1; ++i) {
-		Coords pos = skull->pos + i * spawn_dir;
+		Coords pos = skull->pos + spawn_dir * i;
 		if (IS_DIGGABLE(pos))
 			destroy_wall(pos);
 		if (IS_EMPTY(pos)) {
@@ -473,7 +473,7 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	case SKELETANK_1:
 	case SKELETANK_2:
 	case SKELETANK_3:
-		if (!coords_eq(dir, -m->dir))
+		if (dir != -m->dir)
 			break;
 		if (dmg >= TYPE(m).max_hp)
 			m->type = m->type - SKELETANK_1 + SKELETON_1;
@@ -505,7 +505,7 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	case ORC_1:
 	case ORC_2:
 	case ORC_3:
-		if (!coords_eq(dir, -m->dir))
+		if (dir != -m->dir)
 			break;
 		knockback(m, dir, 1);
 		return false;
@@ -710,7 +710,7 @@ void cone_of_cold(Coords pos, i8 dir)
 	for (u64 i = 0; i < ARRAY_SIZE(cone_shape); ++i) {
 		if (pos.x + dir * cone_shape[i].x >= 32)
 			return;
-		Monster *m = &MONSTER(pos + dir * cone_shape[i]);
+		Monster *m = &MONSTER(pos + cone_shape[i] * dir);
 		m->freeze = 4 + (m == &player);
 	}
 }
