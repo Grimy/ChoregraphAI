@@ -1,2 +1,2 @@
 [build]
-rustflags = ["-Lbin", "-lstatic=main", "-lstatic=monsters", "-lstatic=los"]
+rustflags = ["-Lbin", "-lstatic=main", "-lstatic=monsters", "-lstatic=los", "-lstatic=xml", "-lxml2"]

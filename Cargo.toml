@@ -1,3 +1,6 @@
 [project]
 name = "play"
 version = "2.0.0"
+
+# [dependencies]
+# xml-rs = "0.3"

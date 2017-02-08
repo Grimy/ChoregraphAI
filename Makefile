@@ -52,5 +52,5 @@ bin/lib%.a: %.c
 	+echo CC $@
 	$(CC) $(CFLAGS) -fPIC -c $< -o $@
 
-rust: bin/libmain.a bin/libmonsters.a bin/liblos.a
+rust: bin/libmain.a bin/libmonsters.a bin/liblos.a bin/libxml.a
 	cargo build

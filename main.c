@@ -20,7 +20,6 @@ static void monster_new(MonsterType type, Coords pos, u8 delay)
 	assert(g.last_monster < ARRAY_SIZE(g.monsters));
 	Monster *m = &g.monsters[++g.last_monster];
 	m->type = type;
-	printf("%s" WHITE ": (%d, %d)\n", TYPE(m).glyph, pos.x, pos.y);
 	m->hp = TYPE(m).max_hp;
 	m->untrapped = TYPE(m).flying;
 	m->pos = pos;

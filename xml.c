@@ -192,9 +192,9 @@ void xml_parse(i32 argc, char **argv)
 	g.monsters[0].untrapped = true;
 
 	LIBXML_TEST_VERSION;
-	xml_process_file(argv[1], level, xml_find_spawn);
+	xml_process_file(argv == 0 ? "BARDZ4.xml" : argv[1], level, xml_find_spawn);
 	monster_spawn(PLAYER, spawn, 0);
-	xml_process_file(argv[1], level, xml_process_node);
+	xml_process_file(argv == 0 ? "BARDZ4.xml" : argv[1], level, xml_process_node);
 
 	qsort(g.monsters + 2, g.last_monster - 1, sizeof(Monster), compare_priorities);
 	for (u8 i = 1; g.monsters[i].type; ++i) {

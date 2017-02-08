@@ -1,10 +1,13 @@
 mod coords;
 
 use coords::Coords;
+use std::process::Command;
+use std::io::{Read, stdin};
 
 #[no_mangle]
 extern "C" {
-	fn monster_spawn(class: MonsterClass, pos: Coords, delay: u8) -> *mut Monster;
+	fn xml_parse(argc: i32, argv: *mut *mut i8);
+	fn do_beat(input: u8) -> bool;
 }
 
 macro_rules! blue   { ($x:tt) => (concat!("\x1b[34m", stringify!($x))); }
@@ -51,17 +54,27 @@ struct Monster {
 	was_requeued: bool,
 }
 
-
 fn main() {
 	let a = Coords { x: 42, y: 12 };
 	println!("{} != {}", (a + a).l2(), (a - a).l1());
-	let m = unsafe { monster_spawn(MonsterClass::GreenSlime, a, 3) };
-	unsafe {
-		println!("{:?}", *m);
-	}
 	println!("{}, {}, {} and {}",
 		GLYPHS[MonsterClass::None as usize],
 		GLYPHS[MonsterClass::GreenSlime as usize],
 		GLYPHS[MonsterClass::YellowSlime as usize],
 		GLYPHS[MonsterClass::BlueSlime as usize]);
+
+	unsafe {
+		xml_parse(2, 0 as *mut *mut i8);
+	}
+
+	Command::new("stty").args(&["-echo", "-icanon", "eol", "\x01"]).spawn().expect("fail");
+	let mut buffer = [0;1];
+
+	loop {
+		stdin().read(&mut buffer).unwrap();
+		match buffer[0] {
+			4 | 27 | b'q' => { break }
+			x => unsafe { do_beat(x); }
+		}
+	}
 }
