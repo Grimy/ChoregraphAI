@@ -175,8 +175,8 @@ static void xml_process_file(char *file, i64 level, void callback(xmlTextReader 
 
 static i32 compare_priorities(const void *a, const void *b)
 {
-	u64 pa = TYPE((const Monster*) a).priority;
-	u64 pb = TYPE((const Monster*) b).priority;
+	u64 pa = TYPE((const Monster*) ((long) a & 0x7fffffffffffffff)).priority;
+	u64 pb = TYPE((const Monster*) ((long) b & 0x7fffffffffffffff)).priority;
 	return (pa > pb) - (pa < pb);
 }
 
@@ -190,6 +190,10 @@ void xml_parse(i32 argc, char **argv)
 	i32 level = argc >= 3 ? *argv[2] - '0' : 1;
 
 	g.monsters[0].untrapped = true;
+
+	printf("sizeof: %ld\n", sizeof(g));
+	printf("index0: %p\n", (void*) &g.monsters[0]);
+	printf("index1: %p\n", (void*) &g.monsters[1]);
 
 	LIBXML_TEST_VERSION;
 	xml_process_file(argv == 0 ? "BARDZ4.xml" : argv[1], level, xml_find_spawn);

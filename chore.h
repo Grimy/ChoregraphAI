@@ -251,13 +251,13 @@ typedef struct {
 	u8 exhausted;
 	ItemType item;
 	bool aggro;
-	bool lord;
-	bool untrapped;
+	bool lord: 1;
+	bool untrapped: 1;
 	bool electrified: 1;
 	bool knocked: 1;
 	bool requeued: 1;
 	bool was_requeued: 1;
-	bool: 4;
+	bool: 2;
 } Monster;
 
 typedef struct {
