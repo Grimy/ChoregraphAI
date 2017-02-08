@@ -514,14 +514,14 @@ static void evil_eye(Monster *m, Coords d)
 {
 	if (!m->state) {
 		m->state = L1(d) <= 3 && _can_charge(m, player.pos);
+		m->dir = m->pos - m->prev_pos;
 		return;
 	}
 	m->state = 0;
-	Coords dir = m->pos - m->prev_pos;
-	m->was_requeued = true;
-	for (i64 i = 0; i < 3; ++i)
-		if (enemy_move(m, dir) != MOVE_SUCCESS)
-			return;
+	i64 steps = 3;
+	while (steps-- && enemy_move(m, m->dir));
+	if (TILE(m->pos + m->dir).hp <= 2)
+		destroy_wall(m->pos + m->dir);
 }
 
 static void orc(Monster *m, Coords d)
@@ -592,6 +592,7 @@ static void dragon(Monster *m, Coords d)
 		m->state = 1;
 		break;
 	}
+
 	if (!m->exhausted && can_breathe(m, player.pos - m->pos))
 		m->state = 2 + (d.x > 0);
 }
@@ -636,7 +637,7 @@ static void mommy(Monster *m, Coords d)
 static void ogre(Monster *m, Coords d)
 {
 	if (m->state == 2) {
-		Coords clonk_dir = DIRECTION(player.prev_pos - m->pos);
+		Coords clonk_dir = CARDINAL(player.prev_pos - m->pos);
 		for (i8 i = 1; i <= 3; ++i) {
 			Coords pos = m->pos + i * clonk_dir;
 			destroy_wall(pos);
@@ -778,8 +779,8 @@ const TypeInfos type_infos[256] = {
 	[GORGON_1]     = {  0, 1, 0,   9, false, -1, 10001102, GREEN "S",  basic_seek },
 	[GORGON_2]     = {  0, 3, 0,   9, false, -1, 10003100, YELLOW "S", basic_seek },
 	[WIRE_ZOMBIE]  = {  2, 1, 0, 999, false, -1, 10201201, ORANGE "Z", wire_zombie },
-	[EVIL_EYE_1]   = {  1, 1, 0,   0,  true,  2, 10101103, GREEN "e",  evil_eye },
-	[EVIL_EYE_2]   = {  2, 2, 0,   0,  true,  2, 10202105, PINK "e",   evil_eye },
+	[EVIL_EYE_1]   = {  1, 1, 0,   0,  true, -1, 10101103, GREEN "e",  evil_eye },
+	[EVIL_EYE_2]   = {  2, 2, 0,   0,  true, -1, 10202105, PINK "e",   evil_eye },
 	[ORC_1]        = {  1, 1, 0,   9, false, -1, 10101102, GREEN "o",  orc },
 	[ORC_2]        = {  2, 2, 0,   9, false, -1, 10202103, PINK "o",   orc },
 	[ORC_3]        = {  3, 3, 0,   9, false, -1, 10303104, PURPLE "o", orc },

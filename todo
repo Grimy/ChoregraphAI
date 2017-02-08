@@ -3,6 +3,7 @@ FEATURES:
 * confusion de-aggroing enemies?
 
 BUGFIXES:
+* evil eyes should only get reqd if they fail the first move
 * yetis/mummies/sarcos: should have been aggroed for a full turn
 * beetle shedding isn’t quite right
 * banshees/skeletons should have different activation radii depending on the zone
