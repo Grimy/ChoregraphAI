@@ -29,7 +29,7 @@ $(1)/%: $(1)/%.o $(addprefix $(1)/, $(OBJECTS))
 	$(CC) $$(CFLAGS) $(LDFLAGS) $$^ -o $$@
 endef
 
-$(eval $(call BUILDTYPE, bin, -g -O3 -flto -fno-omit-frame-pointer))
+$(eval $(call BUILDTYPE, bin, -g -O3 -fno-omit-frame-pointer))
 $(eval $(call BUILDTYPE, dbin, -g -fsanitize=undefined,thread))
 
 debug: dbin/solve
@@ -47,3 +47,9 @@ long-funcs:
 
 long-lines:
 	perl -CADS -ple '/^if/||s|^|y///c+7*y/\t//." "|e' *.c | sort -rn | sed 31q
+
+bin/lib%.a: %.c
+	$(CC) $(CFLAGS) -fPIC -c $< -o $@
+
+rust: bin/libmain.a bin/libmonsters.a bin/liblos.a
+	rustc -L bin -lstatic=main -lstatic=monsters -lstatic=los coords.rs

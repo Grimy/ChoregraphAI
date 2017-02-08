@@ -1,3 +1,7 @@
+TESTS:
+* Hitting metrognomes with .freeze = 1
+* Electric orb vs Z4WALL
+
 FEATURES:
 * metal doors (type=111)
 * confusion de-aggroing enemies?
