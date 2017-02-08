@@ -4,3 +4,5 @@ tags
 core.*
 perf.data*
 los.c
+Cargo.lock
+target

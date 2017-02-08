@@ -10,7 +10,7 @@ CFLAGS += -I/usr/include/libxml2 -Wno-documentation -Wno-documentation-unknown-c
 LDFLAGS += -lxml2 -lm
 %/solve: CFLAGS += -fopenmp=libomp
 
-.PHONY: all debug report stat
+.PHONY: all debug report stat rust
 .SECONDARY:
 
 all:
@@ -49,7 +49,8 @@ long-lines:
 	perl -CADS -ple '/^if/||s|^|y///c+7*y/\t//." "|e' *.c | sort -rn | sed 31q
 
 bin/lib%.a: %.c
+	+echo CC $@
 	$(CC) $(CFLAGS) -fPIC -c $< -o $@
 
 rust: bin/libmain.a bin/libmonsters.a bin/liblos.a
-	rustc -L bin -lstatic=main -lstatic=monsters -lstatic=los coords.rs
+	cargo build
