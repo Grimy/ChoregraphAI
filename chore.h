@@ -67,9 +67,6 @@ public:
 	}
 };
 
-// The direction of non-directional damage.
-#define NO_DIR ((Coords) {0, 0})
-
 // Converts relative coordinates to a direction.
 // For example, {5, -7} becomes {1, -1}.
 #define DIRECTION(d) ((Coords) {SIGN((d).x), SIGN((d).y)})

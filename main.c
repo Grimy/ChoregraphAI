@@ -166,7 +166,7 @@ static void enemy_attack(Monster *attacker)
 		}
 		break;
 	case BOMBER:
-		bomb_detonate(attacker, NO_DIR);
+		bomb_detonate(attacker, Coords {});
 		break;
 	case WATER_BALL:
 		tile_change(player.pos, WATER);
@@ -372,7 +372,7 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	// Crates and gargoyles can be pushed even with 0 damage
 	switch (m->type) {
 	case MINE_STATUE:
-		bomb_detonate(m, NO_DIR);
+		bomb_detonate(m, Coords {});
 		return false;
 	case WIND_STATUE:
 	case BOMB_STATUE:
@@ -487,13 +487,13 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 		return false;
 	case ICE_BEETLE:
 	case FIRE_BEETLE:
-		knockback(m, L1(m->pos - player.pos) == 1 ? NO_DIR : dir, 1);
+		knockback(m, L1(m->pos - player.pos) == 1 ? Coords {} : dir, 1);
 		for (i64 i = 0; i < 5; ++i)
 			tile_change(m->pos + plus_shape[i], m->type == FIRE_BEETLE ? FIRE : ICE);
 		return false;
 	case PIXIE:
 	case BOMBSHROOM_:
-		bomb_detonate(m, NO_DIR);
+		bomb_detonate(m, Coords {});
 		return false;
 	case GOOLEM:
 		if (type == DMG_WEAPON && m->state == 0) {
@@ -664,7 +664,7 @@ static void player_move(i8 x, i8 y)
 
 	if (g.monkeyed) {
 		Monster *m = &g.monsters[g.monkeyed];
-		damage(m, max(1, dmg), NO_DIR, DMG_NORMAL);
+		damage(m, max(1, dmg), Coords {}, DMG_NORMAL);
 		if (m->type == TELE_MONKEY)
 			monster_kill(&player, DMG_NORMAL);
 		else if (m->type != CONF_MONKEY)
@@ -816,7 +816,7 @@ static void trap_turn(Trap *trap)
 		forced_move(m, trap->dir);
 		break;
 	case SPIKE:
-		damage(m, 4, NO_DIR, DMG_NORMAL);
+		damage(m, 4, Coords {}, DMG_NORMAL);
 		break;
 	case TRAPDOOR:
 	case TELEPORT:
@@ -922,7 +922,7 @@ bool do_beat(u8 input)
 		&& can_move(&player, DIRECTION(player.pos - player.prev_pos));
 
 	if (!g.player_moved && TILE(player.pos).type == FIRE)
-		damage(&player, 2, NO_DIR, DMG_NORMAL);
+		damage(&player, 2, Coords {}, DMG_NORMAL);
 
 	g.player_moved = false;
 
