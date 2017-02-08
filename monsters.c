@@ -514,14 +514,14 @@ static void evil_eye(Monster *m, Coords d)
 {
 	if (!m->state) {
 		m->state = L1(d) <= 3 && _can_charge(m, player.pos);
+		m->dir = m->pos - m->prev_pos;
 		return;
 	}
 	m->state = 0;
-	Coords dir = m->pos - m->prev_pos;
-	m->was_requeued = true;
-	for (i64 i = 0; i < 3; ++i)
-		if (enemy_move(m, dir) != MOVE_SUCCESS)
-			return;
+	if (enemy_move(m, m->dir)) {
+		m->was_requeued = true;
+		enemy_move(m, m->dir) == MOVE_SUCCESS && enemy_move(m, m->dir);
+	}
 }
 
 static void orc(Monster *m, Coords d)
@@ -592,6 +592,7 @@ static void dragon(Monster *m, Coords d)
 		m->state = 1;
 		break;
 	}
+
 	if (!m->exhausted && can_breathe(m, player.pos - m->pos))
 		m->state = 2 + (d.x > 0);
 }
@@ -636,7 +637,7 @@ static void mommy(Monster *m, Coords d)
 static void ogre(Monster *m, Coords d)
 {
 	if (m->state == 2) {
-		Coords clonk_dir = DIRECTION(player.prev_pos - m->pos);
+		Coords clonk_dir = CARDINAL(player.prev_pos - m->pos);
 		for (i8 i = 1; i <= 3; ++i) {
 			Coords pos = m->pos + clonk_dir * i;
 			destroy_wall(pos);

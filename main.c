@@ -98,12 +98,12 @@ static void z4dig(Coords pos, i32 digging_power)
 
 // Tries to dig away the given wall, replacing it with floor.
 // Returns whether the dig succeeded.
-static bool dig(Coords pos, i32 digging_power)
+static bool dig(Coords pos, i32 digging_power, bool is_player)
 {
 	if (!IS_DIGGABLE(pos) || TILE(pos).hp > digging_power)
 		return false; // Dink!
 
-	if (TILE(pos).type == Z4WALL)
+	if (is_player && TILE(pos).type == Z4WALL)
 		for (i64 i = 0; i < 4; ++i)
 			z4dig(pos + plus_shape[i], digging_power);
 
@@ -242,7 +242,7 @@ MoveResult enemy_move(Monster *m, Coords dir)
 
 	// Digging
 	digging_power += (m->type == MINOTAUR_1 || m->type == MINOTAUR_2) && m->state;
-	if (dig(m->pos + dir, digging_power)) {
+	if (dig(m->pos + dir, digging_power, false)) {
 		return MOVE_SPECIAL;
 	}
 
@@ -589,7 +589,7 @@ static void after_move(Coords dir, bool forced)
 	if (g.inventory[MEMERS_CAP]) {
 		i32 digging_power = TILE(player.pos).type == OOZE ? 0 : 2;
 		for (i64 i = 0; i < 4; ++i)
-			dig(player.pos + plus_shape[i], digging_power);
+			dig(player.pos + plus_shape[i], digging_power, true);
 	}
 
 	if (g.monkeyed)
@@ -677,7 +677,7 @@ static void player_move(i8 x, i8 y)
 	Coords dest = player.pos + dir;
 
 	if (BLOCKS_LOS(dest)) {
-		dig(player.pos + dir, TILE(player.pos).type == OOZE ? 0 : 2);
+		dig(player.pos + dir, TILE(player.pos).type == OOZE ? 0 : 2, true);
 	} else if (TILE(dest).monster) {
 		damage(&MONSTER(dest), dmg, dir, DMG_WEAPON);
 		player.electrified = true;
