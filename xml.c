@@ -44,20 +44,18 @@ static u8 xml_item(xmlTextReader *xml, const char* attr)
 
 static void trap_init(Coords pos, i32 type, i32 subtype)
 {
-	static const Coords trap_dirs[] = {
-		{1, 0}, {-1, 0}, {0, 1}, {0, -1},
-		{1, 1}, {-1, 1}, {-1, -1}, {1, -1},
-	};
 	static u64 trap_count;
 
 	if (type == 10) {
 		monster_spawn(FIREPIG, pos, 0)->dir.x = subtype ? -1 : 1;
 		return;
 	}
+
 	Trap *trap = &g.traps[trap_count++];
 	trap->type = subtype == 8 ? OMNIBOUNCE : (u8) type;
 	trap->pos = pos;
-	trap->dir = trap_dirs[subtype & 7];
+	trap->dir.x = (i8[]) {1, -1, 0, 0, 1, -1, -1, 1} [subtype & 7];
+	trap->dir.y = (i8[]) {0, 0, 1, -1, 1, 1, -1, -1} [subtype & 7];
 }
 
 static void tile_init(Coords pos, i32 type, i32 zone, bool torch)
