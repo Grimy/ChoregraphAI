@@ -241,32 +241,46 @@ enum DamageType {
 
 // A “Monster” can be either an enemy, a bomb, or the player (yes, we are all monsters).
 struct Monster {
+	i8 damage;
+	i8 hp;
+	u8 max_delay;
+	bool flying;
+	i16 radius;
+	i8 digging_power;
+	u8 priority;
+
 	Coords pos;
 	Coords prev_pos;
 	Coords dir;
 	u8 type;
 	u8 item;
 
-	u32 priority;
-	i8 damage;
-	i8 hp;
-	u8 max_delay;
 	u8 delay;
-	i16 radius;
-	i8 digging_power;
-
 	u8 confusion;
 	u8 freeze;
 	u8 state;
 	u8 exhausted;
 	bool aggro;
-	bool flying: 1;
-	bool untrapped: 1;
+	bool untrapped;
 	bool electrified: 1;
 	bool knocked: 1;
 	bool requeued: 1;
 	bool was_requeued: 1;
-	u32: 26;
+	bool: 4;
+};
+
+// Properties that are common to all monsters of a type.
+// This avoids duplicating information between all monsters of the same type.
+struct TypeInfos {
+	i8 damage;
+	i8 max_hp;
+	u8 max_delay;
+	bool flying;
+	i16 radius;
+	i8 digging_power;
+	u8 priority;
+	const char *glyph;
+	void (*act) (Monster*, Coords);
 };
 
 struct Tile {
@@ -286,22 +300,6 @@ struct Trap {
 	u32 type;
 	Coords pos;
 	Coords dir;
-};
-
-// Properties that are common to all monsters of a type.
-// This avoids duplicating information between all monsters of the same type.
-struct TypeInfos {
-	i8 damage;
-	i8 max_hp;
-	u8 max_delay;
-	u8: 8;
-	i16 radius;
-	bool flying;
-	i8 digging_power;
-	u32 priority;
-	u32: 32;
-	const char *glyph;
-	void (*act) (Monster*, Coords);
 };
 
 typedef struct {
@@ -330,7 +328,7 @@ typedef struct {
 	u64: 24;
 } GameState;
 
-extern const TypeInfos type_infos[256];
+extern const TypeInfos type_infos[];
 extern Coords spawn;
 extern Coords stairs;
 extern u64 character;

@@ -21,14 +21,7 @@ static void monster_new(u8 type, Coords pos, u8 delay)
 	Monster *m = &g.monsters[++g.last_monster];
 	m->type = type;
 
-	m->flying = TYPE(m).flying;
-	m->damage = TYPE(m).damage;
-	m->hp = TYPE(m).max_hp;
-	m->max_delay = TYPE(m).max_delay;
-	m->priority = TYPE(m).priority;
-	m->radius = TYPE(m).radius;
-	m->digging_power = TYPE(m).digging_power;
-
+	memcpy((void*) m, (const void*) &type_infos[type], 8);
 	m->untrapped = m->flying;
 	m->pos = pos;
 	m->prev_pos = pos;

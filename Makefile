@@ -49,3 +49,6 @@ long-funcs:
 
 long-lines:
 	perl -CADS -ple '/^if/||s|^|y///c+7*y/\t//." "|e' *.c | sort -rn | sed 31q
+
+# This was used to generate the priorities. Don’t try this at home.
+# perl -pi.bak -e "$(perl -ne'\@_{/^\t\[(?:.*,){5}\s*(\d+)/}}{printf"s/^\\t\\[(?:.*,){6}\\K\\s*$_\\b/%4d/;",$-++for sort{$a<=>$b}keys%_' monsters.c)" monsters.c
