@@ -46,7 +46,7 @@ static void move(Monster *m, Coords dest)
 }
 
 // Tests whether the given monster can move in the given direction.
-bool can_move(Monster *m, Coords dir)
+bool can_move(const Monster *m, Coords dir)
 {
 	assert(m != &player || L1(dir));
 	Coords dest = m->pos + dir;
@@ -351,9 +351,8 @@ void monster_kill(Monster *m, DamageType type)
 	TILE(m->pos).monster = 0;
 }
 
-static void skull_spawn(Monster *skull, Coords spawn_dir, Coords dir)
+static void skull_spawn(const Monster *skull, Coords spawn_dir, Coords dir)
 {
-	monster_kill(skull, DMG_NORMAL);
 	u8 spawn_type = skull->type - SKULL_2 + SKELETON_2;
 	for (i8 i = -1; i <= 1; ++i) {
 		Coords pos = skull->pos + spawn_dir * i;
@@ -514,6 +513,7 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 		[[clang::fallthrough]];
 	case SKULL_2:
 	case SKULL_3:
+		monster_kill(m, DMG_NORMAL);
 		skull_spawn(m, { dir.x == 0, dir.x != 0 }, -CARDINAL(dir));
 		return false;
 	case WIRE_ZOMBIE:
@@ -797,7 +797,7 @@ static bool check_aggro(Monster *m, Coords d, bool bomb_exploded)
 	return false;
 }
 
-static void trap_turn(Trap *trap)
+static void trap_turn(const Trap *trap)
 {
 	if (TILE(trap->pos).destroyed)
 		return;
@@ -838,7 +838,7 @@ static void trap_turn(Trap *trap)
 }
 
 // Compares the priorities of two monsters. Callback for qsort.
-static bool has_priority(Monster *m1, Monster *m2)
+static bool has_priority(const Monster *m1, const Monster *m2)
 {
 	if (m1->priority > m2->priority)
 		return true;

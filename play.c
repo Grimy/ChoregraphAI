@@ -95,7 +95,7 @@ static void display_tile(Coords pos)
 	printf(WHITE);
 }
 
-static void display_hearts(Monster *m)
+static void display_hearts(const Monster *m)
 {
 	printf("%c%02d (%c%02d)", 64 + m->pos.x, m->pos.y, 64 + m->prev_pos.x, m->prev_pos.y);
 	printf(RED " %.*s%.*s" WHITE, 3 * m->hp, "ღღღღღღღღღ", 9 - m->hp, "         ");
@@ -123,7 +123,7 @@ static void display_inventory(void)
 		LINE("Head: %s", "Miner’s Cap");
 }
 
-static const char* additional_info(Monster *m)
+static const char* additional_info(const Monster *m)
 {
 	switch (m->type) {
 	case BARREL:
@@ -180,7 +180,7 @@ static const char* additional_info(Monster *m)
 	return "";
 }
 
-static void display_enemy(Monster *m)
+static void display_enemy(const Monster *m)
 {
 	if (!m->hp)
 		return;
@@ -195,7 +195,7 @@ static void display_enemy(Monster *m)
 	printf("%s", additional_info(m));
 }
 
-static void display_trap(Trap *t)
+static void display_trap(const Trap *t)
 {
 	if (TILE(t->pos).monster)
 		return;

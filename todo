@@ -16,8 +16,6 @@ BUGFIXES:
 * pixie explosions are *weird*
 
 REFACTORS:
-* Make L1 and L2 methods
-* const, const everywhere!
 * Refactor chain_lightning
 * Go ECS or go home
 * Rename _can_charge → something

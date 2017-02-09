@@ -15,7 +15,7 @@
 
 // Tests whether the condition for a breath attack are met.
 // This requires an unbroken line-of-sight, but can go through other monsters.
-static bool can_breathe(Monster *m, Coords d)
+static bool can_breathe(const Monster *m, Coords d)
 {
 	if (m->type == BLUE_DRAGON && (abs(d.x) > 3 || abs(d.y) >= abs(d.x) || player.freeze))
 		return false;
@@ -57,7 +57,7 @@ static bool can_charge(Monster *m)
 
 // The direction a basic_seek enemy would move in.
 // Helper function for basic_seek and its variants.
-static Coords seek_dir(Monster *m, Coords d)
+static Coords seek_dir(const Monster *m, Coords d)
 {
 	// Ignore the player’s previous position if they moved more than one tile
 	Coords prev_pos = L1(player.pos - player.prev_pos) > 1 ? player.pos : player.prev_pos;

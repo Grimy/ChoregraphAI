@@ -347,7 +347,7 @@ void adjust_lights(Coords pos, i8 diff, double radius);
 void bomb_detonate(Monster *m, Coords d);
 void fireball(Coords pos, i8 dir);
 void cone_of_cold(Coords pos, i8 dir);
-bool can_move(Monster *m, Coords dir);
+bool can_move(const Monster *m, Coords dir);
 MoveResult enemy_move(Monster *m, Coords dir);
 void monster_kill(Monster *m, DamageType type);
 bool forced_move(Monster *m, Coords offset);
