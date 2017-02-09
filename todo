@@ -16,13 +16,6 @@ BUGFIXES:
 * pixie explosions are *weird*
 
 REFACTORS:
-* make operator+= return void
-* Make Coords a struct instead of a class
-* Try removing the constructors
-* Get rid of all (Coords) {x, y}
-* Drop the typedefs
-* -fno-exceptions, -fno-rtti, -nostdinc++
-* == instead of streq?
 * Make L1 and L2 methods
 * const, const everywhere!
 * Refactor chain_lightning

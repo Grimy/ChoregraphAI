@@ -210,7 +210,7 @@ static void display_all(void)
 
 	for (i8 y = 1; y < ARRAY_SIZE(g.board) - 1; ++y)
 		for (i8 x = 1; x < ARRAY_SIZE(*g.board) - 1; ++x)
-			display_tile((Coords) {x, y});
+			display_tile({x, y});
 
 	for (Trap *t = g.traps; t->pos.x; ++t)
 		if (TILE(t->pos).revealed && !TILE(t->pos).destroyed)

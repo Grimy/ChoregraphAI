@@ -521,7 +521,7 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 		[[clang::fallthrough]];
 	case SKULL_2:
 	case SKULL_3:
-		skull_spawn(m, (Coords) { dir.x == 0, dir.x != 0 }, -CARDINAL(dir));
+		skull_spawn(m, { dir.x == 0, dir.x != 0 }, -CARDINAL(dir));
 		return false;
 	case WIRE_ZOMBIE:
 		if (IS_WIRE(player.pos) || !(IS_WIRE(m->pos) || TILE(m->pos).type == STAIRS))
@@ -703,7 +703,7 @@ void fireball(Coords pos, i8 dir)
 {
 	assert(dir != 0);
 	for (pos.x += dir; !BLOCKS_LOS(pos); pos.x += dir)
-		damage(&MONSTER(pos), 5, (Coords) {dir, 0}, DMG_NORMAL);
+		damage(&MONSTER(pos), 5, {dir, 0}, DMG_NORMAL);
 }
 
 // Freezes all monsters in a 3x5 cone.

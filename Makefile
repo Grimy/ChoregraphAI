@@ -7,6 +7,7 @@ CFLAGS += -std=c++11 -Weverything -Werror -march=native -mtune=native
 CFLAGS += -Wno-old-style-cast -Wno-c99-extensions -Wno-c++98-compat-pedantic -Wno-c++11-narrowing -Wno-global-constructors
 CFLAGS += -Wno-gnu-statement-expression -Wno-gnu-case-range
 CFLAGS += -fstrict-aliasing -fstrict-overflow -fno-asynchronous-unwind-tables
+CFLAGS += -fno-exceptions -fno-rtti
 CFLAGS += -I/usr/include/libxml2 -Wno-documentation -Wno-documentation-unknown-command -Wno-reserved-id-macro
 LDFLAGS += -lxml2 -lm
 %/solve: CFLAGS += -fopenmp=libomp

@@ -2,7 +2,7 @@
 
 #include "chore.h"
 
-#define MOVE(x, y) (enemy_move(m, (Coords) {(x), (y)}))
+#define MOVE(x, y) (enemy_move(m, {(x), (y)}))
 
 // Many things in the game follow the so-called “bomb order”:
 // 147

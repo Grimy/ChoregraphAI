@@ -25,46 +25,18 @@
 // * A point, representing an absolute position within the grid (usually named `pos`)
 // * A vector, representing the relative position of another entity (usually named `d`)
 // * A unit vector, representing a direction of movement (usually named `dir` or `move`)
-class Coords {
-public:
+struct Coords {
 	i8 x;
 	i8 y;
-	constexpr Coords() : x(0), y(0) { }
-	constexpr Coords(i8 _x, i8 _y) : x(_x), y(_y) { }
 
-	inline Coords& operator+=(const Coords& that) {
-		this->x += that.x;
-		this->y += that.y;
-		return *this;
-	}
-
-	constexpr Coords operator-() const {
-		return Coords(-this->x, -this->y);
-	}
-
-	constexpr Coords operator+(const Coords &that) const {
-		return Coords(this->x + that.x, this->y + that.y);
-	}
-
-	constexpr Coords operator-(const Coords &that) const {
-		return Coords(this->x - that.x, this->y - that.y);
-	}
-
-	constexpr Coords operator*(i8 scalar) const {
-		return Coords(this->x * scalar, this->y * scalar);
-	}
-
-	constexpr Coords operator/(i8 scalar) const {
-		return Coords(this->x / scalar, this->y / scalar);
-	}
-
-	constexpr bool operator==(const Coords &that) const {
-		return this->x == that.x && this->y == that.y;
-	}
-
-	constexpr bool operator!=(const Coords &that) const {
-		return this->x != that.x || this->y != that.y;
-	}
+	void operator+=(const Coords& that)                  { x += that.x; y += that.y; }
+	constexpr Coords operator-()                   const { return { -x, -y }; }
+	constexpr Coords operator+(const Coords &that) const { return { x + that.x, y + that.y }; }
+	constexpr Coords operator-(const Coords &that) const { return { x - that.x, y - that.y }; }
+	constexpr Coords operator*(i8 scalar)          const { return { x * scalar, y * scalar }; }
+	constexpr Coords operator/(i8 scalar)          const { return { x / scalar, y / scalar }; }
+	constexpr bool operator==(const Coords &that)  const { return x == that.x && y == that.y; }
+	constexpr bool operator!=(const Coords &that)  const { return x != that.x || y != that.y; }
 };
 
 // Converts relative coordinates to a direction.
@@ -72,7 +44,7 @@ public:
 #define DIRECTION(d) ((Coords) {SIGN((d).x), SIGN((d).y)})
 
 // Converts relative coordinates to a *cardinal* direction.
-// Diagonals are turned into horizontals.
+// Like DIRECTION, but diagonals are turned into horizontals.
 #define CARDINAL(d) ((Coords) {SIGN((d).x), (d).x ? 0 : SIGN((d).y)})
 
 // L¹ norm of a vector (= number of beats it takes to move to this relative position).
@@ -82,7 +54,7 @@ public:
 #define L2(d) ((d).x * (d).x + (d).y * (d).y)
 
 // Playable characters.
-typedef enum {
+enum CharId {
 	CADENCE,
 	MELODY,
 	ARIA,     // <3
@@ -94,10 +66,9 @@ typedef enum {
 	BOLT,
 	BARD,
 	NOCTURNA,
-} CharId;
+};
 
-// Monster types.
-typedef enum : u8 {
+enum MonsterType : u8 {
 	NO_MONSTER,
 
 	// Z1 enemies
@@ -202,10 +173,9 @@ typedef enum : u8 {
 	CHEST,
 	SHRINE,
 	HEADLESS, // a decapitated skeleton
-} MonsterType;
+};
 
-// Items
-typedef enum : u8 {
+enum ItemType : u8 {
 	NO_ITEM,
 	BOMBS,
 	BOMBS_3,
@@ -217,10 +187,9 @@ typedef enum : u8 {
 	PACEMAKER,
 	SCROLL_FREEZE,
 	ITEM_LAST,
-} ItemType;
+};
 
-// Tile types.
-typedef enum : u8 {
+enum TileType : u8 {
 	FLOOR = 0,
 	SHOP_FLOOR = 3,
 	WATER = 4,
@@ -237,10 +206,9 @@ typedef enum : u8 {
 	Z4WALL = 133,
 	FIREWALL = 138,
 	ICEWALL = 139,
-} TileType;
+};
 
-// Trap types.
-typedef enum {
+enum TrapType {
 	OMNIBOUNCE,
 	BOUNCE,      // any of the eight directional bounce traps
 	SPIKE,
@@ -251,28 +219,28 @@ typedef enum {
 	TEMPO_UP,
 	RAND_BOUNCE, // not implemented
 	BOMBTRAP,
-} TrapType;
+};
 
-// When a monster attempts a movement, it can either:
-typedef enum {
+// When an enemy attempts a movement, it can either:
+enum MoveResult {
 	MOVE_FAIL,     // bump in a wall or other monster
 	MOVE_SPECIAL,  // crawl out of water/tar, or dig a wall
-	MOVE_ATTACK,   // attack another monster
+	MOVE_ATTACK,   // attack the player
 	MOVE_SUCCESS,  // actually change position
-} MoveResult;
+};
 
 // Each damage has a type. It determines which on-damage triggers are in effect.
-typedef enum {
+enum DamageType {
 	DMG_NORMAL,
 	DMG_WEAPON,
 	DMG_BOMB,
 	// Piercing and phasing damage aren’t implemented at the moment
 	// DMG_PIERCING,
 	// DMG_PHASING,
-} DamageType;
+};
 
 // A “Monster” can be either an enemy, a bomb, or the player (yes, we are all monsters).
-typedef struct {
+struct Monster {
 	Coords pos;
 	Coords prev_pos;
 	Coords dir;
@@ -299,9 +267,9 @@ typedef struct {
 	bool requeued: 1;
 	bool was_requeued: 1;
 	u32: 26;
-} Monster;
+};
 
-typedef struct {
+struct Tile {
 	u8 type;
 	i8 hp;
 	u8 monster;
@@ -312,17 +280,17 @@ typedef struct {
 	bool destroyed: 1;
 	bool wired: 1;
 	i8 padding: 5;
-} Tile;
+};
 
-typedef struct {
+struct Trap {
 	u32 type;
 	Coords pos;
 	Coords dir;
-} Trap;
+};
 
 // Properties that are common to all monsters of a type.
 // This avoids duplicating information between all monsters of the same type.
-typedef struct {
+struct TypeInfos {
 	i8 damage;
 	i8 max_hp;
 	u8 max_delay;
@@ -334,7 +302,7 @@ typedef struct {
 	u32: 32;
 	const char *glyph;
 	void (*act) (Monster*, Coords);
-} TypeInfos;
+};
 
 typedef struct {
 	// Contents of the level

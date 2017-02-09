@@ -87,7 +87,7 @@ static Coords orient_zombie(Coords pos)
 	for (int i = 3; i >= 0; --i)
 		if (IS_WIRE(pos + plus_shape[i]))
 			return plus_shape[i];
-	return (Coords) {1, 0};
+	return {1, 0};
 }
 
 static void enemy_init(Coords pos, i32 type, bool lord)
