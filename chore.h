@@ -277,22 +277,28 @@ typedef struct {
 	Coords prev_pos;
 	Coords dir;
 	u8 type;
-	i8 hp;
+	u8 item;
+
 	u32 priority;
+	i8 damage;
+	i8 hp;
+	u8 max_delay;
 	u8 delay;
+	i16 radius;
+	i8 digging_power;
+
 	u8 confusion;
 	u8 freeze;
 	u8 state;
 	u8 exhausted;
-	u8 item;
 	bool aggro;
-	bool lord: 1;
+	bool flying: 1;
 	bool untrapped: 1;
 	bool electrified: 1;
 	bool knocked: 1;
 	bool requeued: 1;
 	bool was_requeued: 1;
-	bool: 2;
+	u32: 26;
 } Monster;
 
 typedef struct {
@@ -319,7 +325,7 @@ typedef struct {
 typedef struct {
 	i8 damage;
 	i8 max_hp;
-	u8 beat_delay;
+	u8 max_delay;
 	u8: 8;
 	i16 radius;
 	bool flying;

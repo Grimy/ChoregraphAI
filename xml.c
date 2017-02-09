@@ -108,9 +108,13 @@ static void enemy_init(Coords pos, i32 type, bool lord)
 		return;
 
 	Monster *m = monster_spawn(id, pos, 0);
-	m->lord = lord;
-	if (lord)
+
+	if (lord) {
+		m->damage *= 2;
 		m->hp *= 2;
+		m->digging_power *= 2;
+		m->flying = true;
+	}
 
 	if (id == RED_DRAGON || id == BLUE_DRAGON)
 		m->exhausted = 3;

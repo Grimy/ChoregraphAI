@@ -20,9 +20,16 @@ static void monster_new(u8 type, Coords pos, u8 delay)
 	assert(g.last_monster < ARRAY_SIZE(g.monsters));
 	Monster *m = &g.monsters[++g.last_monster];
 	m->type = type;
+
+	m->flying = TYPE(m).flying;
+	m->damage = TYPE(m).damage;
 	m->hp = TYPE(m).max_hp;
+	m->max_delay = TYPE(m).max_delay;
 	m->priority = TYPE(m).priority;
-	m->untrapped = TYPE(m).flying;
+	m->radius = TYPE(m).radius;
+	m->digging_power = TYPE(m).digging_power;
+
+	m->untrapped = m->flying;
 	m->pos = pos;
 	m->prev_pos = pos;
 	m->delay = delay;
@@ -40,7 +47,7 @@ Monster* monster_spawn(u8 type, Coords pos, u8 delay)
 static void move(Monster *m, Coords dest)
 {
 	TILE(m->pos).monster = 0;
-	m->untrapped = TYPE(m).flying || m->lord;
+	m->untrapped = m->flying;
 	m->pos = dest;
 	TILE(m->pos).monster = (u8) (m - g.monsters);
 }
@@ -180,7 +187,7 @@ static void enemy_attack(Monster *attacker)
 		monster_kill(attacker, DMG_NORMAL);
 		break;
 	default:
-		damage(&player, TYPE(attacker).damage, d, DMG_NORMAL);
+		damage(&player, attacker->damage, d, DMG_NORMAL);
 	}
 }
 
@@ -231,7 +238,7 @@ MoveResult enemy_move(Monster *m, Coords dir)
 	}
 
 	// Trampling
-	i32 digging_power = m->confusion ? -1 : TYPE(m).digging_power;
+	i32 digging_power = m->confusion ? -1 : m->digging_power;
 	if (!m->aggro && digging_power == 4) {
 		for (i64 i = 0; i < 4; ++i) {
 			Coords pos = m->pos + plus_shape[i];
@@ -785,12 +792,12 @@ static bool check_aggro(Monster *m, Coords d, bool bomb_exploded)
 		return true;
 
 	// The nightmare-bomb-aggro bug
-	if (m->aggro && (bomb_exploded || shadowed) && TYPE(m).radius)
+	if (m->aggro && (bomb_exploded || shadowed) && m->radius)
 		return true;
 
-	if (L2(d) <= TYPE(m).radius) {
+	if (L2(d) <= m->radius) {
 		if (m->type >= SARCO_1 && m->type <= SARCO_3)
-			m->delay = TYPE(m).beat_delay;
+			m->delay = m->max_delay;
 		return true;
 	}
 
@@ -903,7 +910,7 @@ bool do_beat(u8 input)
 
 		u8 old_state = m->state;
 		Coords old_dir = m->dir;
-		m->delay = TYPE(m).beat_delay;
+		m->delay = m->max_delay;
 		TYPE(m).act(m, player.pos - m->pos);
 
 		if (m->requeued) {

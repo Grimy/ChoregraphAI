@@ -16,7 +16,6 @@ BUGFIXES:
 * pixie explosions are *weird*
 
 REFACTORS:
-* inline type infos + bench it
 * make operator+= return void
 * Make Coords a struct instead of a class
 * Try removing the constructors

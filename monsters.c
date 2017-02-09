@@ -251,7 +251,7 @@ static void wind_mage(Monster *m, Coords d)
 static void mushroom(Monster *m, Coords d)
 {
 	if (L2(d) < 4)
-		damage(&player, TYPE(m).damage, d, DMG_NORMAL);
+		damage(&player, m->damage, d, DMG_NORMAL);
 }
 
 // State 0: passive
@@ -275,7 +275,7 @@ static void clone(Monster *m, __attribute__((unused)) Coords d)
 static void tarmonster(Monster *m, Coords d)
 {
 	if (m == &g.monsters[g.monkeyed])
-		damage(&player, TYPE(m).damage, d, DMG_NORMAL);
+		damage(&player, m->damage, d, DMG_NORMAL);
 	else if (m->state || L1(d) > 1)
 		basic_seek(m, d);
 	m->state = m->state ? 2 : L1(d) == 1;
@@ -319,7 +319,7 @@ static void yeti(Monster *m, Coords d)
 	bool has_moved = m->pos != m->prev_pos;
 	basic_seek(m, d);
 	if (has_moved && L2(player.pos - m->pos) < 4)
-		damage(&player, TYPE(m).damage, d, DMG_NORMAL);
+		damage(&player, m->damage, d, DMG_NORMAL);
 }
 
 // Z4 //
