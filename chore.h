@@ -278,6 +278,7 @@ typedef struct {
 	Coords dir;
 	u8 type;
 	i8 hp;
+	u32 priority;
 	u8 delay;
 	u8 confusion;
 	u8 freeze;
@@ -285,13 +286,13 @@ typedef struct {
 	u8 exhausted;
 	u8 item;
 	bool aggro;
-	bool lord;
-	bool untrapped;
+	bool lord: 1;
+	bool untrapped: 1;
 	bool electrified: 1;
 	bool knocked: 1;
 	bool requeued: 1;
 	bool was_requeued: 1;
-	bool: 4;
+	bool: 2;
 } Monster;
 
 typedef struct {
@@ -323,7 +324,8 @@ typedef struct {
 	i16 radius;
 	bool flying;
 	i8 digging_power;
-	u64 priority;
+	u32 priority;
+	u32: 32;
 	const char *glyph;
 	void (*act) (Monster*, Coords);
 } TypeInfos;

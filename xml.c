@@ -173,8 +173,8 @@ static void xml_process_file(char *file, i64 level, void callback(xmlTextReader 
 
 static i32 compare_priorities(const void *a, const void *b)
 {
-	u64 pa = TYPE((const Monster*) a).priority;
-	u64 pb = TYPE((const Monster*) b).priority;
+	u64 pa = ((const Monster*) a)->priority;
+	u64 pb = ((const Monster*) b)->priority;
 	return (pa > pb) - (pa < pb);
 }
 

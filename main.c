@@ -21,6 +21,7 @@ static void monster_new(u8 type, Coords pos, u8 delay)
 	Monster *m = &g.monsters[++g.last_monster];
 	m->type = type;
 	m->hp = TYPE(m).max_hp;
+	m->priority = TYPE(m).priority;
 	m->untrapped = TYPE(m).flying;
 	m->pos = pos;
 	m->prev_pos = pos;
@@ -224,7 +225,7 @@ MoveResult enemy_move(Monster *m, Coords dir)
 
 	// Try the move again after other monsters have moved
 	Monster *blocker = &MONSTER(m->pos + dir);
-	if (!m->was_requeued || (blocker->requeued && TYPE(blocker).priority < TYPE(m).priority)) {
+	if (!m->was_requeued || (blocker->requeued && blocker->priority < m->priority)) {
 		m->requeued = true;
 		return MOVE_FAIL;
 	}
@@ -839,9 +840,9 @@ static void trap_turn(Trap *trap)
 // Compares the priorities of two monsters. Callback for qsort.
 static bool has_priority(Monster *m1, Monster *m2)
 {
-	if (TYPE(m1).priority > TYPE(m2).priority)
+	if (m1->priority > m2->priority)
 		return true;
-	if (TYPE(m1).priority < TYPE(m2).priority)
+	if (m1->priority < m2->priority)
 		return false;
 	return (L1(m1->pos - m2->pos) < 5 && L2(m1->pos - player.pos) < L2(m2->pos - player.pos));
 }
