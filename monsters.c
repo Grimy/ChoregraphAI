@@ -4,16 +4,9 @@
 
 #define MOVE(x, y) (enemy_move(m, {(x), (y)}))
 
-// Many things in the game follow the so-called “bomb order”:
-// 147
-// 258
-// 369
-// Most monster AIs use this as a tiebreaker: when several destination tiles fit
-// all criteria equally well, monsters pick the one that comes first in bomb-order.
-
 // Helpers //
 
-// Test whether the condition for a breath attack are met.
+// Tests whether the condition for a breath attack are met.
 // This requires an unbroken line-of-sight, but can go through other monsters.
 static bool can_breathe(const Monster *m, Coords d)
 {
@@ -29,7 +22,7 @@ static bool can_breathe(const Monster *m, Coords d)
 	return true;
 }
 
-// Test whether a monster can charge toward the given position.
+// Tests whether a monster can charge toward the given position.
 // This requires a straight path without walls nor monsters.
 // /!\ side-effect: sets prev_pos
 static bool _can_charge(Monster *m, Coords dest)
@@ -47,14 +40,14 @@ static bool _can_charge(Monster *m, Coords dest)
 	return true;
 }
 
-// Test whether a monster can charge at the player’s current or previous position.
+// Tests whether a monster can charge at the player’s current or previous position.
 static bool can_charge(Monster *m)
 {
 	return _can_charge(m, player.pos) ||
 		(g.player_moved && _can_charge(m, player.prev_pos));
 }
 
-// The direction a basic_seek enemy would move in.
+// Returns the direction a basic_seek enemy would move in.
 // Helper function for basic_seek and its variants.
 static Coords seek_dir(const Monster *m, Coords d)
 {
@@ -89,7 +82,7 @@ static Coords seek_dir(const Monster *m, Coords d)
 	return axis ? vertical : horizontal;
 }
 
-// Roll a random integer from 0 to 3, using a simple xorshift RNG.
+// Rolls a random integer from 0 to 3, using a simple xorshift RNG.
 static u32 rng() {
 	g.seed ^= g.seed << 13;
 	g.seed ^= g.seed >> 17;
@@ -97,7 +90,7 @@ static u32 rng() {
 	return g.seed & 3;
 }
 
-// Return a random cardinal direction.
+// Returns a random cardinal direction.
 // We first try at random up to 4 times, then try all directions in order.
 // This is slightly biased, but it’s very fast, never fails to move when
 // possible, and never gets stuck in an infinite loop.
@@ -112,6 +105,35 @@ static Coords random_dir(Monster *m)
 }
 
 // Common //
+
+// Explode, damaging the 9 surrounding tiles in the following order:
+// 147
+// 258
+// 369
+// This is called “bomb-order”. Many monster AIs use it as a tiebreaker:
+// when several destination tiles fit all criteria equally well, monsters
+// pick the one that comes first in bomb-order.
+void bomb_detonate(Monster *m, __attribute__((unused)) Coords d)
+{
+	static const Coords square_shape[] = {
+		{-1, -1}, {-1, 0}, {-1, 1},
+		{0, -1}, {0, 0}, {0, 1},
+		{1, -1}, {1, 0}, {1, 1},
+	};
+
+	if (&MONSTER(m->pos) == m)
+		TILE(m->pos).monster = 0;
+
+	for (i64 i = 0; i < 9; ++i) {
+		Tile *tile = &TILE(m->pos + square_shape[i]);
+		tile->type = tile->type == WATER ? FLOOR : tile->type == ICE ? WATER : tile->type;
+		destroy_wall(m->pos + square_shape[i]);
+		damage(&MONSTER(m->pos + square_shape[i]), 4, square_shape[i], DMG_BOMB);
+		tile->destroyed = true;
+	}
+
+	m->hp = 0;
+}
 
 // Move cardinally toward the player, avoiding obstacles.
 // Try to keep moving along the same axis, unless the monster’s current or

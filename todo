@@ -1,6 +1,8 @@
 TESTS:
 * green bats
 * for each class change: how are damage/max_delay/lordness/radius/priority affected?
+* bomb traps; goblin bombers before/after
+* goblin diggers vs Z4WALLs
 
 FEATURES:
 * metal doors (type=111)
@@ -26,4 +28,5 @@ REFACTORS:
 * Only link against libstdc++ in debug
 * Go ECS or go home
 * Rename _can_charge → something
+* Rename cast_light → something with octants
 * Use WIRE/WIRE_DOOR classes instead of .wired ???

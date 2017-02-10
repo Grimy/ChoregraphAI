@@ -5,8 +5,11 @@
 #include "chore.h"
 
 const Coords plus_shape[] = {{-1, 0}, {0, -1}, {0, 1}, {1, 0}, {0, 0}};
-Coords spawn;
+
+// Position of the exit stairs.
 Coords stairs;
+
+// ID of the player’s character.
 u64 character;
 
 __extension__ thread_local GameState g = {
@@ -15,6 +18,8 @@ __extension__ thread_local GameState g = {
 	.boots_on = true,
 };
 
+// Adds a new monster to the list. Unlike monster_spawn, this doesn’t add the
+// monster to the board, so other monsters can move through it (used for bombs).
 static void monster_new(u8 type, Coords pos, u8 delay)
 {
 	assert(g.last_monster < ARRAY_SIZE(g.monsters));
@@ -29,6 +34,7 @@ static void monster_new(u8 type, Coords pos, u8 delay)
 	m->aggro = true;
 }
 
+// Places a new monster of the given type, at the given position.
 Monster* monster_spawn(u8 type, Coords pos, u8 delay)
 {
 	monster_new(type, pos, delay);
@@ -61,6 +67,9 @@ bool can_move(const Monster *m, Coords dir)
 	return !BLOCKS_LOS(dest);
 }
 
+// Recomputes the lighting of nearby tiles when a light source is created or destroyed.
+// diff: +1 to add a light source, -1 to remove it.
+// radius: the maximum L2 distance at which the light source still provides light.
 void adjust_lights(Coords pos, i8 diff, double radius)
 {
 	Coords d = {0, 0};
@@ -70,6 +79,7 @@ void adjust_lights(Coords pos, i8 diff, double radius)
 			TILE(pos + d).light += diff * max(0, (int) (6100 * (radius - sqrt(L2(d)))));
 }
 
+// Replaces a wall with floor, handling the consequences.
 void destroy_wall(Coords pos)
 {
 	if (!IS_DIGGABLE(pos))
@@ -110,28 +120,6 @@ static bool dig(Coords pos, i32 digging_power, bool is_player)
 
 	destroy_wall(pos);
 	return true;
-}
-
-void bomb_detonate(Monster *m, __attribute__((unused)) Coords d)
-{
-	static const Coords square_shape[] = {
-		{-1, -1}, {-1, 0}, {-1, 1},
-		{0, -1}, {0, 0}, {0, 1},
-		{1, -1}, {1, 0}, {1, 1},
-	};
-
-	if (&MONSTER(m->pos) == m)
-		TILE(m->pos).monster = 0;
-
-	for (i64 i = 0; i < 9; ++i) {
-		Tile *tile = &TILE(m->pos + square_shape[i]);
-		tile->type = tile->type == WATER ? FLOOR : tile->type == ICE ? WATER : tile->type;
-		destroy_wall(m->pos + square_shape[i]);
-		damage(&MONSTER(m->pos + square_shape[i]), 4, square_shape[i], DMG_BOMB);
-		tile->destroyed = true;
-	}
-
-	m->hp = 0;
 }
 
 // Handles an enemy attacking the player.
@@ -251,6 +239,7 @@ MoveResult enemy_move(Monster *m, Coords dir)
 	return MOVE_FAIL;
 }
 
+// Marks tiles that the player can see as “revealed”. Uses a shadow-casting algorithm.
 void update_fov(void)
 {
 	Tile *tile = &TILE(player.pos);
@@ -265,6 +254,8 @@ void update_fov(void)
 	cast_light(tile, -ARRAY_SIZE(g.board), -1);
 }
 
+// Knockback is a special kind of forced movement that can be caused by damage.
+// It can only affect a target once per beat, and changes its delay.
 static void knockback(Monster *m, Coords dir, u8 delay)
 {
 	if (!m->knocked && !IS_BOGGED(m))
@@ -351,6 +342,7 @@ void monster_kill(Monster *m, DamageType type)
 	TILE(m->pos).monster = 0;
 }
 
+// Spawns three skeletons in a line.
 static void skull_spawn(const Monster *skull, Coords spawn_dir, Coords dir)
 {
 	u8 spawn_type = skull->type - SKULL_2 + SKELETON_2;
@@ -576,6 +568,7 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	return true;
 }
 
+// Handles effects that trigger after the player’s movement.
 static void after_move(Coords dir, bool forced)
 {
 	if (g.inventory[LUNGING] && g.boots_on) {
@@ -837,16 +830,23 @@ static void trap_turn(const Trap *trap)
 	}
 }
 
-// Compares the priorities of two monsters. Callback for qsort.
+// Tests whether the first monster has priority over the second.
 static bool has_priority(const Monster *m1, const Monster *m2)
 {
 	if (m1->priority > m2->priority)
 		return true;
 	if (m1->priority < m2->priority)
 		return false;
-	return (L1(m1->pos - m2->pos) < 5 && L2(m1->pos - player.pos) < L2(m2->pos - player.pos));
+
+	// Optimization: if they’re further away than that, priority doesn’t matter
+	if (L1(m1->pos - m2->pos) < 5)
+		return L2(m1->pos - player.pos) < L2(m2->pos - player.pos);
+
+	// We default to false to avoid needless swaps
+	return false;
 }
 
+// Inserts a monster at its due place in the priority queue.
 static void priority_insert(Monster **queue, u64 queue_length, Monster *m)
 {
 	u64 i = queue_length;

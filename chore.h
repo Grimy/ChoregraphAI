@@ -24,6 +24,7 @@
 // * A point, representing an absolute position within the grid (usually named `pos`)
 // * A vector, representing the relative position of another entity (usually named `d`)
 // * A unit vector, representing a direction of movement (usually named `dir` or `move`)
+// Coords {0, 0} represent the top-left corner.
 struct Coords {
 	i8 x;
 	i8 y;
@@ -328,7 +329,6 @@ typedef struct {
 } GameState;
 
 extern const TypeInfos type_infos[];
-extern Coords spawn;
 extern Coords stairs;
 extern u64 character;
 extern const Coords plus_shape[];

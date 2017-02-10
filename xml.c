@@ -4,6 +4,9 @@
 
 #include "chore.h"
 
+// Initial position of the player.
+static Coords spawn;
+
 // Returns the numeric value of a named attribute of the current node.
 // If the attribute is absent, it defaults to 0.
 static i32 xml_attr(xmlTextReader *xml, const char* attr)
@@ -14,12 +17,18 @@ static i32 xml_attr(xmlTextReader *xml, const char* attr)
 	return result;
 }
 
+// Computes the position of the spawn relative to the top-left corner.
+// The game uses the spawn as the {0, 0} point, but we use the top-left corner,
+// so we need this information to convert between the two reference frames.
+// Note: we place {0, 0} on the top-left corner because we want to use
+// coordinates to index into the tile array, so they have to be positive.
 static void xml_find_spawn(xmlTextReader *xml, __attribute__((unused)) const char *name)
 {
 	spawn.x = max(spawn.x, 1 - (i8) xml_attr(xml, "x"));
 	spawn.y = max(spawn.y, 1 - (i8) xml_attr(xml, "y"));
 }
 
+// Converts an item name to an item ID.
 static u8 xml_item(xmlTextReader *xml, const char* attr)
 {
 	static const char* item_names[ITEM_LAST] = {
@@ -42,6 +51,7 @@ static u8 xml_item(xmlTextReader *xml, const char* attr)
 	return type;
 }
 
+// Adds a new trap to the list.
 static void trap_init(Coords pos, i32 type, i32 subtype)
 {
 	static u64 trap_count;
@@ -82,6 +92,8 @@ static void tile_init(Coords pos, i32 type, i32 zone, bool torch)
 	TILE(pos).type = (u8) type;
 }
 
+// Guesses at a zombie’s initial orientation.
+// Unfortunately, this information isn’t present in dungeon files.
 static Coords orient_zombie(Coords pos)
 {
 	for (int i = 3; i >= 0; --i)
@@ -175,6 +187,7 @@ static void xml_process_file(char *file, i64 level, void callback(xmlTextReader 
 	xmlFreeTextReader(xml);
 }
 
+// Compares the priorities of two monsters. Callback for qsort.
 static i32 compare_priorities(const void *a, const void *b)
 {
 	u64 pa = ((const Monster*) a)->priority;
