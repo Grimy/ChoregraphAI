@@ -27,6 +27,8 @@ debugging or entertainment purposes.
 
 ## History
 
+* **2017-02-11** The awesome [-7](https://github.com/negative-seven) developped [a tool](https://github.com/necrommunity/nd_level_extract) to read NecroDancer’s memory and generate dungeon files in the format accepted by ChoregraphAI.
+
 * **2017-02-05** Finished updating ChoregraphAI to [handle DLC enemies](https://www.youtube.com/watch?v=3bm50q3bK8o&feature=youtu.be).
 
 * **2017-01-24** The Amplified DLC for NecroDancer was released, adding many new enemies and game mechanics to simulate.
