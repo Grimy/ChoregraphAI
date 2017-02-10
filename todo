@@ -1,8 +1,6 @@
 TESTS:
-* green bats
 * for each class change: how are damage/max_delay/lordness/radius/priority affected?
 * bomb traps; goblin bombers before/after
-* goblin diggers vs Z4WALLs
 
 FEATURES:
 * metal doors (type=111)
@@ -23,6 +21,7 @@ BUGFIXES:
 * pixie explosions are *weird*
 
 REFACTORS:
+* dig / z4dig / destroy_wall
 * Use more references
 * Refactor chain_lightning
 * Only link against libstdc++ in debug

@@ -68,6 +68,31 @@ enum CharId {
 	NOCTURNA,
 };
 
+enum ItemType : u8 {
+	NO_ITEM,
+	HEART_1,
+	HEART_2,
+	BOMB_1,
+	BOMB_3,
+	SHOVEL_BASE,
+	SHOVEL_TIT,
+	DAGGER_BASE,
+	DAGGER_JEWELED,
+	HEAD_MINERS,
+	HEAD_CIRCLET,
+	FEET_LUNGING,
+	FEET_LEAPING,
+	USE_PACEMAKER,
+	USE_FREEZE,
+	ITEM_LAST,
+};
+
+struct ItemNames {
+	const char *xml;
+	const char *friendly;
+	const char *glyph;
+};
+
 enum MonsterType : u8 {
 	NO_MONSTER,
 
@@ -175,20 +200,6 @@ enum MonsterType : u8 {
 	HEADLESS, // a decapitated skeleton
 };
 
-enum ItemType : u8 {
-	NO_ITEM,
-	BOMBS,
-	BOMBS_3,
-	HEART_1,
-	HEART_2,
-	JEWELED,
-	LUNGING,
-	MEMERS_CAP,
-	PACEMAKER,
-	SCROLL_FREEZE,
-	ITEM_LAST,
-};
-
 enum TileType : u8 {
 	FLOOR = 0,
 	SHOP_FLOOR = 3,
@@ -270,17 +281,16 @@ struct Monster {
 };
 
 // Properties that are common to all monsters of a type.
-// This avoids duplicating information between all monsters of the same type.
 struct TypeInfos {
-	i8 damage;
-	i8 max_hp;
-	u8 max_delay;
-	bool flying;
-	i16 radius;
-	i8 digging_power;
-	u8 priority;
+	const i8 damage;
+	const i8 max_hp;
+	const u8 max_delay;
+	const bool flying;
+	const i16 radius;
+	const i8 digging_power;
+	const u8 priority;
 	const char *glyph;
-	void (*act) (Monster*, Coords);
+	void (*const act) (Monster*, Coords);
 };
 
 struct Tile {
@@ -320,15 +330,16 @@ typedef struct {
 	u8 last_monster;
 
 	// Attributes specific to the player
-	u8 inventory[ITEM_LAST];
+	u8 bombs, shovel, weapon, body, head, feet, ring, usable;
 	bool player_moved;
 	bool sliding_on_ice;
 	bool boots_on;
 	u8 iframes;
-	u64: 56;
+	u8: 8;
 } GameState;
 
 extern const TypeInfos type_infos[];
+extern const ItemNames item_names[];
 extern Coords stairs;
 extern u64 character;
 extern const Coords plus_shape[];

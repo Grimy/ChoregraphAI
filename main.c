@@ -14,7 +14,7 @@ u64 character;
 
 __extension__ thread_local GameState g = {
 	.board = {[0 ... 31] = {[0 ... 31] = {.type = EDGE}}},
-	.inventory = { [BOMBS] = 3 },
+	.bombs = 3,
 	.boots_on = true,
 };
 
@@ -571,7 +571,7 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 // Handles effects that trigger after the player’s movement.
 static void after_move(Coords dir, bool forced)
 {
-	if (g.inventory[LUNGING] && g.boots_on) {
+	if (g.feet == FEET_LUNGING && g.boots_on) {
 		i64 steps = 4;
 		while (--steps && !forced && can_move(&player, dir))
 			move(&player, player.pos + dir);
@@ -580,14 +580,17 @@ static void after_move(Coords dir, bool forced)
 			knockback(in_my_way, dir, 1);
 	}
 
-	if (g.inventory[MEMERS_CAP]) {
-		i32 digging_power = TILE(player.pos).type == OOZE ? 0 : 2;
+	if (g.head == HEAD_MINERS) {
+		i32 digging_power = TILE(player.pos).type == OOZE ? 0 : player.digging_power;
 		for (i64 i = 0; i < 4; ++i)
 			dig(player.pos + plus_shape[i], digging_power, true);
 	}
 
 	if (g.monkeyed)
 		move(&g.monsters[g.monkeyed], player.pos);
+
+	if (TILE(player.pos).item)
+		TILE(player.pos).item = pickup_item(TILE(player.pos).item);
 }
 
 // Moves something by force (as caused by bounce traps, wind mages and knockback).
@@ -651,7 +654,7 @@ static void player_move(i8 x, i8 y)
 	Tile *tile = &TILE(player.pos);
 	player.prev_pos = player.pos;
 	Coords dir = {x, y};
-	i32 dmg = tile->type == OOZE ? 0 : g.inventory[JEWELED] ? 5 : 1;
+	i32 dmg = tile->type == OOZE ? 0 : player.damage;
 
 	if (player.confusion || g.monsters[g.monkeyed].type == CONF_MONKEY)
 		dir = -dir;
@@ -671,7 +674,7 @@ static void player_move(i8 x, i8 y)
 	Coords dest = player.pos + dir;
 
 	if (BLOCKS_LOS(dest)) {
-		dig(player.pos + dir, TILE(player.pos).type == OOZE ? 0 : 2, true);
+		dig(player.pos + dir, TILE(player.pos).type == OOZE ? 0 : player.digging_power, true);
 	} else if (TILE(dest).monster) {
 		damage(&MONSTER(dest), dmg, dir, DMG_WEAPON);
 		player.electrified = true;
@@ -712,15 +715,41 @@ void cone_of_cold(Coords pos, i8 dir)
 // Returns the item the player had in that slot.
 u8 pickup_item(u8 item)
 {
-	if (item == BOMBS_3)
-		g.inventory[BOMBS] += 3;
-	else if (item == HEART_1)
+	switch (item) {
+	case HEART_1:
 		player.hp += 1;
-	else if (item == HEART_2)
+		return NO_ITEM;
+	case HEART_2:
 		player.hp += 2;
-	else
-		++g.inventory[item];
-	return NO_ITEM;
+		return NO_ITEM;
+	case BOMB_1:
+		g.bombs += 1;
+		return NO_ITEM;
+	case BOMB_3:
+		g.bombs += 3;
+		return NO_ITEM;
+	case SHOVEL_BASE:
+	case SHOVEL_TIT:
+		SWAP(item, g.shovel);
+		break;
+	case DAGGER_BASE:
+	case DAGGER_JEWELED:
+		SWAP(item, g.weapon);
+		player.damage = g.weapon == DAGGER_JEWELED ? 5 : 1;
+		break;
+	case HEAD_MINERS:
+	case HEAD_CIRCLET:
+		SWAP(item, g.head);
+		player.radius = g.head == HEAD_MINERS ? 5 : 2;
+		break;
+	case FEET_LUNGING:
+	case FEET_LEAPING:
+		SWAP(item, g.feet);
+		break;
+	}
+
+	player.digging_power = 1 + (g.shovel == SHOVEL_TIT) + (g.head == HEAD_MINERS);
+	return item;
 }
 
 static void player_turn(u8 input)
@@ -739,15 +768,15 @@ static void player_turn(u8 input)
 		player_move( 0, -1);
 		break;
 	case 'z':
-		if (!g.inventory[SCROLL_FREEZE])
+		if (!g.usable)
 			break;
-		--g.inventory[SCROLL_FREEZE];
+		g.usable = NO_ITEM;
 		for (Monster *m = &player + 1; m->type; ++m)
 			m->freeze = 16;
 		break;
 	case '<':
-		if (g.inventory[BOMBS]) {
-			--g.inventory[BOMBS];
+		if (g.bombs) {
+			--g.bombs;
 			monster_new(BOMB, player.pos, 3);
 		}
 		break;
@@ -758,9 +787,6 @@ static void player_turn(u8 input)
 
 	if (g.sliding_on_ice)
 		g.player_moved = forced_move(&player, DIRECTION(player.pos - player.prev_pos));
-
-	if (TILE(player.pos).item)
-		TILE(player.pos).item = pickup_item(TILE(player.pos).item);
 }
 
 static bool check_aggro(Monster *m, Coords d, bool bomb_exploded)

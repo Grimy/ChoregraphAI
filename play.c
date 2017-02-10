@@ -79,16 +79,14 @@ static void display_tile(Coords pos)
 
 	cursor_to(pos.x, pos.y);
 
-	if (tile->monster)
-		printf("%s", TYPE(&MONSTER(pos)).glyph);
-	else if (IS_DOOR(pos))
+	if (IS_DOOR(pos))
 		putchar('+');
 	else if (IS_DIGGABLE(pos))
 		display_wall(pos);
 	else if (IS_WIRE(pos))
 		display_wire(pos);
 	else if (tile->item)
-		putchar('*');
+		printf("%s", item_names[tile->item].glyph);
 	else if (L2(pos - g.monsters[g.nightmare].pos) >= 8)
 		printf("%s", floor_glyphs[tile->type]);
 
@@ -115,12 +113,14 @@ static void display_inventory(void)
 		g.iframes > g.current_beat ? PINK "I-framed " : "");
 	LINE("Beat #%d", g.current_beat);
 	LINE("");
-	LINE("Bombs: %d", g.inventory[BOMBS]);
-	LINE("Weapon: %s", g.inventory[JEWELED] ? "Jeweled Dagger" : "Dagger");
-	if (g.inventory[LUNGING])
-		LINE("Boots: Lunging (%s)", g.boots_on ? "on" : "off");
-	if (g.inventory[MEMERS_CAP])
-		LINE("Head: %s", "Miner’s Cap");
+	LINE("Bombs: %d", g.bombs);
+	LINE("Shovel: %s",     item_names[g.shovel].friendly);
+	LINE("Weapon: %s",     item_names[g.weapon].friendly);
+	LINE("Body: %s",       item_names[g.body].friendly);
+	LINE("Head: %s",       item_names[g.head].friendly);
+	LINE("Boots: %s (%s)", item_names[g.feet].friendly, g.boots_on ? "on" : "off");
+	LINE("Ring: %s",       item_names[g.ring].friendly);
+	LINE("Usable: %s",     item_names[g.usable].friendly);
 }
 
 static const char* additional_info(const Monster *m)
@@ -180,7 +180,7 @@ static const char* additional_info(const Monster *m)
 	return "";
 }
 
-static void display_enemy(const Monster *m)
+static void display_monster(const Monster *m)
 {
 	if (!m->hp)
 		return;
@@ -193,6 +193,8 @@ static void display_enemy(const Monster *m)
 		dir_to_arrow(m->dir));
 	display_hearts(m);
 	printf("%s", additional_info(m));
+	cursor_to(m->pos.x, m->pos.y);
+	printf("%s" WHITE, TYPE(m).glyph);
 }
 
 static void display_trap(const Trap *t)
@@ -219,9 +221,9 @@ static void display_all(void)
 	cursor_to(64, 0);
 	printf("\033[s");
 
-	for (Monster *m = &player + 1; m->type; ++m)
-		if (m->aggro || TILE(m->pos).revealed)
-			display_enemy(m);
+	for (Monster *m = &player; m->type; ++m)
+		if (m->aggro || TILE(m->pos).revealed || g.head == HEAD_CIRCLET)
+			display_monster(m);
 
 	display_inventory();
 	cursor_to(0, 0);

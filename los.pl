@@ -30,7 +30,7 @@ void cast_light(Tile *tile, i64 x, i64 y)
 {
 Tile *row = tile;
 u64 walls = 0;
-u64 torch = g.inventory[MEMERS_CAP] ? 5 : 2;
+u64 torch = (u64) player.radius;
 END
 
 for my $y (1..10) {

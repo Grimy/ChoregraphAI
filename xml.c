@@ -4,6 +4,24 @@
 
 #include "chore.h"
 
+const ItemNames item_names[] {
+	[NO_ITEM]        = { "",                       "None",                 "" },
+	[HEART_1]        = { "misc_heart_container",   "",                     RED "ღ" },
+	[HEART_2]        = { "misc_heart_container2",  "",                     RED "ღ" },
+	[BOMB_1]         = { "bomb",                   "",                     "●" },
+	[BOMB_3]         = { "bomb_3",                 "",                     "●" },
+	[SHOVEL_BASE]    = { "shovel_basic",           "Base Shovel",          BROWN "(" },
+	[SHOVEL_TIT]     = { "shovel_titanium",        "Titanium Shovel",      "(" },
+	[DAGGER_BASE]    = { "weapon_dagger",          "Base Dagger",          ")" },
+	[DAGGER_JEWELED] = { "weapon_dagger_jeweled",  "Jeweled Dagger",       BLUE ")" },
+	[HEAD_MINERS]    = { "head_miners_cap",        "Miner’s Cap",          BLACK "[" },
+	[HEAD_CIRCLET]   = { "head_circlet_telepathy", "Circlet of Telepathy", YELLOW "[" },
+	[FEET_LUNGING]   = { "feet_boots_lunging",     "Lunging",              "[" },
+	[FEET_LEAPING]   = { "feet_boots_leaping",     "Leaping",              GREEN "[" },
+	[USE_PACEMAKER]  = { "heart_transplant",       "Heart Transplant",     RED "ღ" },
+	[USE_FREEZE]     = { "scroll_freeze_enemies",  "Freeze Scroll",        "?" },
+};
+
 // Initial position of the player.
 static Coords spawn;
 
@@ -31,22 +49,9 @@ static void xml_find_spawn(xmlTextReader *xml, __attribute__((unused)) const cha
 // Converts an item name to an item ID.
 static u8 xml_item(xmlTextReader *xml, const char* attr)
 {
-	static const char* item_names[ITEM_LAST] = {
-		[BOMBS]         = "bomb",
-		[BOMBS_3]       = "bomb_3",
-		[HEART_1]       = "misc_heart_container",
-		[HEART_2]       = "misc_heart_container2",
-		[JEWELED]       = "weapon_dagger_jeweled",
-		[LUNGING]       = "feet_boots_lunging",
-		[MEMERS_CAP]    = "head_miners_cap",
-		[SCROLL_FREEZE] = "scroll_freeze_enemies",
-		[PACEMAKER]     = "heart_transplant",
-	};
-
 	char* item_name = (char*) xmlTextReaderGetAttribute(xml, (xmlChar*) attr);
-
 	u8 type = ITEM_LAST;
-	while (--type && !streq(item_name, item_names[type]));
+	while (--type && !streq(item_name, item_names[type].xml));
 	free(item_name);
 	return type;
 }
@@ -205,6 +210,8 @@ void xml_parse(i32 argc, char **argv)
 	i32 level = argc >= 3 ? *argv[2] - '0' : 1;
 
 	g.monsters[0].untrapped = true;
+	pickup_item(DAGGER_BASE);
+	pickup_item(SHOVEL_BASE);
 
 	LIBXML_TEST_VERSION;
 	xml_process_file(argv[1], level, xml_find_spawn);
