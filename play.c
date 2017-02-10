@@ -231,7 +231,7 @@ static void display_all(void)
 int main(i32 argc, char **argv)
 {
 	xml_parse(argc, argv);
-	g.seed = (u64) time(NULL);
+	g.seed = (u32) time(NULL);
 	if (argc == 4)
 		while (*argv[3])
 			do_beat((u8) *argv[3]++);

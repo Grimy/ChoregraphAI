@@ -8,12 +8,12 @@
 // 147
 // 258
 // 369
-// Most monster AIs use m as a tiebreaker: when several destination tiles fit
+// Most monster AIs use this as a tiebreaker: when several destination tiles fit
 // all criteria equally well, monsters pick the one that comes first in bomb-order.
 
 // Helpers //
 
-// Tests whether the condition for a breath attack are met.
+// Test whether the condition for a breath attack are met.
 // This requires an unbroken line-of-sight, but can go through other monsters.
 static bool can_breathe(const Monster *m, Coords d)
 {
@@ -29,7 +29,7 @@ static bool can_breathe(const Monster *m, Coords d)
 	return true;
 }
 
-// Tests whether the given monster can charge toward the given position.
+// Test whether a monster can charge toward the given position.
 // This requires a straight path without walls nor monsters.
 // /!\ side-effect: sets prev_pos
 static bool _can_charge(Monster *m, Coords dest)
@@ -47,8 +47,7 @@ static bool _can_charge(Monster *m, Coords dest)
 	return true;
 }
 
-// Tests whether the given monster can charge at the player’s current
-// or previous position.
+// Test whether a monster can charge at the player’s current or previous position.
 static bool can_charge(Monster *m)
 {
 	return _can_charge(m, player.pos) ||
@@ -88,6 +87,28 @@ static Coords seek_dir(const Monster *m, Coords d)
 		m->dir.y != 0;
 
 	return axis ? vertical : horizontal;
+}
+
+// Roll a random integer from 0 to 3, using a simple xorshift RNG.
+static u32 rng() {
+	g.seed ^= g.seed << 13;
+	g.seed ^= g.seed >> 17;
+	g.seed ^= g.seed << 5;
+	return g.seed & 3;
+}
+
+// Return a random cardinal direction.
+// We first try at random up to 4 times, then try all directions in order.
+// This is slightly biased, but it’s very fast, never fails to move when
+// possible, and never gets stuck in an infinite loop.
+static Coords random_dir(Monster *m)
+{
+	for (u64 i = 0; i < 8; ++i) {
+		Coords dir = plus_shape[i < 4 ? rng() : i & 3];
+		if (IS_EMPTY(m->pos + dir))
+			return dir;
+	}
+	return {0, 0};
 }
 
 // Common //
@@ -191,44 +212,24 @@ static void zombie(Monster *m, __attribute__((unused)) Coords d)
 }
 
 // Move in a random direction.
-// If the chosen direction is blocked, cycles through the other directions
-// in the order right > left > down > up (mnemonic: Ryan Loves to Dunk Us).
 static void bat(Monster *m, Coords d)
 {
-	static const Coords moves[] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
-	if (m->confusion) {
+	if (m->confusion)
 		basic_seek(m, d);
-		return;
-	}
-	if (!g.seed) {
+	else if (!g.seed)
 		monster_kill(m, DMG_NORMAL);
-		return;
-	}
-	i64 rng = RNG();
-	for (i64 i = 0; i < 4; ++i)
-		if (enemy_move(m, moves[(rng + i) & 3]))
-			return;
+	else
+		enemy_move(m, random_dir(m));
 }
 
 // Move in a randomer direction.
 static void green_bat(Monster *m, Coords d)
 {
-	static const Coords moves[] = {
-		{1, 0}, {-1, 0}, {0, 1}, {0, -1},
-		{1, -1}, {1, 1}, {-1, -1}, {-1, 1},
-	};
-	if (m->confusion) {
-		basic_seek(m, d);
-		return;
-	}
-	if (!g.seed) {
-		monster_kill(m, DMG_NORMAL);
-		return;
-	}
-	i64 rng = RNG() * 2 + RNG();
-	for (i64 i = 0; i < 8; ++i)
-		if (enemy_move(m, moves[(rng + i) & 7]))
-			return;
+	static const Coords diagonals[] = {{1, -1}, {1, 1}, {-1, -1}, {-1, 1}};
+	if (rng() & 1)
+		bat(m, d);
+	else
+		enemy_move(m, diagonals[rng()]);
 }
 
 // Move toward the player when they’re retreating, stand still otherwise.
@@ -424,7 +425,7 @@ static void lich(Monster *m, Coords d)
 		player.confusion = 5;
 }
 
-// Unlike bats, sarcophagi aren’t biased.
+// Spawn a random skeleton in a random direction
 static void sarcophagus(Monster *m, __attribute__((unused)) Coords d)
 {
 	static const MonsterType types[] = {SKELETON_1, SKELETANK_1, WINDMAGE_1, RIDER_1};
@@ -432,16 +433,9 @@ static void sarcophagus(Monster *m, __attribute__((unused)) Coords d)
 	if (g.monsters[g.sarco_spawn].hp || !g.seed)
 		return;
 
-	// Try at random up to 4 times, then try in order
-	for (u64 i = 0; i < 8; ++i) {
-		Coords spawn_dir = plus_shape[i < 4 ? RNG() : i & 3];
-		if (!IS_EMPTY(m->pos + spawn_dir))
-			continue;
-		u8 spawned = types[RNG()] + m->type - SARCO_1;
-		monster_spawn(spawned, m->pos + spawn_dir, 1);
-		g.sarco_spawn = g.last_monster;
-		return;
-	}
+	u8 spawned = types[rng()] + m->type - SARCO_1;
+	monster_spawn(spawned, m->pos + random_dir(m), 1);
+	g.sarco_spawn = g.last_monster;
 }
 
 static void wind_statue(__attribute__((unused)) Monster *m, Coords d)

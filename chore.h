@@ -13,7 +13,6 @@
 #define IS_DIGGABLE(pos) (TILE(pos).type >= DOOR)
 #define IS_DOOR(pos) (TILE(pos).type == DOOR)
 
-#define RNG() ((g.seed = g.seed >> 2 ^ g.seed << 3 ^ g.seed >> 14) & 3)
 #define IS_BOGGED(m) (!(m)->untrapped \
 	&& (TILE((m)->pos).type == WATER \
 	|| (TILE((m)->pos).type == TAR)))
@@ -309,7 +308,7 @@ typedef struct {
 	Trap traps[32];
 
 	// Global properties
-	u64 seed;
+	u32 seed;
 	u8 input[32];
 	u8 current_beat;
 	u8 locking_enemies;
@@ -325,7 +324,7 @@ typedef struct {
 	bool sliding_on_ice;
 	bool boots_on;
 	u8 iframes;
-	u64: 24;
+	u64: 56;
 } GameState;
 
 extern const TypeInfos type_infos[];

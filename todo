@@ -1,6 +1,11 @@
+TESTS:
+* green bats
+* for each class change: how are damage/max_delay/lordness/radius/priority affected?
+
 FEATURES:
 * metal doors (type=111)
 * confusion de-aggroing enemies?
+* items write to the player struct
 
 BUGFIXES:
 * yetis/mummies/sarcos: should have been aggroed for a full turn
@@ -16,7 +21,9 @@ BUGFIXES:
 * pixie explosions are *weird*
 
 REFACTORS:
+* Use more references
 * Refactor chain_lightning
+* Only link against libstdc++ in debug
 * Go ECS or go home
 * Rename _can_charge → something
 * Use WIRE/WIRE_DOOR classes instead of .wired ???
