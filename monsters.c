@@ -723,8 +723,8 @@ const TypeInfos type_infos[] = {
 	[WIGHT]        = {  2, 1, 0,   true,  25, -1, 24, GREEN "W",  basic_seek },
 	[WALL_MIMIC]   = {  2, 1, 0,  false,   1, -1, 24, GREEN "m",  mimic },
 	[LIGHTSHROOM]  = {  0, 1, 0,  false,   0, -1,  0, "%",        NULL },
-	[BOMBSHROOM]   = {  4, 1, 0,  false,   0, -1, 86, YELLOW "%", NULL },
-	[BOMBSHROOM_]  = {  4, 1, 0,  false, 999, -1, 86, RED "%",    bomb_detonate },
+	[BOMBSHROOM]   = {  4, 1, 0,  false,  25, -1, 86, YELLOW "%", NULL },
+	[BOMBSHROOM_]  = {  4, 1, 0,  false,  25, -1, 86, RED "%",    bomb_detonate },
 
 	[FIRE_SLIME]   = {  3, 1, 0,  false, 999,  2, 34, RED "P",    slime },
 	[ICE_SLIME]    = {  3, 1, 0,  false, 999,  2, 34, CYAN "P",   slime },

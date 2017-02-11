@@ -3,7 +3,7 @@ TESTS:
 
 FEATURES:
 * metal doors (type=111)
-* confusion de-aggroing enemies?
+* confusion de-aggroing enemies + set radius=0
 * items write to the player struct
 
 BUGFIXES:

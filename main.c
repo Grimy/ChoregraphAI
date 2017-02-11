@@ -164,7 +164,7 @@ static void enemy_attack(Monster *attacker)
 		break;
 	case GORGON_1:
 	case GORGON_2:
-		player.freeze = 3;
+		player.freeze = 4;
 		monster_kill(attacker, DMG_NORMAL);
 		break;
 	default:
