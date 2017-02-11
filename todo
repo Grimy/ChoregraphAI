@@ -1,6 +1,5 @@
 TESTS:
 * for each class change: how are damage/max_delay/lordness/radius/priority affected?
-* bomb traps; goblin bombers before/after
 
 FEATURES:
 * metal doors (type=111)

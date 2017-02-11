@@ -9,6 +9,8 @@
 
 #define LINE(...) printf("\033[u\033[B\033[s " __VA_ARGS__)
 
+#define cursor_to(x, y) printf("\033[%d;%dH", (y) + 1, (x) + 1)
+
 static const char* floor_glyphs[] = {
 	".", ".", ".",
 	[SHOP_FLOOR] = YELLOW ".",
@@ -74,12 +76,11 @@ static void display_tile(Coords pos)
 {
 	Tile *tile = &TILE(pos);
 
-	if (tile->type == EDGE || !tile->revealed)
-		return;
-
 	cursor_to(pos.x, pos.y);
 
-	if (IS_DOOR(pos))
+	if (tile->type == EDGE || !tile->revealed)
+		putchar(' ');
+	else if (IS_DOOR(pos))
 		putchar('+');
 	else if (IS_DIGGABLE(pos))
 		display_wall(pos);
@@ -105,7 +106,7 @@ static void display_inventory(void)
 	printf("\033[s");
 	LINE("Bard ");
 	display_hearts(&player);
-	LINE("%s%s%s%s%s",
+	printf("%s%s%s%s%s",
 		g.monkeyed ? PURPLE "Monkeyed " : "",
 		player.confusion ? YELLOW "Confused " : "",
 		player.freeze ? CYAN "Frozen " : "",
@@ -208,6 +209,7 @@ static void display_trap(const Trap *t)
 // Clears and redraws the entire interface.
 static void display_all(void)
 {
+	cursor_to(0, 0);
 	printf("\033[J");
 
 	for (i8 y = 1; y < ARRAY_SIZE(g.board) - 1; ++y)
@@ -221,12 +223,14 @@ static void display_all(void)
 	cursor_to(64, 0);
 	printf("\033[s");
 
-	for (Monster *m = &player; m->type; ++m)
+	for (Monster *m = &player + 1; m->type; ++m)
 		if (m->aggro || TILE(m->pos).revealed || g.head == HEAD_CIRCLET)
 			display_monster(m);
 
 	display_inventory();
-	cursor_to(0, 0);
+
+	cursor_to(player.pos.x, player.pos.y);
+	printf("@\b" WHITE);
 }
 
 // `play` entry point: an interactive interface to the simulation.

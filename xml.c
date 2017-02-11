@@ -17,7 +17,7 @@ const ItemNames item_names[] {
 	[HEAD_MINERS]    = { "head_miners_cap",        "Miner’s Cap",          BLACK "[" },
 	[HEAD_CIRCLET]   = { "head_circlet_telepathy", "Circlet of Telepathy", YELLOW "[" },
 	[FEET_LUNGING]   = { "feet_boots_lunging",     "Lunging",              "[" },
-	[FEET_LEAPING]   = { "feet_boots_leaping",     "Leaping",              GREEN "[" },
+	[FEET_LEAPING]   = { "feet_boots_leaping",     "Frog Socks",           GREEN "[" },
 	[USE_PACEMAKER]  = { "heart_transplant",       "Heart Transplant",     RED "ღ" },
 	[USE_FREEZE]     = { "scroll_freeze_enemies",  "Freeze Scroll",        "?" },
 };

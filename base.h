@@ -44,9 +44,6 @@ typedef int64_t  i64;
 #define CYAN   "\033[94m"
 #define PURPLE "\033[95m"
 
-#define cursor_to(x, y) printf("\033[%d;%dH", (y) + 1, (x) + 1)
-#define term_clear() printf("\033[H\033[2J")
-
 // Die verbosely
 #define FATAL(message, ...) do { \
 	fprintf(stderr, RED message WHITE "\n", __VA_ARGS__); \
