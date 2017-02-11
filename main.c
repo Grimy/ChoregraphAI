@@ -588,6 +588,11 @@ static void after_move(Coords dir, bool forced)
 		Monster *in_my_way = &MONSTER(player.pos + dir);
 		if (steps && damage(in_my_way, 4, dir, DMG_NORMAL))
 			knockback(in_my_way, dir, 1);
+	} else if (g.feet == FEET_LEAPING) {
+		if (g.boots_on && can_move(&player, dir))
+			move(&player, player.pos + dir);
+		if (IS_BOGGED(&player))
+			player.untrapped = true;
 	}
 
 	if (g.head == HEAD_MINERS) {
