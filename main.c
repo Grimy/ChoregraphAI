@@ -42,6 +42,13 @@ Monster* monster_spawn(u8 type, Coords pos, u8 delay)
 	return &g.monsters[g.last_monster];
 }
 
+static void monster_transform(Monster* m, u8 type)
+{
+	m->type = type;
+	m->damage = type_infos[type].damage;
+	m->max_delay = type_infos[type].max_delay;
+}
+
 // Moves the given monster to a specific position.
 static void move(Monster *m, Coords dest)
 {
@@ -89,7 +96,7 @@ void destroy_wall(Coords pos)
 	wall->type &= ICE;
 
 	if (MONSTER(pos).type == SPIDER) {
-		MONSTER(pos).type = FREE_SPIDER;
+		monster_transform(&MONSTER(pos), FREE_SPIDER);
 		MONSTER(pos).delay = 1;
 	}
 
@@ -411,7 +418,7 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	// Before-damage triggers
 	switch (m->type) {
 	case BOMBSHROOM:
-		m->type = BOMBSHROOM_;
+		monster_transform(m, BOMBSHROOM_);
 		m->delay = 3;
 		return false;
 	case TARMONSTER:
@@ -458,7 +465,8 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	case RIDER_1:
 	case RIDER_2:
 	case RIDER_3:
-		m->type -= RIDER_1 - SKELETANK_1;
+		monster_transform(m, m->type - RIDER_1 + SKELETANK_1);
+		m->flying = m->untrapped = false;
 		knockback(m, dir, 1);
 		return false;
 	case SKELETANK_1:
@@ -467,7 +475,7 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 		if (dir != -m->dir)
 			break;
 		if (dmg >= TYPE(m).max_hp)
-			m->type = m->type - SKELETANK_1 + SKELETON_1;
+			monster_transform(m, m->type - SKELETANK_1 + SKELETON_1);
 		knockback(m, dir, 1);
 		return false;
 	case ARMADILLO_1:
@@ -537,7 +545,9 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	case SKELETANK_3:
 		if (m->hp > 1)
 			break;
-		m->type = HEADLESS;
+		static_assert(SKELETON_2 & 1, "");
+		static_assert(SKELETANK_2 & 1, "");
+		monster_transform(m, m->type & 1 ? HEADLESS_2 : HEADLESS_3);
 		m->delay = 0;
 		m->prev_pos = m->pos - dir;
 		return false;
@@ -882,6 +892,18 @@ static void priority_insert(Monster **queue, u64 queue_length, Monster *m)
 	queue[i] = m;
 }
 
+static void before_and_after()
+{
+	for (i64 i = 0; i < 4; ++i) {
+		Coords pos = player.pos + plus_shape[i];
+		Monster *m = &MONSTER(pos);
+		if (m->type == FIRE_BEETLE || m->type == ICE) {
+			tile_change(m->pos, m->type == FIRE_BEETLE ? FIRE : ICE);
+			m->type = BEETLE;
+		}
+	}
+}
+
 // Runs one full beat of the game.
 // During each beat, the player acts first, enemies second and traps last.
 // Enemies act in decreasing priority order. Traps have an arbitrary order.
@@ -889,10 +911,12 @@ bool do_beat(u8 input)
 {
 	// Player’s turn
 	g.input[g.current_beat++ & 31] = input;
+
 	player_turn(input);
 	if (TILE(player.pos).type == STAIRS && g.locking_enemies == 0)
 		return true;
 	update_fov();
+	before_and_after();
 
 	// Build a priority queue with all active enemies
 	Monster *queue[64] = { 0 };
@@ -977,5 +1001,6 @@ bool do_beat(u8 input)
 			tile_change(m->pos, ICE);
 	}
 
+	before_and_after();
 	return false;
 }

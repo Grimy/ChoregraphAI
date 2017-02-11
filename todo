@@ -1,14 +1,9 @@
-TESTS:
-* for each class change: how are damage/max_delay/lordness/radius/priority affected?
-
 FEATURES:
 * metal doors (type=111)
 * confusion de-aggroing enemies + set radius=0
-* items write to the player struct
 
 BUGFIXES:
 * yetis/mummies/sarcos: should have been aggroed for a full turn
-* beetle shedding isn’t quite right
 * banshees/skeletons should have different activation radii depending on the zone
 * charged breath attacks should have extreme priority
 * clonking should hit both player and monkey

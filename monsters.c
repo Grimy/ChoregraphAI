@@ -322,21 +322,6 @@ static void assassin(Monster *m, Coords d)
 	(m->state ? basic_seek : basic_flee)(m, d);
 }
 
-static void beetle_shed(Monster *m)
-{
-	tile_change(m->pos, m->type == FIRE_BEETLE ? FIRE : ICE);
-	m->type = BEETLE;
-}
-
-static void beetle(Monster *m, Coords d)
-{
-	if (L1(d) == 1)
-		beetle_shed(m);
-	basic_seek(m, d);
-	if (L1(player.pos - m->pos) == 1)
-		beetle_shed(m);
-}
-
 // Chase the player, then attack in a 3x3 zone.
 static void yeti(Monster *m, Coords d)
 {
@@ -703,7 +688,8 @@ const TypeInfos type_infos[] = {
 	[MIMIC_4]      = {  2, 1, 0,  false,   1, -1, 22, ORANGE "m", mimic },
 	[MIMIC_5]      = {  2, 1, 0,  false,   1, -1, 22, ORANGE "m", mimic },
 	[WHITE_MIMIC]  = {  3, 1, 0,  false,   1, -1, 33, "m",        mimic },
-	[HEADLESS]     = {  1, 1, 0,  false,   0, -1, 40, "∠",        charge },
+	[HEADLESS_2]   = {  3, 1, 0,  false,   0, -1,  0, YELLOW "∠", charge },
+	[HEADLESS_3]   = {  4, 1, 0,  false,   0, -1,  0, BLACK "∠",  charge },
 
 	[SKELETANK_1]  = {  1, 1, 1,  false,  25, -1, 18, "Ź",        basic_seek },
 	[SKELETANK_2]  = {  3, 2, 1,  false,  25, -1, 41, YELLOW "Ź", basic_seek },
@@ -735,8 +721,8 @@ const TypeInfos type_infos[] = {
 	[DJINN]        = {  3, 2, 2,   true,  49,  2, 65, CYAN "E",   basic_seek },
 	[ASSASSIN_1]   = {  4, 1, 0,  false,  49, -1, 47, PURPLE "o", assassin },
 	[ASSASSIN_2]   = {  6, 2, 0,  false,  49, -1, 61, BLACK "o",  assassin },
-	[FIRE_BEETLE]  = {  3, 3, 1,  false,  49, -1, 43, RED "a",    beetle },
-	[ICE_BEETLE]   = {  3, 3, 1,  false,  49, -1, 43, CYAN "a",   beetle },
+	[FIRE_BEETLE]  = {  3, 3, 1,  false,  49, -1, 43, RED "a",    basic_seek },
+	[ICE_BEETLE]   = {  3, 3, 1,  false,  49, -1, 43, CYAN "a",   basic_seek },
 	[BEETLE]       = {  3, 3, 1,  false,  49, -1, 43, "a",        basic_seek },
 	[HELLHOUND]    = {  3, 1, 1,  false,  49, -1, 37, RED "d",    moore_seek },
 	[SHOVE_1]      = {  0, 2, 0,  false,  49, -1,  6, PURPLE "~", basic_seek },

@@ -197,7 +197,7 @@ enum MonsterType : u8 {
 	BOMB,
 	CHEST,
 	SHRINE,
-	HEADLESS, // a decapitated skeleton
+	HEADLESS_2, HEADLESS_3, // a decapitated skeleton
 };
 
 enum TileType : u8 {
