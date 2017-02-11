@@ -1,6 +1,5 @@
 // play.c - manages terminal input/output
 // Assumes an ANSI-compatible UTF-8 terminal with a black background.
-// ♪
 
 #include <time.h>
 #include <unistd.h>
@@ -196,6 +195,8 @@ static void display_monster(const Monster *m)
 	printf("%s", additional_info(m));
 	cursor_to(m->pos.x, m->pos.y);
 	printf("%s" WHITE, TYPE(m).glyph);
+	if (g.current_beat % 2 && m->type == SHOPKEEPER)
+		printf("♪");
 }
 
 static void display_trap(const Trap *t)
