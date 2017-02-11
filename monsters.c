@@ -130,6 +130,7 @@ void bomb_detonate(Monster *m, __attribute__((unused)) Coords d)
 		destroy_wall(m->pos + square_shape[i]);
 		damage(&MONSTER(m->pos + square_shape[i]), 4, square_shape[i], DMG_BOMB);
 		tile->destroyed = true;
+		tile->item = NO_ITEM;
 	}
 
 	m->hp = 0;
