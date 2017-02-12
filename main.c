@@ -86,46 +86,33 @@ void adjust_lights(Coords pos, i8 diff, double radius)
 			TILE(pos + d).light += diff * max(0, (int) (6100 * (radius - sqrt(L2(d)))));
 }
 
-// Replaces a wall with floor, handling the consequences.
-void destroy_wall(Coords pos)
+// Tries to dig away the given wall, replacing it with floor.
+// Returns whether the dig succeeded.
+bool dig(Coords pos, i32 digging_power, bool can_splash)
 {
-	if (!IS_DIGGABLE(pos))
-		return;
+	if (!IS_DIGGABLE(pos) || TILE(pos).hp > digging_power)
+		return false;
 
 	Tile *wall = &TILE(pos);
+
+	if (can_splash && wall->type == Z4WALL)
+		for (i64 i = 0; i < 4; ++i)
+			if (TILE(pos + plus_shape[i]).type != DOOR)
+				dig(pos + plus_shape[i], min(digging_power, 2), false);
+
 	wall->type &= ICE;
 
+	if (wall->hp == 0)
+		for (i64 i = 0; i < 4; ++i)
+			dig(pos + plus_shape[i], 0, false);
+
+	if (wall->torch)
+		adjust_lights(pos, -1, 4.25);
 	if (MONSTER(pos).type == SPIDER) {
 		monster_transform(&MONSTER(pos), FREE_SPIDER);
 		MONSTER(pos).delay = 1;
 	}
 
-	for (i64 i = 0; wall->hp == 0 && i < 4; ++i)
-		if (IS_DOOR(pos + plus_shape[i]))
-			destroy_wall(pos + plus_shape[i]);
-
-	if (wall->torch)
-		adjust_lights(pos, -1, 4.25);
-}
-
-static void z4dig(Coords pos, i32 digging_power)
-{
-	if (TILE(pos).type == Z4WALL && TILE(pos).hp <= digging_power)
-		destroy_wall(pos);
-}
-
-// Tries to dig away the given wall, replacing it with floor.
-// Returns whether the dig succeeded.
-static bool dig(Coords pos, i32 digging_power, bool is_player)
-{
-	if (!IS_DIGGABLE(pos) || TILE(pos).hp > digging_power)
-		return false; // Dink!
-
-	if (is_player && TILE(pos).type == Z4WALL)
-		for (i64 i = 0; i < 4; ++i)
-			z4dig(pos + plus_shape[i], digging_power);
-
-	destroy_wall(pos);
 	return true;
 }
 
@@ -230,7 +217,7 @@ MoveResult enemy_move(Monster *m, Coords dir)
 	if (!m->aggro && digging_power == 4) {
 		for (i64 i = 0; i < 4; ++i) {
 			Coords pos = m->pos + plus_shape[i];
-			destroy_wall(pos);
+			dig(pos, 4, false);
 			damage(&MONSTER(pos), 4, plus_shape[i], DMG_NORMAL);
 		}
 		return MOVE_SPECIAL;
@@ -238,7 +225,7 @@ MoveResult enemy_move(Monster *m, Coords dir)
 
 	// Digging
 	digging_power += (m->type == MINOTAUR_1 || m->type == MINOTAUR_2) && m->state;
-	if (dig(m->pos + dir, digging_power, false)) {
+	if (dig(m->pos + dir, digging_power, m->type == DIGGER)) {
 		return MOVE_SPECIAL;
 	}
 
@@ -356,7 +343,7 @@ static void skull_spawn(const Monster *skull, Coords spawn_dir, Coords dir)
 	for (i8 i = -1; i <= 1; ++i) {
 		Coords pos = skull->pos + spawn_dir * i;
 		if (IS_DIGGABLE(pos))
-			destroy_wall(pos);
+			dig(pos, 4, false);
 		if (IS_EMPTY(pos)) {
 			Monster *skele = monster_spawn(spawn_type, pos, 1);
 			skele->dir = dir;

@@ -127,7 +127,7 @@ void bomb_detonate(Monster *m, __attribute__((unused)) Coords d)
 	for (i64 i = 0; i < 9; ++i) {
 		Tile *tile = &TILE(m->pos + square_shape[i]);
 		tile->type = tile->type == WATER ? FLOOR : tile->type == ICE ? WATER : tile->type;
-		destroy_wall(m->pos + square_shape[i]);
+		dig(m->pos + square_shape[i], 4, false);
 		damage(&MONSTER(m->pos + square_shape[i]), 4, square_shape[i], DMG_BOMB);
 		tile->destroyed = true;
 		tile->item = NO_ITEM;
@@ -343,9 +343,12 @@ static void digger(Monster *m, Coords d)
 		return;
 	}
 
-	Coords moves[4] = {{-SIGN(d.x), 0}, {0, -SIGN(d.y)}, {0, SIGN(d.y)}, {SIGN(d.x), 0}};
+	i8 dx = d.x ? SIGN(d.x) : -1;
+	i8 dy = d.y ? SIGN(d.y) : -1;
+	Coords moves[4] = {{-dx, 0}, {0, -dy}, {0, dy}, {dx, 0}};
 	Coords move = {0, 0};
 	bool vertical = abs(d.y) > (abs(d.x) + 1) / 3;
+
 	for (i64 i = 0; i < 3; ++i) {
 		move = moves[i ^ vertical];
 		if (!TILE(m->pos + move).monster && TILE(m->pos + move).type != EDGE)
@@ -642,7 +645,7 @@ static void ogre(Monster *m, Coords d)
 		Coords clonk_dir = CARDINAL(player.prev_pos - m->pos);
 		for (i8 i = 1; i <= 3; ++i) {
 			Coords pos = m->pos + clonk_dir * i;
-			destroy_wall(pos);
+			dig(pos, 4, false);
 			damage(&MONSTER(pos), 5, clonk_dir, DMG_NORMAL);
 		}
 		m->state = 1;
@@ -697,8 +700,8 @@ const TypeInfos type_infos[] = {
 	[WINDMAGE_1]   = {  2, 1, 1,  false,   0, -1, 26, BLUE "@",   wind_mage },
 	[WINDMAGE_2]   = {  4, 2, 1,  false,   0, -1, 52, YELLOW "@", wind_mage },
 	[WINDMAGE_3]   = {  5, 3, 1,  false,   0, -1, 60, BLACK "@",  wind_mage },
-	[MUSHROOM_1]   = {  2, 1, 3,  false,  25, -1, 28, BLUE "%",   mushroom },
-	[MUSHROOM_2]   = {  4, 3, 2,  false,  25, -1, 56, PURPLE "%", mushroom },
+	[MUSHROOM_1]   = {  2, 1, 3,  false,  25, -1, 28, BLUE "F",   mushroom },
+	[MUSHROOM_2]   = {  4, 3, 2,  false,  25, -1, 56, PURPLE "F", mushroom },
 	[GOLEM_1]      = {  4, 5, 3,   true,  25,  2, 66, "'",        basic_seek },
 	[GOLEM_2]      = {  6, 7, 3,   true,  25,  2, 68, BLACK "'",  basic_seek },
 	[ARMADILLO_1]  = {  2, 1, 0,  false,  -1,  2, 23, "q",        armadillo },
@@ -708,9 +711,9 @@ const TypeInfos type_infos[] = {
 	[MOLE]         = {  2, 1, 0,   true,  25, -1,  3, "r",        mole },
 	[WIGHT]        = {  2, 1, 0,   true,  25, -1, 24, GREEN "W",  basic_seek },
 	[WALL_MIMIC]   = {  2, 1, 0,  false,   1, -1, 24, GREEN "m",  mimic },
-	[LIGHTSHROOM]  = {  0, 1, 0,  false,   0, -1,  0, "%",        NULL },
-	[BOMBSHROOM]   = {  4, 1, 0,  false,  25, -1, 86, YELLOW "%", NULL },
-	[BOMBSHROOM_]  = {  4, 1, 0,  false,  25, -1, 86, RED "%",    bomb_detonate },
+	[LIGHTSHROOM]  = {  0, 1, 0,  false,   0, -1,  0, "F",        NULL },
+	[BOMBSHROOM]   = {  4, 1, 0,  false,  25, -1, 86, YELLOW "F", NULL },
+	[BOMBSHROOM_]  = {  4, 1, 0,  false,  25, -1, 86, RED "F",    bomb_detonate },
 
 	[FIRE_SLIME]   = {  3, 1, 0,  false, 999,  2, 34, RED "P",    slime },
 	[ICE_SLIME]    = {  3, 1, 0,  false, 999,  2, 34, CYAN "P",   slime },

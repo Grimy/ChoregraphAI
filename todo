@@ -16,7 +16,6 @@ BUGFIXES:
 * pixie explosions are *weird*
 
 REFACTORS:
-* dig / z4dig / destroy_wall
 * Use more references
 * Refactor chain_lightning
 * Only link against libstdc++ in debug

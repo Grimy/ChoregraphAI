@@ -210,7 +210,6 @@ static void display_trap(const Trap *t)
 // Clears and redraws the entire interface.
 static void display_all(void)
 {
-	cursor_to(0, 0);
 	printf("\033[J");
 
 	for (i8 y = 1; y < ARRAY_SIZE(g.board) - 1; ++y)
@@ -231,7 +230,8 @@ static void display_all(void)
 	display_inventory();
 
 	cursor_to(player.pos.x, player.pos.y);
-	printf("@\b" WHITE);
+	printf("\033[7m@" WHITE);
+	cursor_to(0, 0);
 }
 
 // `play` entry point: an interactive interface to the simulation.
