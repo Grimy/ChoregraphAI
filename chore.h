@@ -338,27 +338,32 @@ typedef struct {
 	u8: 8;
 } GameState;
 
-extern const TypeInfos type_infos[];
+// Defined by los.c
+void cast_light(Tile *tile, i64 x, i64 y);
+
+// Defined by xml.c
 extern const ItemNames item_names[];
+void xml_parse(i32 argc, char **argv);
+
+// Defined by monsters.c
+extern const TypeInfos type_infos[];
+void fireball(Coords pos, i8 dir);
+void bomb_detonate(Monster *m, Coords d);
+
+// Defined by main.c
+extern const Coords plus_shape[];
 extern Coords stairs;
 extern u64 character;
-extern const Coords plus_shape[];
 extern thread_local GameState g;
 
-Monster* monster_spawn(u8 type, Coords pos, u8 delay);
-void xml_parse(i32 argc, char **argv);
 bool do_beat(u8 input);
+Monster* monster_spawn(u8 type, Coords pos, u8 delay);
 bool dig(Coords pos, i32 digging_power, bool can_splash);
+void monster_kill(Monster *m, DamageType type);
 bool damage(Monster *m, i64 dmg, Coords dir, DamageType type);
-void cast_light(Tile *tile, i64 x, i64 y);
 void update_fov(void);
-u8 pickup_item(u8 item);
 void adjust_lights(Coords pos, i8 diff, double radius);
-void bomb_detonate(Monster *m, Coords d);
-void fireball(Coords pos, i8 dir);
-void cone_of_cold(Coords pos, i8 dir);
+u8 pickup_item(u8 item);
 bool can_move(const Monster *m, Coords dir);
 MoveResult enemy_move(Monster *m, Coords dir);
-void monster_kill(Monster *m, DamageType type);
 bool forced_move(Monster *m, Coords offset);
-void tile_change(Coords pos, u8 new_type);

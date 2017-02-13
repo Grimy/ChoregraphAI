@@ -1,3 +1,7 @@
+TESTS:
+* firepig vs coals vs bounced skelly?
+* freeze while monkeyed?
+
 FEATURES:
 * metal doors (type=111)
 * earth dragons
@@ -16,6 +20,8 @@ BUGFIXES:
 * pixie explosions are *weird*
 
 REFACTORS:
+* Consider moving: tile_change, adjust_lights, pickup_item, can_move
+* Use for (Coords dir: plus_shape)
 * Use more references
 * Refactor chain_lightning
 * Only link against libstdc++ in debug

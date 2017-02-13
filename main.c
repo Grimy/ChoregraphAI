@@ -86,6 +86,20 @@ void adjust_lights(Coords pos, i8 diff, double radius)
 			TILE(pos + d).light += diff * max(0, (int) (6100 * (radius - sqrt(L2(d)))));
 }
 
+// Overrides a tile with a given floor hazard. Also destroys traps on the tile.
+// Special cases: stairs are immune, fire+ice => water, fire+water => nothing.
+static void tile_change(Coords pos, u8 new_type)
+{
+	Tile *tile = &TILE(pos);
+	tile->type =
+		tile->type == STAIRS ? STAIRS :
+		BLOCKS_LOS(pos) ? tile->type :
+		tile->type * new_type == FIRE * ICE ? WATER :
+		tile->type == WATER && new_type == FIRE ? FLOOR :
+		new_type;
+	tile->destroyed = true;
+}
+
 // Tries to dig away the given wall, replacing it with floor.
 // Returns whether the dig succeeded.
 bool dig(Coords pos, i32 digging_power, bool can_splash)
@@ -256,20 +270,6 @@ static void knockback(Monster *m, Coords dir, u8 delay)
 		forced_move(m, dir);
 	m->knocked = true;
 	m->delay = delay;
-}
-
-// Overrides a tile with a given floor hazard. Also destroys traps on the tile.
-// Special cases: stairs are immune, fire+ice => water, fire+water => nothing.
-void tile_change(Coords pos, u8 new_type)
-{
-	Tile *tile = &TILE(pos);
-	tile->type =
-		tile->type == STAIRS ? STAIRS :
-		BLOCKS_LOS(pos) ? tile->type :
-		tile->type * new_type == FIRE * ICE ? WATER :
-		tile->type == WATER && new_type == FIRE ? FLOOR :
-		new_type;
-	tile->destroyed = true;
 }
 
 // Kills the given monster, handling on-death effects.
@@ -686,30 +686,6 @@ static void player_move(i8 x, i8 y)
 		g.player_moved = true;
 		move(&player, player.pos + dir);
 		after_move(dir, false);
-	}
-}
-
-// Deals normal damage to all monsters on a horizontal line.
-void fireball(Coords pos, i8 dir)
-{
-	assert(dir != 0);
-	for (pos.x += dir; !BLOCKS_LOS(pos); pos.x += dir)
-		damage(&MONSTER(pos), 5, {dir, 0}, DMG_NORMAL);
-}
-
-// Freezes all monsters in a 3x5 cone.
-void cone_of_cold(Coords pos, i8 dir)
-{
-	static const Coords cone_shape[] = {
-		{1, 0},
-		{2, -1}, {2, 0}, {2, 1},
-		{3, -2}, {3, -1}, {3, 0}, {3, 1}, {3, 2},
-	};
-	for (u64 i = 0; i < ARRAY_SIZE(cone_shape); ++i) {
-		if (pos.x + dir * cone_shape[i].x >= 32)
-			return;
-		Monster *m = &MONSTER(pos + cone_shape[i] * dir);
-		m->freeze = 4 + (m == &player);
 	}
 }
 

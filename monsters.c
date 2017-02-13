@@ -22,6 +22,30 @@ static bool can_breathe(const Monster *m, Coords d)
 	return true;
 }
 
+// Deals normal damage to all monsters on a horizontal line.
+void fireball(Coords pos, i8 dir)
+{
+	assert(dir != 0);
+	for (pos.x += dir; !BLOCKS_LOS(pos); pos.x += dir)
+		damage(&MONSTER(pos), 5, {dir, 0}, DMG_NORMAL);
+}
+
+// Freezes all monsters in a 3x5 cone.
+static void cone_of_cold(Coords pos, i8 dir)
+{
+	static const Coords cone_shape[] = {
+		{1, 0},
+		{2, -1}, {2, 0}, {2, 1},
+		{3, -2}, {3, -1}, {3, 0}, {3, 1}, {3, 2},
+	};
+	for (u64 i = 0; i < ARRAY_SIZE(cone_shape); ++i) {
+		if (pos.x + dir * cone_shape[i].x >= 32)
+			return;
+		Monster *m = &MONSTER(pos + cone_shape[i] * dir);
+		m->freeze = 4 + (m == &player);
+	}
+}
+
 // Tests whether a monster can charge toward the given position.
 // This requires a straight path without walls nor monsters.
 // /!\ side-effect: sets prev_pos
