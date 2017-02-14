@@ -5,7 +5,7 @@ ARGS := BARDZ4.xml 3
 CC = clang
 CFLAGS += -std=c++11 -Weverything -Werror -march=native -mtune=native
 CFLAGS += -Wno-old-style-cast -Wno-c99-extensions -Wno-c++98-compat-pedantic -Wno-c++11-narrowing
-CFLAGS += -Wno-gnu-statement-expression -Wno-gnu-case-range
+CFLAGS += -Wno-gnu-statement-expression -Wno-gnu-case-range -Wno-format-nonliteral
 CFLAGS += -fstrict-aliasing -fstrict-overflow -fno-asynchronous-unwind-tables
 CFLAGS += -fno-exceptions -fno-rtti -fopenmp=libomp
 CFLAGS += -I/usr/include/libxml2 -Wno-documentation -Wno-documentation-unknown-command -Wno-reserved-id-macro

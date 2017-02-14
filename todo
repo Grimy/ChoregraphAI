@@ -1,9 +1,9 @@
 TESTS:
-* firepig vs coals vs bounced skelly?
-* freeze while monkeyed?
+* conf-monkey + lich?
 
 FEATURES:
 * metal doors (type=111)
+* scatter traps
 * earth dragons
 * confusion de-aggroing enemies + set radius=0
 

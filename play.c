@@ -6,10 +6,6 @@
 
 #include "chore.h"
 
-#define LINE(...) printf("\033[u\033[B\033[s " __VA_ARGS__)
-
-#define cursor_to(x, y) printf("\033[%d;%dH", (y) + 1, (x) + 1)
-
 static const char* floor_glyphs[] = {
 	".", ".", ".",
 	[SHOP_FLOOR] = YELLOW ".",
@@ -41,6 +37,13 @@ static const char* dir_to_arrow(Coords dir)
 		"↙", "↓", "↘",
 	};
 	return arrows[3 * (dir.y + 1) + (dir.x + 1)];
+}
+
+static void print_at(Coords pos, const char *fmt, ...) {
+	printf("\033[%d;%dH", pos.y + 1, pos.x + 1);
+	va_list args;
+	va_start(args, fmt);
+	vprintf(fmt, args);
 }
 
 // Picks an appropriate box-drawing glyph for a wall by looking at adjacent tiles.
@@ -75,7 +78,7 @@ static void display_tile(Coords pos)
 {
 	Tile *tile = &TILE(pos);
 
-	cursor_to(pos.x, pos.y);
+	print_at(pos, WHITE);
 
 	if (tile->type == EDGE || !tile->revealed)
 		putchar(' ');
@@ -89,38 +92,21 @@ static void display_tile(Coords pos)
 		printf("%s", item_names[tile->item].glyph);
 	else if (L2(pos - g.monsters[g.nightmare].pos) >= 8)
 		printf("%s", floor_glyphs[tile->type]);
+}
 
-	printf(WHITE);
+static void display_trap(const Trap *t)
+{
+	if (TILE(t->pos).monster)
+		return;
+	print_at(t->pos, WHITE);
+	printf("%s", t->type == BOUNCE ? dir_to_arrow(t->dir) : trap_glyphs[t->type]);
 }
 
 static void display_hearts(const Monster *m)
 {
-	printf("%c%02d (%c%02d)", 64 + m->pos.x, m->pos.y, 64 + m->prev_pos.x, m->prev_pos.y);
+	printf("%c%02d ", 64 + m->pos.x, m->pos.y);
+	printf("(%c%02d)", 64 + m->prev_pos.x, m->prev_pos.y);
 	printf(RED " %.*s%.*s" WHITE, 3 * m->hp, "ღღღღღღღღღ", 9 - m->hp, "         ");
-}
-
-static void display_inventory(void)
-{
-	cursor_to(32, 0);
-	printf("\033[s");
-	LINE("Bard ");
-	display_hearts(&player);
-	printf("%s%s%s%s%s",
-		g.monkeyed ? PURPLE "Monkeyed " : "",
-		player.confusion ? YELLOW "Confused " : "",
-		player.freeze ? CYAN "Frozen " : "",
-		g.sliding_on_ice ? CYAN "Sliding " : "",
-		g.iframes > g.current_beat ? PINK "I-framed " : "");
-	LINE("Beat #%d", g.current_beat);
-	LINE("");
-	LINE("Bombs: %d", g.bombs);
-	LINE("Shovel: %s",     item_names[g.shovel].friendly);
-	LINE("Weapon: %s",     item_names[g.weapon].friendly);
-	LINE("Body: %s",       item_names[g.body].friendly);
-	LINE("Head: %s",       item_names[g.head].friendly);
-	LINE("Boots: %s (%s)", item_names[g.feet].friendly, g.boots_on ? "on" : "off");
-	LINE("Ring: %s",       item_names[g.ring].friendly);
-	LINE("Usable: %s",     item_names[g.usable].friendly);
 }
 
 static const char* additional_info(const Monster *m)
@@ -180,11 +166,10 @@ static const char* additional_info(const Monster *m)
 	return "";
 }
 
-static void display_monster(const Monster *m)
+static void display_monster(const Monster *m, Coords &pos)
 {
-	if (!m->hp)
-		return;
-	LINE("%s %s%s%s%s" WHITE "%s ",
+	++pos.y;
+	print_at(pos, "%s %s%s%s%s" WHITE "%s ",
 		TYPE(m).glyph,
 		m->aggro ? ORANGE "!" : " ",
 		m->delay ? BLACK "◔" : " ",
@@ -193,18 +178,34 @@ static void display_monster(const Monster *m)
 		dir_to_arrow(m->dir));
 	display_hearts(m);
 	printf("%s", additional_info(m));
-	cursor_to(m->pos.x, m->pos.y);
-	printf("%s" WHITE, TYPE(m).glyph);
+
+	print_at(m->pos, "%s" WHITE, TYPE(m).glyph);
 	if (g.current_beat % 2 && m->type == SHOPKEEPER)
 		printf("♪");
 }
 
-static void display_trap(const Trap *t)
+static void display_player(void)
 {
-	if (TILE(t->pos).monster)
-		return;
-	cursor_to(t->pos.x, t->pos.y);
-	printf("%s" WHITE, t->type == BOUNCE ? dir_to_arrow(t->dir) : trap_glyphs[t->type]);
+	i8 x = 32, y = 0;
+	print_at({x, ++y}, "Bard ");
+	display_hearts(&player);
+	print_at({x, ++y}, "%s%s%s%s%s" WHITE,
+		g.monkeyed ? PURPLE "Monkeyed " : "",
+		player.confusion ? YELLOW "Confused " : "",
+		player.freeze ? CYAN "Frozen " : "",
+		g.sliding_on_ice ? CYAN "Sliding " : "",
+		g.iframes > g.current_beat ? PINK "I-framed " : "");
+	print_at({x, ++y}, "Beat #%d", g.current_beat);
+	print_at({x, ++y}, "Bombs: %d", g.bombs);
+	print_at({x, ++y}, "Shovel: %s", item_names[g.shovel].friendly);
+	print_at({x, ++y}, "Weapon: %s", item_names[g.weapon].friendly);
+	print_at({x, ++y}, "Body: %s",   item_names[g.body].friendly);
+	print_at({x, ++y}, "Head: %s",   item_names[g.head].friendly);
+	print_at({x, ++y}, "Boots: %s",  item_names[g.feet].friendly);
+	printf(" (%s)", g.boots_on ? "on" : "off");
+	print_at({x, ++y}, "Ring: %s",   item_names[g.ring].friendly);
+	print_at({x, ++y}, "Usable: %s", item_names[g.usable].friendly);
+	print_at(player.pos, "\033[7m@" WHITE);
 }
 
 // Clears and redraws the entire interface.
@@ -220,18 +221,13 @@ static void display_all(void)
 		if (TILE(t->pos).revealed && !TILE(t->pos).destroyed)
 			display_trap(t);
 
-	cursor_to(64, 0);
-	printf("\033[s");
-
+	Coords pos = {64, 0};
 	for (Monster *m = &player + 1; m->type; ++m)
-		if (m->aggro || TILE(m->pos).revealed || g.head == HEAD_CIRCLET)
-			display_monster(m);
+		if (m->hp && (m->aggro || TILE(m->pos).revealed || g.head == HEAD_CIRCLET))
+			display_monster(m, pos);
 
-	display_inventory();
-
-	cursor_to(player.pos.x, player.pos.y);
-	printf("\033[7m@" WHITE);
-	cursor_to(0, 0);
+	display_player();
+	print_at({0, 0}, "");
 }
 
 // `play` entry point: an interactive interface to the simulation.
