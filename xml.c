@@ -165,8 +165,10 @@ static void xml_process_node(xmlTextReader *xml, const char *name)
 		monster_spawn(CRATE_2 + (u8) type, pos, 0)->item = xml_item(xml, "contents");
 	else if (streq(name, "shrine"))
 		monster_spawn(SHRINE, pos, 0);
+	else if (streq(name, "item") && pos == spawn)
+		pickup_item(xml_item(xml, "type"));
 	else if (streq(name, "item"))
-		TILE(pos).item = pos == spawn ? pickup_item(xml_item(xml, "type")) : xml_item(xml, "type");
+		TILE(pos).item = xml_item(xml, "type");
 }
 
 static void xml_process_file(char *file, i64 level, void callback(xmlTextReader *xml, const char *name))

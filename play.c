@@ -6,6 +6,8 @@
 
 #include "chore.h"
 
+static Coords cursor;
+
 static const char* floor_glyphs[] = {
 	".", ".", ".",
 	[SHOP_FLOOR] = YELLOW ".",
@@ -169,19 +171,17 @@ static const char* additional_info(const Monster *m)
 static void display_monster(const Monster *m, Coords &pos)
 {
 	++pos.y;
-	print_at(pos, "%s %s%s%s%s" WHITE "%s ",
-		TYPE(m).glyph,
-		m->aggro ? ORANGE "!" : " ",
-		m->delay ? BLACK "◔" : " ",
-		m->confusion ? YELLOW "?" : " ",
-		m->freeze ? CYAN "=" : " ",
-		dir_to_arrow(m->dir));
+	if (cursor == m->pos || (cursor.x >= pos.x && cursor.y == pos.y))
+		printf(REVERSE);
+	print_at(pos, "%s ", TYPE(m).glyph);
+	printf("%s", m->aggro ? ORANGE "!" : " ");
+	printf("%s", m->delay ? BLACK "◔" : " ");
+	printf("%s", m->confusion ? YELLOW "?" : " ");
+	printf("%s", m->freeze ? CYAN "=" : " ");
+	printf(WHITE "%s ", dir_to_arrow(m->dir));
 	display_hearts(m);
 	printf("%s", additional_info(m));
-
-	print_at(m->pos, "%s" WHITE, TYPE(m).glyph);
-	if (g.current_beat % 2 && m->type == SHOPKEEPER)
-		printf("♪");
+	print_at(m->pos, "%s" CLEAR, TYPE(m).glyph);
 }
 
 static void display_player(void)
@@ -189,13 +189,13 @@ static void display_player(void)
 	i8 x = 32, y = 0;
 	print_at({x, ++y}, "Bard ");
 	display_hearts(&player);
-	print_at({x, ++y}, "%s%s%s%s%s" WHITE,
-		g.monkeyed ? PURPLE "Monkeyed " : "",
-		player.confusion ? YELLOW "Confused " : "",
-		player.freeze ? CYAN "Frozen " : "",
-		g.sliding_on_ice ? CYAN "Sliding " : "",
-		g.iframes > g.current_beat ? PINK "I-framed " : "");
-	print_at({x, ++y}, "Beat #%d", g.current_beat);
+	print_at({x, ++y}, REVERSE);
+	printf("%s", g.monkeyed ? PURPLE "Monkeyed " : "");
+	printf("%s", player.confusion ? YELLOW "Confused " : "");
+	printf("%s", player.freeze ? CYAN "Frozen " : "");
+	printf("%s", g.sliding_on_ice ? CYAN "Sliding" : "");
+	printf("%s", g.iframes > g.current_beat ? PINK "I-framed " : "");
+	print_at({x, ++y}, CLEAR);
 	print_at({x, ++y}, "Bombs: %d", g.bombs);
 	print_at({x, ++y}, "Shovel: %s", item_names[g.shovel].friendly);
 	print_at({x, ++y}, "Weapon: %s", item_names[g.weapon].friendly);
@@ -205,7 +205,7 @@ static void display_player(void)
 	printf(" (%s)", g.boots_on ? "on" : "off");
 	print_at({x, ++y}, "Ring: %s",   item_names[g.ring].friendly);
 	print_at({x, ++y}, "Usable: %s", item_names[g.usable].friendly);
-	print_at(player.pos, "\033[7m@" WHITE);
+	print_at(player.pos, REVERSE "@" CLEAR);
 }
 
 // Clears and redraws the entire interface.
@@ -221,7 +221,7 @@ static void display_all(void)
 		if (TILE(t->pos).revealed && !TILE(t->pos).destroyed)
 			display_trap(t);
 
-	Coords pos = {64, 0};
+	Coords pos = {64, 1};
 	for (Monster *m = &player + 1; m->type; ++m)
 		if (m->hp && (m->aggro || TILE(m->pos).revealed || g.head == HEAD_CIRCLET))
 			display_monster(m, pos);
@@ -240,19 +240,21 @@ int main(i32 argc, char **argv)
 			do_beat((u8) *argv[3]++);
 
 	system("stty -echo -icanon eol \1");
-	printf("\033[?1049h");
+	printf("\033[?1049h\033[?1003h");
 
 	while (player.hp) {
 		display_all();
 		int c = getchar();
 		if (c == 't')
 			execv(*argv, argv);
+		else if (c == '\033' && getchar() == '[' && getchar() == 'M' && getchar())
+			cursor = {(i8) getchar() - 33, (i8) getchar() - 33};
 		else if (c == EOF || c == 'q')
 			player.hp = 0;
 		else if (do_beat((u8) c))
 			break;
 	}
 
-	printf("\033[?1049l");
+	printf("\033[?1049l\033[?1003l");
 	printf("%s!\n", player.hp ? "You won" : "See you soon");
 }

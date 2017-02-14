@@ -32,17 +32,19 @@ typedef int64_t  i64;
 #define streq(a, b) (!strcmp((a), (b)))
 
 // Terminal ANSI codes
-#define WHITE  "\033[m"
-#define RED    "\033[31m"
-#define BROWN  "\033[33m"
-#define BLUE   "\033[34m"
-#define PINK   "\033[35m"
-#define BLACK  "\033[90m"
-#define ORANGE "\033[91m"
-#define GREEN  "\033[92m"
-#define YELLOW "\033[93m"
-#define CYAN   "\033[94m"
-#define PURPLE "\033[95m"
+#define CLEAR   "\033[m"
+#define REVERSE "\033[7m"
+#define RED     "\033[31m"
+#define BROWN   "\033[33m"
+#define BLUE    "\033[34m"
+#define PINK    "\033[35m"
+#define BLACK   "\033[90m"
+#define ORANGE  "\033[91m"
+#define GREEN   "\033[92m"
+#define YELLOW  "\033[93m"
+#define CYAN    "\033[94m"
+#define PURPLE  "\033[95m"
+#define WHITE   "\033[97m"
 
 // Die verbosely
 #define FATAL(message, ...) do { \

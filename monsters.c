@@ -845,7 +845,7 @@ const TypeInfos type_infos[] = {
 	[METROGNOME_2] = {  5, 5, 0,   true,   9,  1, 77, GREEN "G",  metrognome },
 
 	[NO_MONSTER]   = {  0, 0, 0,   true,   0, -1,  0, NULL,       NULL },
-	[SHOPKEEPER]   = { 20, 9, 0,  false,   0, -1, 83, "@",        NULL },
+	[SHOPKEEPER]   = { 20, 9, 0,  false,   0, -1, 83, "@\033[5m♪\033[25m\b", NULL },
 	[PLAYER]       = {  1, 1, 0,  false,   2,  1, 99, "@",        NULL },
 	[BOMB]         = {  4, 1, 0,  false, 999, -1, 98, ORANGE "●", bomb_detonate },
 	[SHRINE]       = {  0, 1, 0,  false,   0, -1,  0, "_",        NULL },
