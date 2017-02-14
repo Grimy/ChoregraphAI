@@ -22,7 +22,7 @@ static const char* floor_glyphs[] = {
 
 static const char* trap_glyphs[] = {
 	[OMNIBOUNCE] = BROWN "■",
-	[SPIKE] = "◭",
+	[SPIKE] = WHITE "◭",
 	[TRAPDOOR] = BROWN "▫",
 	[CONFUSE] = YELLOW "◆",
 	[TELEPORT] = YELLOW "▫",
@@ -100,8 +100,7 @@ static void display_trap(const Trap *t)
 {
 	if (TILE(t->pos).monster)
 		return;
-	print_at(t->pos, WHITE);
-	printf("%s", t->type == BOUNCE ? dir_to_arrow(t->dir) : trap_glyphs[t->type]);
+	print_at(t->pos, t->type == BOUNCE ? dir_to_arrow(t->dir) : trap_glyphs[t->type]);
 }
 
 static void display_hearts(const Monster *m)
@@ -187,7 +186,7 @@ static void display_monster(const Monster *m, Coords &pos)
 static void display_player(void)
 {
 	i8 x = 32, y = 0;
-	print_at({x, ++y}, "Bard ");
+	print_at({x, ++y}, CLEAR "Bard ");
 	display_hearts(&player);
 	print_at({x, ++y}, REVERSE);
 	printf("%s", g.monkeyed ? PURPLE "Monkeyed " : "");
@@ -240,7 +239,7 @@ int main(i32 argc, char **argv)
 			do_beat((u8) *argv[3]++);
 
 	system("stty -echo -icanon eol \1");
-	printf("\033[?1049h\033[?1003h");
+	printf("\033[?1049h\033[?1000h");
 
 	while (player.hp) {
 		display_all();
@@ -255,6 +254,6 @@ int main(i32 argc, char **argv)
 			break;
 	}
 
-	printf("\033[?1049l\033[?1003l");
+	printf("\033[?1049l\033[?1000l");
 	printf("%s!\n", player.hp ? "You won" : "See you soon");
 }

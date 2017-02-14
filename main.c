@@ -158,12 +158,10 @@ static void enemy_attack(Monster *attacker)
 		break;
 	case SHOVE_1:
 	case SHOVE_2:
-		if (forced_move(&player, d)) {
+		if (forced_move(&player, d))
 			move(attacker, attacker->pos + d);
-			g.player_moved = true;
-		} else {
+		else
 			damage(&player, 1, d, DMG_NORMAL);
-		}
 		break;
 	case BOMBER:
 		bomb_detonate(attacker, Coords {});
@@ -571,6 +569,8 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 // Handles effects that trigger after the player’s movement.
 static void after_move(Coords dir, bool forced)
 {
+	g.player_moved = true;
+
 	if (g.feet == FEET_LUNGING && g.boots_on) {
 		i64 steps = 4;
 		while (--steps && !forced && can_move(&player, dir))
@@ -661,7 +661,7 @@ static void player_move(i8 x, i8 y)
 	Coords dir = {x, y};
 	i32 dmg = tile->type == OOZE ? 0 : player.damage;
 
-	if (player.confusion || g.monsters[g.monkeyed].type == CONF_MONKEY)
+	if (player.confusion)
 		dir = -dir;
 
 	if (g.monkeyed) {
@@ -687,7 +687,6 @@ static void player_move(i8 x, i8 y)
 		if (IS_WIRE(player.pos))
 			chain_lightning(dest, dir);
 	} else {
-		g.player_moved = true;
 		move(&player, player.pos + dir);
 		after_move(dir, false);
 	}
@@ -768,7 +767,7 @@ static void player_turn(u8 input)
 	}
 
 	if (g.sliding_on_ice)
-		g.player_moved = forced_move(&player, DIRECTION(player.pos - player.prev_pos));
+		forced_move(&player, DIRECTION(player.pos - player.prev_pos));
 }
 
 static bool check_aggro(Monster *m, Coords d, bool bomb_exploded)
@@ -972,5 +971,8 @@ bool do_beat(u8 input)
 	}
 
 	before_and_after();
+	if (g.monsters[g.monkeyed].type == CONF_MONKEY)
+		player.confusion = max(player.confusion, 1);
+
 	return false;
 }

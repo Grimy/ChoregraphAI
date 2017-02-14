@@ -1,10 +1,3 @@
-TESTS:
-* windmages/shovemonsters + clones/minotaurs
-* bounce traps on ice?
-* check omnibounce against a wall
-* conf-monkey + lich?
-* spirits through firepigs?
-
 FEATURES:
 * metal doors (type=111)
 * scatter traps
@@ -13,6 +6,7 @@ FEATURES:
 
 BUGFIXES:
 * yetis/mummies/sarcos: should have been aggroed for a full turn
+* firepig should have trap priority
 * banshees/skeletons should have different activation radii depending on the zone
 * charged breath attacks should have extreme priority
 * clonking should hit both player and monkey
