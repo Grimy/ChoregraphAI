@@ -38,10 +38,10 @@ static void cone_of_cold(Coords pos, i8 dir)
 		{2, -1}, {2, 0}, {2, 1},
 		{3, -2}, {3, -1}, {3, 0}, {3, 1}, {3, 2},
 	};
-	for (u64 i = 0; i < ARRAY_SIZE(cone_shape); ++i) {
-		if (pos.x + dir * cone_shape[i].x >= 32)
+	for (Coords d: cone_shape) {
+		if (pos.x + dir * d.x >= 32)
 			return;
-		Monster *m = &MONSTER(pos + cone_shape[i] * dir);
+		Monster *m = &MONSTER(pos + d * dir);
 		m->freeze = 4 + (m == &player);
 	}
 }
@@ -137,7 +137,7 @@ static Coords random_dir(Monster *m)
 // This is called “bomb-order”. Many monster AIs use it as a tiebreaker:
 // when several destination tiles fit all criteria equally well, monsters
 // pick the one that comes first in bomb-order.
-void bomb_detonate(Monster *m, __attribute__((unused)) Coords d)
+void bomb_detonate(Monster *m, __attribute__((unused)) Coords _)
 {
 	static const Coords square_shape[] = {
 		{-1, -1}, {-1, 0}, {-1, 1},
@@ -148,13 +148,16 @@ void bomb_detonate(Monster *m, __attribute__((unused)) Coords d)
 	if (&MONSTER(m->pos) == m)
 		TILE(m->pos).monster = 0;
 
-	for (i64 i = 0; i < 9; ++i) {
-		Tile *tile = &TILE(m->pos + square_shape[i]);
-		tile->type = tile->type == WATER ? FLOOR : tile->type == ICE ? WATER : tile->type;
-		dig(m->pos + square_shape[i], 4, false);
-		damage(&MONSTER(m->pos + square_shape[i]), 4, square_shape[i], DMG_BOMB);
+	for (Coords d: square_shape) {
+		Tile *tile = &TILE(m->pos + d);
+		if (tile->type == ICE)
+			tile->type = WATER;
+		else if (tile->type == WATER)
+			tile->type = FLOOR;
 		tile->destroyed = true;
 		tile->item = NO_ITEM;
+		dig(m->pos + d, 4, false);
+		damage(&MONSTER(m->pos + d), 4, d, DMG_BOMB);
 	}
 
 	m->hp = 0;

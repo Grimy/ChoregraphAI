@@ -1,5 +1,6 @@
 TESTS:
 * conf-monkey + lich?
+* spirits through firepigs?
 
 FEATURES:
 * metal doors (type=111)
@@ -21,7 +22,6 @@ BUGFIXES:
 
 REFACTORS:
 * Consider moving: tile_change, adjust_lights, pickup_item, can_move
-* Use for (Coords dir: plus_shape)
 * Use more references
 * Refactor chain_lightning
 * Only link against libstdc++ in debug

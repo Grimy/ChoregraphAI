@@ -355,7 +355,6 @@ extern const Coords plus_shape[];
 extern Coords stairs;
 extern u64 character;
 extern thread_local GameState g;
-
 bool do_beat(u8 input);
 Monster* monster_spawn(u8 type, Coords pos, u8 delay);
 bool dig(Coords pos, i32 digging_power, bool can_splash);

@@ -4,7 +4,7 @@
 
 #include "chore.h"
 
-const Coords plus_shape[] = {{-1, 0}, {0, -1}, {0, 1}, {1, 0}, {0, 0}};
+const Coords plus_shape[] = {{-1, 0}, {0, -1}, {0, 1}, {1, 0}};
 
 // Position of the exit stairs.
 Coords stairs;
@@ -110,15 +110,15 @@ bool dig(Coords pos, i32 digging_power, bool can_splash)
 	Tile *wall = &TILE(pos);
 
 	if (can_splash && wall->type == Z4WALL)
-		for (i64 i = 0; i < 4; ++i)
-			if (TILE(pos + plus_shape[i]).type != DOOR)
-				dig(pos + plus_shape[i], min(digging_power, 2), false);
+		for (Coords d: plus_shape)
+			if (TILE(pos + d).type != DOOR)
+				dig(pos + d, min(digging_power, 2), false);
 
 	wall->type &= ICE;
 
 	if (wall->hp == 0)
-		for (i64 i = 0; i < 4; ++i)
-			dig(pos + plus_shape[i], 0, false);
+		for (Coords d: plus_shape)
+			dig(pos + d, 0, false);
 
 	if (wall->torch)
 		adjust_lights(pos, -1, 4.25);
@@ -229,10 +229,9 @@ MoveResult enemy_move(Monster *m, Coords dir)
 	// Trampling
 	i32 digging_power = m->confusion ? -1 : m->digging_power;
 	if (!m->aggro && digging_power == 4) {
-		for (i64 i = 0; i < 4; ++i) {
-			Coords pos = m->pos + plus_shape[i];
-			dig(pos, 4, false);
-			damage(&MONSTER(pos), 4, plus_shape[i], DMG_NORMAL);
+		for (Coords d: plus_shape) {
+			dig(m->pos + d, 4, false);
+			damage(&MONSTER(m->pos + d), 4, d, DMG_NORMAL);
 		}
 		return MOVE_SPECIAL;
 	}
@@ -475,8 +474,9 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	case ICE_BEETLE:
 	case FIRE_BEETLE:
 		knockback(m, L1(m->pos - player.pos) == 1 ? Coords {} : dir, 1);
-		for (i64 i = 0; i < 5; ++i)
-			tile_change(m->pos + plus_shape[i], m->type == FIRE_BEETLE ? FIRE : ICE);
+		tile_change(m->pos, m->type == FIRE_BEETLE ? FIRE : ICE);
+		for (Coords d: plus_shape)
+			tile_change(m->pos + d, m->type == FIRE_BEETLE ? FIRE : ICE);
 		return false;
 	case PIXIE:
 	case BOMBSHROOM_:
@@ -584,8 +584,8 @@ static void after_move(Coords dir, bool forced)
 
 	if (g.head == HEAD_MINERS) {
 		i32 digging_power = TILE(player.pos).type == OOZE ? 0 : player.digging_power;
-		for (i64 i = 0; i < 4; ++i)
-			dig(player.pos + plus_shape[i], digging_power, true);
+		for (Coords d: plus_shape)
+			dig(player.pos + d, digging_power, true);
 	}
 
 	if (g.monkeyed)
@@ -862,9 +862,8 @@ static void priority_insert(Monster **queue, u64 queue_length, Monster *m)
 
 static void before_and_after()
 {
-	for (i64 i = 0; i < 4; ++i) {
-		Coords pos = player.pos + plus_shape[i];
-		Monster *m = &MONSTER(pos);
+	for (Coords d: plus_shape) {
+		Monster *m = &MONSTER(player.pos + d);
 		if (m->type == FIRE_BEETLE || m->type == ICE) {
 			tile_change(m->pos, m->type == FIRE_BEETLE ? FIRE : ICE);
 			m->type = BEETLE;
