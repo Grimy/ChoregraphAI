@@ -40,7 +40,7 @@ static i32 xml_attr(xmlTextReader *xml, const char* attr)
 // so we need this information to convert between the two reference frames.
 // Note: we place {0, 0} on the top-left corner because we want to use
 // coordinates to index into the tile array, so they have to be positive.
-static void xml_find_spawn(xmlTextReader *xml, __attribute__((unused)) const char *name)
+static void xml_find_spawn(xmlTextReader *xml)
 {
 	spawn.x = max(spawn.x, 1 - (i8) xml_attr(xml, "x"));
 	spawn.y = max(spawn.y, 1 - (i8) xml_attr(xml, "y"));
@@ -171,7 +171,7 @@ static void xml_process_node(xmlTextReader *xml, const char *name)
 		TILE(pos).item = xml_item(xml, "type");
 }
 
-static void xml_process_file(char *file, i64 level, void callback(xmlTextReader *xml, const char *name))
+static void xml_process_file(char *file, i64 level, bool first_pass)
 {
 	xmlTextReader *xml = xmlReaderForFile(file, NULL, 0);
 	if (!xml)
@@ -185,8 +185,10 @@ static void xml_process_file(char *file, i64 level, void callback(xmlTextReader 
 			character = xml_attr(xml, "character") % 1000;
 		else if (streq(name, "level"))
 			--level;
+		else if (!level && first_pass)
+			xml_find_spawn(xml);
 		else if (!level)
-			callback(xml, name);
+			xml_process_node(xml, name);
 	}
 
 	if (xmlTextReaderRead(xml) < 0)
@@ -216,9 +218,9 @@ void xml_parse(i32 argc, char **argv)
 	pickup_item(SHOVEL_BASE);
 
 	LIBXML_TEST_VERSION;
-	xml_process_file(argv[1], level, xml_find_spawn);
+	xml_process_file(argv[1], level, true);
 	monster_spawn(PLAYER, spawn, 0);
-	xml_process_file(argv[1], level, xml_process_node);
+	xml_process_file(argv[1], level, false);
 
 	qsort(g.monsters + 2, g.last_monster - 1, sizeof(Monster), compare_priorities);
 	for (u8 i = 1; g.monsters[i].type; ++i) {

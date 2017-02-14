@@ -25,7 +25,6 @@ typedef int64_t  i64;
 
 #define SIGN(x) (((x) > 0) - ((x) < 0))
 
-#define abs(x) ((x) > 0 ? (x) : -(x))
 #define min(x, y) ({ __typeof(x) X = (x), Y = (y); (__typeof(x)) (X < Y ? X : Y); })
 #define max(x, y) ({ __typeof(x) X = (x), Y = (y); (__typeof(x)) (X > Y ? X : Y); })
 

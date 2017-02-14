@@ -48,10 +48,10 @@ struct Coords {
 #define CARDINAL(d) ((Coords) {SIGN((d).x), (d).x ? 0 : SIGN((d).y)})
 
 // L¹ norm of a vector (= number of beats it takes to move to this relative position).
-#define L1(d) (abs((d).x) + abs((d).y))
+static inline i64 L1(Coords d) { return abs((i64) d.x) + abs((i64) d.y); }
 
 // *Square* of the L² norm of a vector (mostly used for aggro/lighting).
-#define L2(d) ((d).x * (d).x + (d).y * (d).y)
+static inline i64 L2(Coords d) { return d.x * d.x + d.y * d.y; }
 
 // Playable characters.
 enum CharId {
@@ -361,7 +361,7 @@ bool dig(Coords pos, i32 digging_power, bool can_splash);
 void monster_kill(Monster *m, DamageType type);
 bool damage(Monster *m, i64 dmg, Coords dir, DamageType type);
 void update_fov(void);
-void adjust_lights(Coords pos, i8 diff, double radius);
+void adjust_lights(Coords pos, i64 diff, double radius);
 u8 pickup_item(u8 item);
 bool can_move(const Monster *m, Coords dir);
 MoveResult enemy_move(Monster *m, Coords dir);

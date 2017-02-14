@@ -61,7 +61,7 @@ static void move(Monster *m, Coords dest)
 // Tests whether the given monster can move in the given direction.
 bool can_move(const Monster *m, Coords dir)
 {
-	assert(m != &player || L1(dir));
+	assert(m != &player || dir != Coords {});
 	Coords dest = m->pos + dir;
 	if (m->type == TARMONSTER && m->state == 0)
 		return TILE(dest).type == TAR;
@@ -77,13 +77,16 @@ bool can_move(const Monster *m, Coords dir)
 // Recomputes the lighting of nearby tiles when a light source is created or destroyed.
 // diff: +1 to add a light source, -1 to remove it.
 // radius: the maximum L2 distance at which the light source still provides light.
-void adjust_lights(Coords pos, i8 diff, double radius)
+void adjust_lights(Coords pos, i64 diff, double radius)
 {
-	Coords d = {0, 0};
+	Coords d = {};
 	assert(ARRAY_SIZE(g.board) == 32);
-	for (d.x = -min(pos.x, 4); d.x <= min(4, 31 - pos.x); ++d.x)
-		for (d.y = -min(pos.y, 4); d.y <= min(4, 31 - pos.y); ++d.y)
-			TILE(pos + d).light += diff * max(0, (int) (6100 * (radius - sqrt(L2(d)))));
+	for (d.x = -min(pos.x, 4); d.x <= min(4, 31 - pos.x); ++d.x) {
+		for (d.y = -min(pos.y, 4); d.y <= min(4, 31 - pos.y); ++d.y) {
+			double light = max(0.0, radius - sqrt(L2(d)));
+			TILE(pos + d).light += diff * (i64) (6100 * light);
+		}
+	}
 }
 
 // Overrides a tile with a given floor hazard. Also destroys traps on the tile.
@@ -599,7 +602,7 @@ static void after_move(Coords dir, bool forced)
 // Unlike enemy_move, ignores confusion, delay, and digging.
 bool forced_move(Monster *m, Coords dir)
 {
-	assert(m != &player || L1(dir));
+	assert(m != &player || dir != Coords {});
 	if (m->freeze || unbog(m) || (m == &player && g.monkeyed))
 		return false;
 
@@ -676,7 +679,8 @@ static void player_move(i8 x, i8 y)
 	Coords dest = player.pos + dir;
 
 	if (BLOCKS_LOS(dest)) {
-		dig(player.pos + dir, TILE(player.pos).type == OOZE ? 0 : player.digging_power, true);
+		i32 digging_power = TILE(player.pos).type == OOZE ? 0 : player.digging_power;
+		dig(player.pos + dir, digging_power, true);
 	} else if (TILE(dest).monster) {
 		damage(&MONSTER(dest), dmg, dir, DMG_WEAPON);
 		player.electrified = true;
@@ -807,8 +811,7 @@ static void trap_turn(const Trap *trap)
 
 	switch (trap->type) {
 	case OMNIBOUNCE:
-		if (L1(m->pos - m->prev_pos))
-			forced_move(m, DIRECTION(m->pos - m->prev_pos));
+		forced_move(m, DIRECTION(m->pos - m->prev_pos));
 		break;
 	case BOUNCE:
 		forced_move(m, trap->dir);
