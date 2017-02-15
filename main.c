@@ -4,8 +4,6 @@
 
 #include "chore.h"
 
-const Coords plus_shape[] = {{-1, 0}, {0, -1}, {0, 1}, {1, 0}};
-
 // Position of the exit stairs.
 Coords stairs;
 
@@ -810,9 +808,11 @@ static void trap_turn(const Trap *trap)
 
 	switch (trap->type) {
 	case OMNIBOUNCE:
+		animation(2, m->pos, {});
 		forced_move(m, DIRECTION(m->pos - m->prev_pos));
 		break;
 	case BOUNCE:
+		animation(2, m->pos, {});
 		forced_move(m, trap->dir);
 		break;
 	case SPIKE:

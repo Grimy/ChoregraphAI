@@ -179,7 +179,7 @@ static void display_monster(const Monster *m, Coords &pos)
 	printf("%s", m->freeze ? CYAN "=" : " ");
 	printf(WHITE "%s ", dir_to_arrow(m->dir));
 	display_hearts(m);
-	printf("%s", additional_info(m));
+	printf("%s\033[?K", additional_info(m));
 	print_at(m->pos, "%s" CLEAR, TYPE(m).glyph);
 }
 
@@ -210,8 +210,6 @@ static void display_player(void)
 // Clears and redraws the entire interface.
 static void display_all(void)
 {
-	printf("\033[J");
-
 	for (i8 y = 1; y < ARRAY_SIZE(g.board) - 1; ++y)
 		for (i8 x = 1; x < ARRAY_SIZE(*g.board) - 1; ++x)
 			display_tile({x, y});
@@ -229,6 +227,40 @@ static void display_all(void)
 	print_at({0, 0}, "");
 }
 
+void animation(i64 id, Coords pos, Coords dir)
+{
+	display_all();
+
+	if (id == 0) { // fireball
+		const char *steps[] = { WHITE "█", YELLOW "▓", ORANGE "▒", RED "▬", BROWN "▬" };
+		for (const char *step: steps) {
+			for (Coords p = pos + dir; !BLOCKS_LOS(p); p += dir)
+				print_at(p, step);
+			fflush(stdout);
+			usleep(42000);
+		}
+	} else if (id == 1) { // explosion
+		const char *steps[] = { WHITE "█", YELLOW "▓", ORANGE "▒", RED "▒", BLACK "░" };
+		for (const char *step: steps) {
+			for (Coords d: square_shape)
+				print_at(pos + d, step);
+			fflush(stdout);
+			usleep(42000);
+		}
+	} else if (id == 2) { // bounce trap
+		fflush(stdout);
+		usleep(42000);
+	} else if (id == 3) { // mushroom
+		const char *steps[] = { CYAN "∷", CYAN "∵", CYAN "∴", CYAN "∶" };
+		for (const char *step: steps) {
+			for (Coords d: square_shape)
+				print_at(pos + d, L1(d) ? step : "");
+			fflush(stdout);
+			usleep(42000);
+		}
+	}
+}
+
 // `play` entry point: an interactive interface to the simulation.
 int main(i32 argc, char **argv)
 {
@@ -239,7 +271,7 @@ int main(i32 argc, char **argv)
 			do_beat((u8) *argv[3]++);
 
 	system("stty -echo -icanon eol \1");
-	printf("\033[?1049h\033[?1000h");
+	printf("\033[?1049h\033[?1000h\033[?25l");
 
 	while (player.hp) {
 		display_all();
@@ -254,6 +286,6 @@ int main(i32 argc, char **argv)
 			break;
 	}
 
-	printf("\033[?1049l\033[?1000l");
+	printf("\033[?1049l\033[?1000l\033[?25h");
 	printf("%s!\n", player.hp ? "You won" : "See you soon");
 }

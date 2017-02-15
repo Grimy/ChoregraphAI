@@ -4,6 +4,14 @@
 
 #define MOVE(x, y) (enemy_move(m, {(x), (y)}))
 
+const Coords plus_shape[] = {{-1, 0}, {0, -1}, {0, 1}, {1, 0}};
+
+const Coords square_shape[] = {
+	{-1, -1}, {-1, 0}, {-1, 1},
+	{0, -1}, {0, 0}, {0, 1},
+	{1, -1}, {1, 0}, {1, 1},
+};
+
 // Helpers //
 
 // Tests whether the condition for a breath attack are met.
@@ -34,6 +42,7 @@ static void evaporate(Tile *tile)
 void fireball(Coords pos, i8 dir)
 {
 	assert(dir != 0);
+	animation(0, pos, {dir, 0});
 	for (pos.x += dir; !BLOCKS_LOS(pos); pos.x += dir) {
 		damage(&MONSTER(pos), 5, {dir, 0}, DMG_NORMAL);
 		evaporate(&TILE(pos));
@@ -149,11 +158,8 @@ static Coords random_dir(Monster *m)
 // pick the one that comes first in bomb-order.
 void bomb_detonate(Monster *m, __attribute__((unused)) Coords _)
 {
-	static const Coords square_shape[] = {
-		{-1, -1}, {-1, 0}, {-1, 1},
-		{0, -1}, {0, 0}, {0, 1},
-		{1, -1}, {1, 0}, {1, 1},
-	};
+
+	animation(1, m->pos, {});
 
 	if (&MONSTER(m->pos) == m)
 		TILE(m->pos).monster = 0;
@@ -308,6 +314,7 @@ static void wind_mage(Monster *m, Coords d)
 // Attack in a 3x3 zone without moving.
 static void mushroom(Monster *m, Coords d)
 {
+	animation(3, m->pos, {});
 	if (L2(d) < 4)
 		damage(&player, m->damage, d, DMG_NORMAL);
 }
@@ -361,8 +368,8 @@ static void yeti(Monster *m, Coords d)
 {
 	bool has_moved = m->pos != m->prev_pos;
 	basic_seek(m, d);
-	if (has_moved && L2(player.pos - m->pos) < 4)
-		damage(&player, m->damage, d, DMG_NORMAL);
+	if (has_moved)
+		mushroom(m, player.pos - m->pos);
 }
 
 // Z4 //

@@ -312,7 +312,7 @@ struct Trap {
 	Coords dir;
 };
 
-typedef struct {
+struct GameState {
 	// Contents of the level
 	Tile board[32][32];
 	Monster monsters[72];
@@ -336,7 +336,7 @@ typedef struct {
 	bool boots_on;
 	u8 iframes;
 	u8: 8;
-} GameState;
+};
 
 // Defined by los.c
 void cast_light(Tile *tile, i64 x, i64 y);
@@ -347,11 +347,12 @@ void xml_parse(i32 argc, char **argv);
 
 // Defined by monsters.c
 extern const TypeInfos type_infos[];
+extern const Coords plus_shape[4];
+extern const Coords square_shape[9];
 void fireball(Coords pos, i8 dir);
 void bomb_detonate(Monster *m, Coords d);
 
 // Defined by main.c
-extern const Coords plus_shape[];
 extern Coords stairs;
 extern u64 character;
 extern thread_local GameState g;
@@ -366,3 +367,6 @@ u8 pickup_item(u8 item);
 bool can_move(const Monster *m, Coords dir);
 MoveResult enemy_move(Monster *m, Coords dir);
 bool forced_move(Monster *m, Coords offset);
+
+// Defined by play.c and solve.c
+void animation(i64 id, Coords pos, Coords dir);
