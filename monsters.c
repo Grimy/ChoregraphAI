@@ -22,12 +22,22 @@ static bool can_breathe(const Monster *m, Coords d)
 	return true;
 }
 
+static void evaporate(Tile *tile)
+{
+	if (tile->type == ICE)
+		tile->type = WATER;
+	else if (tile->type == WATER)
+		tile->type = FLOOR;
+}
+
 // Deals normal damage to all monsters on a horizontal line.
 void fireball(Coords pos, i8 dir)
 {
 	assert(dir != 0);
-	for (pos.x += dir; !BLOCKS_LOS(pos); pos.x += dir)
+	for (pos.x += dir; !BLOCKS_LOS(pos); pos.x += dir) {
 		damage(&MONSTER(pos), 5, {dir, 0}, DMG_NORMAL);
+		evaporate(&TILE(pos));
+	}
 }
 
 // Freezes all monsters in a 3x5 cone.
@@ -150,10 +160,7 @@ void bomb_detonate(Monster *m, __attribute__((unused)) Coords _)
 
 	for (Coords d: square_shape) {
 		Tile *tile = &TILE(m->pos + d);
-		if (tile->type == ICE)
-			tile->type = WATER;
-		else if (tile->type == WATER)
-			tile->type = FLOOR;
+		evaporate(tile);
 		tile->destroyed = true;
 		tile->item = NO_ITEM;
 		dig(m->pos + d, 4, false);
