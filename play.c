@@ -271,21 +271,21 @@ int main(i32 argc, char **argv)
 			do_beat((u8) *argv[3]++);
 
 	system("stty -echo -icanon eol \1");
-	printf("\033[?1049h\033[?1000h\033[?25l");
+	printf("\033[?25l\033[?1003h\033[?1049h");
 
 	while (player.hp) {
 		display_all();
 		int c = getchar();
 		if (c == 't')
 			execv(*argv, argv);
-		else if (c == '\033' && getchar() == '[' && getchar() == 'M' && getchar())
-			cursor = {(i8) getchar() - 33, (i8) getchar() - 33};
-		else if (c == EOF || c == 'q')
+		else if (c == '\033' && scanf("[M%*c%c%c", &cursor.x, &cursor.y))
+			cursor += {-33, -33};
+		else if (c == 4 || c == 'q')
 			player.hp = 0;
 		else if (do_beat((u8) c))
 			break;
 	}
 
-	printf("\033[?1049l\033[?1000l\033[?25h");
+	printf("\033[?25h\033[?1003l\033[?1049l");
 	printf("%s!\n", player.hp ? "You won" : "See you soon");
 }

@@ -3,6 +3,7 @@ FEATURES:
 * scatter traps
 * earth dragons
 * confusion de-aggroing enemies + set radius=0
+* change terrain glyphs
 
 BUGFIXES:
 * yetis/mummies/sarcos: should have been aggroed for a full turn
@@ -19,9 +20,9 @@ BUGFIXES:
 
 REFACTORS:
 * Consider moving: tile_change, adjust_lights, pickup_item, can_move
+* Store item/enemy data as plain text?
 * Use more references
 * Refactor chain_lightning
-* Only link against libstdc++ in debug
 * Go ECS or go home
 * Rename _can_charge → something
 * Rename cast_light → something with octants

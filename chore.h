@@ -312,7 +312,7 @@ struct Trap {
 	Coords dir;
 };
 
-struct GameState {
+struct alignas(2048) GameState {
 	// Contents of the level
 	Tile board[32][32];
 	Monster monsters[72];
@@ -335,7 +335,8 @@ struct GameState {
 	bool sliding_on_ice;
 	bool boots_on;
 	u8 iframes;
-	u8: 8;
+	u64: 8;
+	u64: 64;
 };
 
 // Defined by los.c
