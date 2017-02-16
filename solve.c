@@ -12,8 +12,7 @@ static i32 initial_distance;
 
 static _Atomic i32 simulated_beats;
 
-#define UNUSED __attribute__((unused))
-void animation(UNUSED i64 id, UNUSED Coords pos, UNUSED Coords dir) { }
+void animation(UNUSED Animation id, UNUSED Coords pos, UNUSED Coords dir) { }
 
 // Returns the cost (in beats) of the current route.
 // This is the number of beats it takes, plus the value of spent resources.

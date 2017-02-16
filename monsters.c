@@ -12,6 +12,12 @@ const Coords square_shape[] = {
 	{1, -1}, {1, 0}, {1, 1},
 };
 
+const Coords cone_shape[] = {
+	{1, 0},
+	{2, -1}, {2, 0}, {2, 1},
+	{3, -2}, {3, -1}, {3, 0}, {3, 1}, {3, 2},
+};
+
 // Helpers //
 
 // Tests whether the condition for a breath attack are met.
@@ -42,7 +48,7 @@ static void evaporate(Tile *tile)
 void fireball(Coords pos, i8 dir)
 {
 	assert(dir != 0);
-	animation(0, pos, {dir, 0});
+	animation(FIREBALL, pos, {dir, 0});
 	for (pos.x += dir; !BLOCKS_LOS(pos); pos.x += dir) {
 		damage(&MONSTER(pos), 5, {dir, 0}, DMG_NORMAL);
 		evaporate(&TILE(pos));
@@ -52,15 +58,12 @@ void fireball(Coords pos, i8 dir)
 // Freezes all monsters in a 3x5 cone.
 static void cone_of_cold(Coords pos, i8 dir)
 {
-	static const Coords cone_shape[] = {
-		{1, 0},
-		{2, -1}, {2, 0}, {2, 1},
-		{3, -2}, {3, -1}, {3, 0}, {3, 1}, {3, 2},
-	};
+	animation(CONE_OF_COLD, pos, {dir, 0});
 	for (Coords d: cone_shape) {
-		if (pos.x + dir * d.x >= 32)
+		Coords dest = pos + d * dir;
+		if (dest.x >= 31 || dest.x <= 0)
 			return;
-		Monster *m = &MONSTER(pos + d * dir);
+		Monster *m = &MONSTER(dest);
 		m->freeze = 4 + (m == &player);
 	}
 }
@@ -156,10 +159,9 @@ static Coords random_dir(Monster *m)
 // This is called “bomb-order”. Many monster AIs use it as a tiebreaker:
 // when several destination tiles fit all criteria equally well, monsters
 // pick the one that comes first in bomb-order.
-void bomb_detonate(Monster *m, __attribute__((unused)) Coords _)
+void bomb_detonate(Monster *m, UNUSED Coords _)
 {
-
-	animation(1, m->pos, {});
+	animation(EXPLOSION, m->pos, {});
 
 	if (&MONSTER(m->pos) == m)
 		TILE(m->pos).monster = 0;
@@ -224,7 +226,7 @@ static void moore_seek(Monster *m, Coords d)
 }
 
 // Keep moving in the same direction
-static void charge(Monster *m, __attribute__((unused)) Coords d)
+static void charge(Monster *m, UNUSED Coords d)
 {
 	Coords charging_dir = m->pos - m->prev_pos;
 	if (m->type != ARMADILDO && m->type != BARREL)
@@ -251,7 +253,7 @@ static bool magic(Monster *m, Coords d, bool condition)
 // Z1 //
 
 // Move in a repeating pattern.
-static void slime(Monster *m, __attribute__((unused)) Coords d)
+static void slime(Monster *m, UNUSED Coords d)
 {
 	static const Coords moves[][4] = {
 		{{ 1, 0}, {-1,  1}, {-1,  0}, { 1, -1}}, // black
@@ -268,7 +270,7 @@ static void slime(Monster *m, __attribute__((unused)) Coords d)
 }
 
 // Move in a straight line, turn around when blocked.
-static void zombie(Monster *m, __attribute__((unused)) Coords d)
+static void zombie(Monster *m, UNUSED Coords d)
 {
 	if (enemy_move(m, m->dir) < MOVE_ATTACK && !m->requeued)
 		m->dir = -m->dir;
@@ -314,7 +316,7 @@ static void wind_mage(Monster *m, Coords d)
 // Attack in a 3x3 zone without moving.
 static void mushroom(Monster *m, Coords d)
 {
-	animation(3, m->pos, {});
+	animation(SPORES, m->pos, {});
 	if (L2(d) < 4)
 		damage(&player, m->damage, d, DMG_NORMAL);
 }
@@ -331,7 +333,7 @@ static void armadillo(Monster *m, Coords d)
 	}
 }
 
-static void clone(Monster *m, __attribute__((unused)) Coords d)
+static void clone(Monster *m, UNUSED Coords d)
 {
 	if (g.player_moved)
 		enemy_move(m, DIRECTION(player.prev_pos - player.pos));
@@ -478,7 +480,7 @@ static void lich(Monster *m, Coords d)
 }
 
 // Spawn a random skeleton in a random direction
-static void sarcophagus(Monster *m, __attribute__((unused)) Coords d)
+static void sarcophagus(Monster *m, UNUSED Coords d)
 {
 	static const MonsterType types[] = {SKELETON_1, SKELETANK_1, WINDMAGE_1, RIDER_1};
 
@@ -490,7 +492,7 @@ static void sarcophagus(Monster *m, __attribute__((unused)) Coords d)
 	g.sarco_spawn = g.last_monster;
 }
 
-static void wind_statue(__attribute__((unused)) Monster *m, Coords d)
+static void wind_statue(UNUSED Monster *m, Coords d)
 {
 	if (L1(d) == 1)
 		forced_move(&player, d);
@@ -530,14 +532,14 @@ static void electro_lich(Monster *m, Coords d)
 	m->prev_pos = true_prev_pos;
 }
 
-static void orb(Monster *m, __attribute__((unused)) Coords d)
+static void orb(Monster *m, UNUSED Coords d)
 {
 	m->was_requeued = true;
 	if (enemy_move(m, m->dir) != MOVE_SUCCESS)
 		monster_kill(m, DMG_NORMAL);
 }
 
-static void wire_zombie(Monster *m, __attribute__((unused)) Coords d)
+static void wire_zombie(Monster *m, UNUSED Coords d)
 {
 	if (enemy_move(m, m->dir) < MOVE_ATTACK && !m->requeued)
 		m->dir = -m->dir;

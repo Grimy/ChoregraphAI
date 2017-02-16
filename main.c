@@ -622,7 +622,7 @@ static void chain_lightning(Coords pos, Coords dir)
 {
 	Coords queue[32] = { pos };
 	i64 queue_length = 1;
-	Coords arcs[7] = {
+	Coords arcs[] = {
 		{ dir.x, dir.y },
 		{ dir.x + dir.y, dir.y - dir.x },
 		{ dir.x - dir.y, dir.y + dir.x },
@@ -630,20 +630,22 @@ static void chain_lightning(Coords pos, Coords dir)
 		{ -dir.y, dir.x },
 		{ dir.y - dir.x, -dir.y - dir.x },
 		{ -dir.y - dir.x, dir.x - dir.y },
+		{ -dir.x, -dir.y },
 	};
 
 	MONSTER(pos).electrified = true;
-
 	for (i64 i = 0; queue[i].x; ++i) {
-		for (i64 j = 0; j < 7; ++j) {
-			Monster *m = &MONSTER(queue[i] + arcs[j]);
-			if (m->electrified)
+		for (Coords arc: arcs) {
+			Monster *m = &MONSTER(queue[i] + arc);
+			if (m->electrified || m == &player)
 				continue;
 			m->electrified = true;
-			damage(m, 1, CARDINAL(arcs[j]), DMG_NORMAL);
-			queue[queue_length++] = queue[i] + arcs[j];
+			damage(m, 1, CARDINAL(arc), DMG_NORMAL);
+			queue[queue_length++] = queue[i] + arc;
 		}
 	}
+
+	animation(ELECTRICITY, pos, dir);
 }
 
 // Attempts to move the player in the given direction
@@ -681,7 +683,6 @@ static void player_move(i8 x, i8 y)
 		dig(player.pos + dir, digging_power, true);
 	} else if (TILE(dest).monster) {
 		damage(&MONSTER(dest), dmg, dir, DMG_WEAPON);
-		player.electrified = true;
 		if (IS_WIRE(player.pos))
 			chain_lightning(dest, dir);
 	} else {
@@ -808,11 +809,11 @@ static void trap_turn(const Trap *trap)
 
 	switch (trap->type) {
 	case OMNIBOUNCE:
-		animation(2, m->pos, {});
+		animation(BOUNCE_TRAP, m->pos, {});
 		forced_move(m, DIRECTION(m->pos - m->prev_pos));
 		break;
 	case BOUNCE:
-		animation(2, m->pos, {});
+		animation(BOUNCE_TRAP, m->pos, {});
 		forced_move(m, trap->dir);
 		break;
 	case SPIKE:

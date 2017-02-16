@@ -214,6 +214,7 @@ void xml_parse(i32 argc, char **argv)
 	i32 level = argc >= 3 ? *argv[2] - '0' : 1;
 
 	g.monsters[0].untrapped = true;
+	g.monsters[0].electrified = true;
 	pickup_item(DAGGER_BASE);
 	pickup_item(SHOVEL_BASE);
 

@@ -1,6 +1,7 @@
 // play.c - manages terminal input/output
 // Assumes an ANSI-compatible UTF-8 terminal with a black background.
 
+#include <sys/select.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -15,7 +16,7 @@ static const char* floor_glyphs[] = {
 	[TAR] = BLACK ".",
 	[STAIRS] = ">",
 	[FIRE] = RED ".",
-	[ICE] = CYAN ".",
+	[ICE] = CYAN "█",
 	[OOZE] = GREEN ".",
 	[WIRE] = ".",
 };
@@ -29,6 +30,15 @@ static const char* trap_glyphs[] = {
 	[TEMPO_DOWN] = YELLOW "⇐",
 	[TEMPO_UP] = YELLOW "⇒",
 	[BOMBTRAP] = BROWN "●",
+};
+
+static const char* animation_steps[][6] = {
+	[EXPLOSION]    = { WHITE "█", YELLOW "▓", ORANGE "▒", RED "▒", BLACK "░", "" },
+	[FIREBALL]     = { WHITE "█", YELLOW "▇", ORANGE "▅", RED "▬", BROWN "▬", "" },
+	[CONE_OF_COLD] = { WHITE "█", BLUE   "▓", BLUE   "▒", CYAN "▒", WHITE "░", "" },
+	[SPORES]       = { CYAN "∵", CYAN "∴", "" },
+	[ELECTRICITY]  = { YELLOW "↯", "↯", "\033[107m" REVERSE "↯", CLEAR "↯", "↯", "" },
+	[BOUNCE_TRAP]  = { " ", "" },
 };
 
 static const char* dir_to_arrow(Coords dir)
@@ -92,7 +102,7 @@ static void display_tile(Coords pos)
 		display_wire(pos);
 	else if (tile->item)
 		printf("%s", item_names[tile->item].glyph);
-	else if (L2(pos - g.monsters[g.nightmare].pos) >= 8)
+	else if (!(g.nightmare && L2(pos - g.monsters[g.nightmare].pos) >= 8))
 		printf("%s", floor_glyphs[tile->type]);
 }
 
@@ -137,7 +147,7 @@ static const char* additional_info(const Monster *m)
 	case BOMB_STATUE:
 		return m->state ? "active" : "";
 	case FIREPIG:
-		return m->state ? "breathing" : "";
+		return m->state ? RED REVERSE "breathing" : "";
 	case EVIL_EYE_1:
 	case EVIL_EYE_2:
 		return m->state ? "glowing" : "";
@@ -160,7 +170,7 @@ static const char* additional_info(const Monster *m)
 			m->state ? "" : "hidden";
 	case RED_DRAGON:
 	case BLUE_DRAGON:
-		return m->state >= 2 ? "breathing" : m->exhausted ? "exhausted" : "";
+		return m->state >= 2 ? RED REVERSE "breathing" : m->exhausted ? "exhausted" : "";
 	case OGRE:
 		return m->state == 2 ? "clonking" : "";
 	}
@@ -172,6 +182,7 @@ static void display_monster(const Monster *m, Coords &pos)
 	++pos.y;
 	if (cursor == m->pos || (cursor.x >= pos.x && cursor.y == pos.y))
 		printf(REVERSE);
+	print_at(m->pos, "%s", TYPE(m).glyph);
 	print_at(pos, "%s ", TYPE(m).glyph);
 	printf("%s", m->aggro ? ORANGE "!" : " ");
 	printf("%s", m->delay ? BLACK "◔" : " ");
@@ -179,8 +190,7 @@ static void display_monster(const Monster *m, Coords &pos)
 	printf("%s", m->freeze ? CYAN "=" : " ");
 	printf(WHITE "%s ", dir_to_arrow(m->dir));
 	display_hearts(m);
-	printf("%s\033[?K", additional_info(m));
-	print_at(m->pos, "%s" CLEAR, TYPE(m).glyph);
+	printf("%s" CLEAR, additional_info(m));
 }
 
 static void display_player(void)
@@ -204,12 +214,14 @@ static void display_player(void)
 	printf(" (%s)", g.boots_on ? "on" : "off");
 	print_at({x, ++y}, "Ring: %s",   item_names[g.ring].friendly);
 	print_at({x, ++y}, "Usable: %s", item_names[g.usable].friendly);
-	print_at(player.pos, REVERSE "@" CLEAR);
+	print_at(player.pos, REVERSE "%s@" CLEAR, TILE(player.pos).wired ? YELLOW : "");
 }
 
 // Clears and redraws the entire interface.
 static void display_all(void)
 {
+	printf("\033[2J");
+
 	for (i8 y = 1; y < ARRAY_SIZE(g.board) - 1; ++y)
 		for (i8 x = 1; x < ARRAY_SIZE(*g.board) - 1; ++x)
 			display_tile({x, y});
@@ -219,7 +231,7 @@ static void display_all(void)
 			display_trap(t);
 
 	Coords pos = {64, 1};
-	for (Monster *m = &player + 1; m->type; ++m)
+	for (Monster *m = &g.monsters[g.last_monster]; m != &player; --m)
 		if (m->hp && (m->aggro || TILE(m->pos).revealed || g.head == HEAD_CIRCLET))
 			display_monster(m, pos);
 
@@ -227,37 +239,52 @@ static void display_all(void)
 	print_at({0, 0}, "");
 }
 
-void animation(i64 id, Coords pos, Coords dir)
+void animation(Animation id, Coords pos, Coords dir)
 {
+	static Coords targets[32];
+	i64 target_count = 0;
+
 	display_all();
 
-	if (id == 0) { // fireball
-		const char *steps[] = { WHITE "█", YELLOW "▓", ORANGE "▒", RED "▬", BROWN "▬" };
-		for (const char *step: steps) {
-			for (Coords p = pos + dir; !BLOCKS_LOS(p); p += dir)
-				print_at(p, step);
-			fflush(stdout);
-			usleep(42000);
+	switch (id) {
+	case EXPLOSION:
+		for (Coords d: square_shape)
+			targets[target_count++] = pos + d;
+		break;
+	case FIREBALL:
+		for (Coords p = pos + dir; !BLOCKS_LOS(p); p += dir)
+			targets[target_count++] = p;
+		break;
+	case CONE_OF_COLD:
+		for (Coords d: cone_shape)
+			targets[target_count++] = pos + d * dir.x;
+		break;
+	case SPORES:
+		for (Coords d: square_shape)
+			if (L1(d))
+				targets[target_count++] = pos + d;
+		break;
+	case ELECTRICITY:
+		for (Monster *m = &player; m->type; ++m) {
+			if (m->electrified) {
+				targets[target_count++] = m->pos;
+				m->electrified = false;
+			}
 		}
-	} else if (id == 1) { // explosion
-		const char *steps[] = { WHITE "█", YELLOW "▓", ORANGE "▒", RED "▒", BLACK "░" };
-		for (const char *step: steps) {
-			for (Coords d: square_shape)
-				print_at(pos + d, step);
-			fflush(stdout);
-			usleep(42000);
-		}
-	} else if (id == 2) { // bounce trap
+		break;
+	case BOUNCE_TRAP:
+		break;
+	}
+
+	for (const char **step = animation_steps[(i64) id]; **step; ++step) {
+		for (i64 i = 0; i < target_count; ++i)
+			if (targets[i].x > 0 && targets[i].x < 31 && targets[i].y > 0 && targets[i].y < 31)
+				print_at(targets[i], *step);
 		fflush(stdout);
-		usleep(42000);
-	} else if (id == 3) { // mushroom
-		const char *steps[] = { CYAN "∷", CYAN "∵", CYAN "∴", CYAN "∶" };
-		for (const char *step: steps) {
-			for (Coords d: square_shape)
-				print_at(pos + d, L1(d) ? step : "");
-			fflush(stdout);
-			usleep(42000);
-		}
+		struct timeval timeout = { .tv_usec = 42000 };
+		fd_set in_fds;
+		FD_SET(0, &in_fds);
+		select(1, &in_fds, NULL, NULL, &timeout);
 	}
 }
 
@@ -271,7 +298,7 @@ int main(i32 argc, char **argv)
 			do_beat((u8) *argv[3]++);
 
 	system("stty -echo -icanon eol \1");
-	printf("\033[?25l\033[?1003h\033[?1049h");
+	printf("\033[?25l\033[?1002h\033[?1049h");
 
 	while (player.hp) {
 		display_all();
@@ -286,6 +313,6 @@ int main(i32 argc, char **argv)
 			break;
 	}
 
-	printf("\033[?25h\033[?1003l\033[?1049l");
+	printf("\033[?25h\033[?1002l\033[?1049l");
 	printf("%s!\n", player.hp ? "You won" : "See you soon");
 }

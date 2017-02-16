@@ -2,6 +2,8 @@
 
 #include "base.h"
 
+#define UNUSED __attribute__((unused))
+
 #define player (g.monsters[1])
 
 #define TILE(pos) (g.board[(pos).x][(pos).y])
@@ -339,6 +341,15 @@ struct alignas(2048) GameState {
 	u64: 64;
 };
 
+enum Animation {
+	EXPLOSION,
+	FIREBALL,
+	CONE_OF_COLD,
+	SPORES,
+	ELECTRICITY,
+	BOUNCE_TRAP,
+};
+
 // Defined by los.c
 void cast_light(Tile *tile, i64 x, i64 y);
 
@@ -350,6 +361,7 @@ void xml_parse(i32 argc, char **argv);
 extern const TypeInfos type_infos[];
 extern const Coords plus_shape[4];
 extern const Coords square_shape[9];
+extern const Coords cone_shape[9];
 void fireball(Coords pos, i8 dir);
 void bomb_detonate(Monster *m, Coords d);
 
@@ -370,4 +382,4 @@ MoveResult enemy_move(Monster *m, Coords dir);
 bool forced_move(Monster *m, Coords offset);
 
 // Defined by play.c and solve.c
-void animation(i64 id, Coords pos, Coords dir);
+void animation(Animation id, Coords pos, Coords dir);
