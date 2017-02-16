@@ -23,11 +23,10 @@ typedef int64_t  i64;
 
 #define SWAP(a, b) do { __typeof(a) _swap = (a); (a) = (b); (b) = _swap; } while (0)
 
-#define SIGN(x) (((x) > 0) - ((x) < 0))
-
-#define abs(x) ({ __typeof(x) X = (x); X < 0 ? -X : X; })
-#define min(x, y) ({ __typeof(x) X = (x), Y = (y); (__typeof(x)) (X < Y ? X : Y); })
-#define max(x, y) ({ __typeof(x) X = (x), Y = (y); (__typeof(x)) (X > Y ? X : Y); })
+constexpr i8 sign(i8 x)         { return (x > 0) - (x < 0); }
+constexpr i64 abs(i64 x)        { return x < 0 ? -x : x; }
+constexpr i64 min(i64 x, i64 y) { return x < y ? x : y; }
+constexpr i64 max(i64 x, i64 y) { return x > y ? x : y; }
 
 #define streq(a, b) (!strcmp((a), (b)))
 

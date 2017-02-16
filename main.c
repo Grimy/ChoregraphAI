@@ -77,12 +77,12 @@ bool can_move(const Monster *m, Coords dir)
 // radius: the maximum L2 distance at which the light source still provides light.
 void adjust_lights(Coords pos, i64 diff, double radius)
 {
-	Coords d = {};
 	assert(ARRAY_SIZE(g.board) == 32);
-	for (d.x = -min(pos.x, 4); d.x <= min(4, 31 - pos.x); ++d.x) {
-		for (d.y = -min(pos.y, 4); d.y <= min(4, 31 - pos.y); ++d.y) {
-			double light = max(0.0, radius - sqrt(L2(d)));
-			TILE(pos + d).light += diff * (i64) (6100 * light);
+	Tile *tile = &TILE(pos);
+	for (i64 x = -min(pos.x, 4); x <= min(4, 31 - pos.x); ++x) {
+		for (i64 y = -min(pos.y, 4); y <= min(4, 31 - pos.y); ++y) {
+			i64 light = (i64) (6100 * (radius - sqrt(x*x + y*y)));
+			tile[32*x + y].light += diff * max(0, light);
 		}
 	}
 }
@@ -103,7 +103,7 @@ static void tile_change(Coords pos, u8 new_type)
 
 // Tries to dig away the given wall, replacing it with floor.
 // Returns whether the dig succeeded.
-bool dig(Coords pos, i32 digging_power, bool can_splash)
+bool dig(Coords pos, i64 digging_power, bool can_splash)
 {
 	if (!IS_DIGGABLE(pos) || TILE(pos).hp > digging_power)
 		return false;
@@ -972,7 +972,7 @@ bool do_beat(u8 input)
 
 	before_and_after();
 	if (g.monsters[g.monkeyed].type == CONF_MONKEY)
-		player.confusion = max(player.confusion, 1);
+		player.confusion = (u8) max(player.confusion, 1);
 
 	return false;
 }

@@ -41,11 +41,11 @@ struct Coords {
 
 // Converts relative coordinates to a direction.
 // For example, {5, -7} becomes {1, -1}.
-#define DIRECTION(d) ((Coords) {SIGN((d).x), SIGN((d).y)})
+#define DIRECTION(d) ((Coords) {sign((d).x), sign((d).y)})
 
 // Converts relative coordinates to a *cardinal* direction.
 // Like DIRECTION, but diagonals are turned into horizontals.
-#define CARDINAL(d) ((Coords) {SIGN((d).x), (d).x ? 0 : SIGN((d).y)})
+#define CARDINAL(d) ((Coords) {sign((d).x), (d).x ? 0 : sign((d).y)})
 
 // L¹ norm of a vector (= number of beats it takes to move to this relative position).
 static inline i64 L1(Coords d) { return abs((i64) d.x) + abs((i64) d.y); }
@@ -359,7 +359,7 @@ extern u64 character;
 extern thread_local GameState g;
 bool do_beat(u8 input);
 Monster* monster_spawn(u8 type, Coords pos, u8 delay);
-bool dig(Coords pos, i32 digging_power, bool can_splash);
+bool dig(Coords pos, i64 digging_power, bool can_splash);
 void monster_kill(Monster *m, DamageType type);
 bool damage(Monster *m, i64 dmg, Coords dir, DamageType type);
 void update_fov(void);

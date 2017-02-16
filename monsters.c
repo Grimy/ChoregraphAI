@@ -96,8 +96,8 @@ static Coords seek_dir(const Monster *m, Coords d)
 {
 	// Ignore the player’s previous position if they moved more than one tile
 	Coords prev_pos = L1(player.pos - player.prev_pos) > 1 ? player.pos : player.prev_pos;
-	Coords vertical = {0, SIGN(d.y)};
-	Coords horizontal = {SIGN(d.x), 0};
+	Coords vertical = {0, sign(d.y)};
+	Coords horizontal = {sign(d.x), 0};
 
 	bool axis =
 		// #1: move toward the player
@@ -190,37 +190,37 @@ static void basic_seek(Monster *m, Coords d)
 static void basic_flee(Monster *m, Coords d)
 {
 	if (d.y == 0)
-		MOVE(-SIGN(d.x), 0) || MOVE(0, -1) || MOVE(0, 1);
+		MOVE(-sign(d.x), 0) || MOVE(0, -1) || MOVE(0, 1);
 	else if (d.x == 0)
-		MOVE(0, -SIGN(d.y)) || MOVE(-1, 0) || MOVE(1, 0);
+		MOVE(0, -sign(d.y)) || MOVE(-1, 0) || MOVE(1, 0);
 	else if (abs(d.y) > abs(d.x))
-		MOVE(0, -SIGN(d.y)) || MOVE(-SIGN(d.x), 0);
+		MOVE(0, -sign(d.y)) || MOVE(-sign(d.x), 0);
 	else
-		MOVE(-SIGN(d.x), 0) || MOVE(0, -SIGN(d.y));
+		MOVE(-sign(d.x), 0) || MOVE(0, -sign(d.y));
 }
 
 // Move diagonally toward the player. Tiebreak by *reverse* bomb-order.
 static void diagonal_seek(Monster *m, Coords d)
 {
 	if (d.y == 0)
-		MOVE(SIGN(d.x), 1) || MOVE(SIGN(d.x), -1);
+		MOVE(sign(d.x), 1) || MOVE(sign(d.x), -1);
 	else if (d.x == 0)
-		MOVE(1, SIGN(d.y)) || MOVE(-1, SIGN(d.y));
+		MOVE(1, sign(d.y)) || MOVE(-1, sign(d.y));
 	else
-		MOVE(SIGN(d.x), SIGN(d.y))
-		    || MOVE(1,  SIGN(d.y) * -SIGN(d.x))
-		    || MOVE(-1, SIGN(d.y) * SIGN(d.x));
+		MOVE(sign(d.x), sign(d.y))
+		    || MOVE(1,  sign(d.y) * -sign(d.x))
+		    || MOVE(-1, sign(d.y) * sign(d.x));
 }
 
 // Move toward the player either cardinally or diagonally.
 static void moore_seek(Monster *m, Coords d)
 {
-	if (MOVE(SIGN(d.x), SIGN(d.y)) || d.x == 0 || d.y == 0)
+	if (MOVE(sign(d.x), sign(d.y)) || d.x == 0 || d.y == 0)
 		return;
 	if (d.x < 0)
-		MOVE(-1, 0) || MOVE(0, SIGN(d.y));
+		MOVE(-1, 0) || MOVE(0, sign(d.y));
 	else
-		MOVE(0, SIGN(d.y)) || MOVE(1, 0);
+		MOVE(0, sign(d.y)) || MOVE(1, 0);
 }
 
 // Keep moving in the same direction
@@ -384,8 +384,8 @@ static void digger(Monster *m, Coords d)
 		return;
 	}
 
-	i8 dx = d.x ? SIGN(d.x) : -1;
-	i8 dy = d.y ? SIGN(d.y) : -1;
+	i8 dx = d.x ? sign(d.x) : -1;
+	i8 dy = d.y ? sign(d.y) : -1;
 	Coords moves[4] = {{-dx, 0}, {0, -dy}, {0, dy}, {dx, 0}};
 	Coords move = {0, 0};
 	bool vertical = abs(d.y) > (abs(d.x) + 1) / 3;
@@ -510,7 +510,7 @@ static void firepig(Monster *m, Coords d)
 		fireball(m->pos, m->dir.x);
 		m->state = 0;
 		m->delay = 4;
-	} else if (abs(d.x) <= 5 && SIGN(d.x) == m->dir.x && can_breathe(m, d)) {
+	} else if (abs(d.x) <= 5 && sign(d.x) == m->dir.x && can_breathe(m, d)) {
 		m->state = 1;
 	}
 }

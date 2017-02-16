@@ -42,8 +42,8 @@ static i32 xml_attr(xmlTextReader *xml, const char* attr)
 // coordinates to index into the tile array, so they have to be positive.
 static void xml_find_spawn(xmlTextReader *xml)
 {
-	spawn.x = max(spawn.x, 1 - (i8) xml_attr(xml, "x"));
-	spawn.y = max(spawn.y, 1 - (i8) xml_attr(xml, "y"));
+	spawn.x = (i8) max(spawn.x, 1 - (i8) xml_attr(xml, "x"));
+	spawn.y = (i8) max(spawn.y, 1 - (i8) xml_attr(xml, "y"));
 }
 
 // Converts an item name to an item ID.
