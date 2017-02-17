@@ -1,7 +1,5 @@
 // xml.c - deals with custom dungeon XML files
 
-#include <libxml/xmlreader.h>
-
 #include "chore.h"
 
 const ItemNames item_names[] {
@@ -25,34 +23,28 @@ const ItemNames item_names[] {
 // Initial position of the player.
 static Coords spawn;
 
-// Returns the numeric value of a named attribute of the current node.
-// If the attribute is absent, it defaults to 0.
-static i32 xml_attr(xmlTextReader *xml, const char* attr)
-{
-	char* value = (char*) xmlTextReaderGetAttribute(xml, (xmlChar*) (attr));
-	i32 result = value ? atoi(value) : 0;
-	free(value);
-	return result;
-}
+static char attribute_map[8][32];
+
+#define HASH(key) (*(key) % 46 % (strlen(key) ^ 13) & 7)
+#define STR_ATTR(key) (attribute_map[HASH(key)])
+#define INT_ATTR(key) (atoi(STR_ATTR(key)))
 
 // Computes the position of the spawn relative to the top-left corner.
 // The game uses the spawn as the {0, 0} point, but we use the top-left corner,
 // so we need this information to convert between the two reference frames.
 // Note: we place {0, 0} on the top-left corner because we want to use
 // coordinates to index into the tile array, so they have to be positive.
-static void xml_find_spawn(xmlTextReader *xml)
+static void xml_find_spawn(UNUSED const char* node)
 {
-	spawn.x = (i8) max(spawn.x, 1 - (i8) xml_attr(xml, "x"));
-	spawn.y = (i8) max(spawn.y, 1 - (i8) xml_attr(xml, "y"));
+	spawn.x = (i8) max(spawn.x, 1 - (i8) INT_ATTR("x"));
+	spawn.y = (i8) max(spawn.y, 1 - (i8) INT_ATTR("y"));
 }
 
 // Converts an item name to an item ID.
-static u8 xml_item(xmlTextReader *xml, const char* attr)
+static u8 xml_item(const char* key)
 {
-	char* item_name = (char*) xmlTextReaderGetAttribute(xml, (xmlChar*) attr);
 	u8 type = ITEM_LAST;
-	while (--type && !streq(item_name, item_names[type].xml));
-	free(item_name);
+	while (--type && !streq(STR_ATTR(key), item_names[type].xml));
 	return type;
 }
 
@@ -144,56 +136,56 @@ static void enemy_init(Coords pos, i32 type, bool lord)
 }
 
 // Converts a single XML node into an appropriate object (trap, tile, monster or item).
-static void xml_process_node(xmlTextReader *xml, const char *name)
+static void xml_process_node(const char *name)
 {
-	i32 type = xml_attr(xml, "type");
-	Coords pos = {(i8) xml_attr(xml, "x"), (i8) xml_attr(xml, "y")};
+	i32 type = INT_ATTR("type");
+	Coords pos = {(i8) INT_ATTR("x"), (i8) INT_ATTR("y")};
 
 	pos += spawn;
 	if (pos.x >= ARRAY_SIZE(g.board) - 1 || pos.y >= ARRAY_SIZE(*g.board) - 1)
 		return;
 
 	if (streq(name, "trap"))
-		trap_init(pos, type, xml_attr(xml, "subtype"));
+		trap_init(pos, type, INT_ATTR("subtype"));
 	else if (streq(name, "tile"))
-		tile_init(pos, type, xml_attr(xml, "zone"), !!xml_attr(xml, "torch"));
+		tile_init(pos, type, INT_ATTR("zone"), INT_ATTR("torch"));
 	else if (streq(name, "enemy"))
-		enemy_init(pos, type, !!xml_attr(xml, "lord"));
+		enemy_init(pos, type, INT_ATTR("lord"));
 	else if (streq(name, "chest"))
-		monster_spawn(CHEST, pos, 0)->item = xml_item(xml, "contents");
+		monster_spawn(CHEST, pos, 0)->item = xml_item("contents");
 	else if (streq(name, "crate"))
-		monster_spawn(CRATE_2 + (u8) type, pos, 0)->item = xml_item(xml, "contents");
+		monster_spawn(CRATE_2 + (u8) type, pos, 0)->item = xml_item("contents");
 	else if (streq(name, "shrine"))
 		monster_spawn(SHRINE, pos, 0);
 	else if (streq(name, "item") && pos == spawn)
-		pickup_item(xml_item(xml, "type"));
+		pickup_item(xml_item("type"));
 	else if (streq(name, "item"))
-		TILE(pos).item = xml_item(xml, "type");
+		TILE(pos).item = xml_item("type");
 }
 
-static void xml_process_file(char *file, i64 level, bool first_pass)
+static void xml_process_file(char *file, i64 level, void (callback)(const char*))
 {
-	xmlTextReader *xml = xmlReaderForFile(file, NULL, 0);
+	FILE *xml = fopen(file, "r");
+	char node[16];
+	char key[16];
+
 	if (!xml)
 		FATAL("Cannot open file: %s", file);
 
-	while (xmlTextReaderRead(xml) == 1) {
-		if (xmlTextReaderNodeType(xml) != 1)
-			continue;
-		const char* name = (const char*) xmlTextReaderConstName(xml);
-		if (streq(name, "dungeon"))
-			character = xml_attr(xml, "character") % 1000;
-		else if (streq(name, "level"))
+	while (fscanf(xml, "<%15[?/a-z] ", node) > 0) {
+		while (fscanf(xml, "%15[a-zA-Z]", key) > 0)
+			fscanf(xml, " = \"%31[^\"]\" ", STR_ATTR(key));
+		fscanf(xml, "%*[?/>] ");
+		if (streq(node, "dungeon"))
+			character = INT_ATTR("character") % 1000;
+		else if (streq(node, "level"))
 			--level;
-		else if (!level && first_pass)
-			xml_find_spawn(xml);
 		else if (!level)
-			xml_process_node(xml, name);
+			callback(node);
 	}
 
-	if (xmlTextReaderRead(xml) < 0)
-		FATAL("Invalid XML file: %s", file);
-	xmlFreeTextReader(xml);
+	if (level > 0)
+		FATAL("File isn’t valid XML: %s", file);
 }
 
 // Compares the priorities of two monsters. Callback for qsort.
@@ -218,10 +210,9 @@ void xml_parse(i32 argc, char **argv)
 	pickup_item(DAGGER_BASE);
 	pickup_item(SHOVEL_BASE);
 
-	LIBXML_TEST_VERSION;
-	xml_process_file(argv[1], level, true);
+	xml_process_file(argv[1], level, xml_find_spawn);
 	monster_spawn(PLAYER, spawn, 0);
-	xml_process_file(argv[1], level, false);
+	xml_process_file(argv[1], level, xml_process_node);
 
 	qsort(g.monsters + 2, g.last_monster - 1, sizeof(Monster), compare_priorities);
 	for (u8 i = 1; g.monsters[i].type; ++i) {

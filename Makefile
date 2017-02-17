@@ -8,8 +8,6 @@ CFLAGS += -Wno-old-style-cast -Wno-c99-extensions -Wno-c++98-compat-pedantic -Wn
 CFLAGS += -Wno-gnu-statement-expression -Wno-gnu-case-range -Wno-format-nonliteral -Wno-disabled-macro-expansion
 CFLAGS += -fstrict-aliasing -fstrict-overflow -fno-asynchronous-unwind-tables
 CFLAGS += -fno-exceptions -fno-rtti -fopenmp=libomp
-CFLAGS += -I/usr/include/libxml2 -Wno-documentation -Wno-documentation-unknown-command -Wno-reserved-id-macro
-LDFLAGS += -lxml2 -lm
 
 .PHONY: all debug report stat long-funcs long-lines callgraph
 .SECONDARY:
@@ -27,7 +25,7 @@ $(1)/%.o: %.c chore.h base.h Makefile
 	$(CC) -xc++ -nostdinc++ $$(CFLAGS) $$< -c -o $$@
 $(1)/%: $(1)/%.o $(addprefix $(1)/, $(OBJECTS))
 	+echo LD $$@
-	$(CC) $$(CFLAGS) $(LDFLAGS) $$^ -o $$@
+	$(CC) $$(CFLAGS) -lm $$^ -o $$@
 endef
 
 $(eval $(call BUILDTYPE, bin, -g -O3 -flto -fno-omit-frame-pointer))
