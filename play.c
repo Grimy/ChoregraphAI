@@ -10,20 +10,20 @@
 static Coords cursor;
 
 static const char* floor_glyphs[] = {
-	".", ".", ".",
+	[FLOOR] = WHITE ".", WHITE ".", WHITE ".",
 	[SHOP_FLOOR] = YELLOW ".",
-	[WATER] = BLUE ".",
-	[TAR] = BLACK ".",
+	[WATER] = BLUE "≈",
+	[TAR] = BLACK "≈",
 	[STAIRS] = ">",
-	[FIRE] = RED ".",
+	[FIRE] = RED "░",
 	[ICE] = CYAN "█",
-	[OOZE] = GREEN ".",
-	[WIRE] = ".",
+	[OOZE] = GREEN "░",
+	[WIRE] = WHITE ".",
 };
 
 static const char* trap_glyphs[] = {
 	[OMNIBOUNCE] = BROWN "■",
-	[SPIKE] = WHITE "◭",
+	[SPIKE] = "◭",
 	[TRAPDOOR] = BROWN "▫",
 	[CONFUSE] = YELLOW "◆",
 	[TELEPORT] = YELLOW "▫",
@@ -37,7 +37,7 @@ static const char* animation_steps[][6] = {
 	[FIREBALL]     = { WHITE "█", YELLOW "▇", ORANGE "▅", RED "▬", BROWN "▬", "" },
 	[CONE_OF_COLD] = { WHITE "█", BLUE   "▓", BLUE   "▒", CYAN "▒", WHITE "░", "" },
 	[SPORES]       = { CYAN "∵", CYAN "∴", "" },
-	[ELECTRICITY]  = { YELLOW "↯", "↯", "\033[107m" REVERSE "↯", CLEAR "↯", "↯", "" },
+	[ELECTRICITY]  = { YELLOW "↯", "↯", "\033[103m" REVERSE "↯", CLEAR "↯", "↯", "" },
 	[BOUNCE_TRAP]  = { " ", "" },
 };
 
@@ -62,19 +62,16 @@ static void print_at(Coords pos, const char *fmt, ...) {
 // For example, when tiles to the bottom and right are walls too, use '┌'.
 static void display_wall(Coords pos)
 {
-	if (TILE(pos).type == FIREWALL)
-		printf(RED);
-	else if (TILE(pos).type == ICEWALL)
-		printf(CYAN);
-	else if (TILE(pos).hp == 3)
-		printf(BLACK);
-	else if (TILE(pos).hp == 4)
-		printf(YELLOW);
+	const char* color =
+		TILE(pos).type == FIREWALL ? RED :
+		TILE(pos).type == ICEWALL ? CYAN :
+		TILE(pos).hp == 3 ? BLACK :
+		TILE(pos).hp == 4 ? YELLOW : WHITE;
 
 	i64 glyph = 0;
 	for (i64 i = 0; i < 4; ++i)
 		glyph |= IS_DIGGABLE(pos + plus_shape[i]) << i;
-	printf("%3.3s", &"╳─│┘│┐│┤──└┴┌┬├┼"[3 * glyph]);
+	print_at(pos, "%s%3.3s", color, &"──│┘│┐│┤──└┴┌┬├┼"[3 * glyph]);
 }
 
 static void display_wire(Coords pos)
@@ -82,7 +79,7 @@ static void display_wire(Coords pos)
 	i64 glyph = 0;
 	for (i64 i = 0; i < 4; ++i)
 		glyph |= (TILE(pos + plus_shape[i]).wired) << i;
-	printf(YELLOW "%3.3s", &"⋅╴╵╯╷╮│┤╶─╰┴╭┬├┼"[3 * glyph]);
+	print_at(pos, YELLOW "%3.3s", &"⋅╴╵╯╷╮│┤╶─╰┴╭┬├┼"[3 * glyph]);
 }
 
 // Pretty-prints the tile at the given position.
@@ -90,27 +87,24 @@ static void display_tile(Coords pos)
 {
 	Tile *tile = &TILE(pos);
 
-	print_at(pos, WHITE);
-
 	if (tile->type == EDGE || !tile->revealed)
-		putchar(' ');
+		print_at(pos, " ");
 	else if (IS_DOOR(pos))
-		putchar('+');
+		print_at(pos, BROWN "+");
 	else if (IS_DIGGABLE(pos))
 		display_wall(pos);
 	else if (IS_WIRE(pos))
 		display_wire(pos);
 	else if (tile->item)
-		printf("%s", item_names[tile->item].glyph);
-	else if (!(g.nightmare && L2(pos - g.monsters[g.nightmare].pos) >= 8))
-		printf("%s", floor_glyphs[tile->type]);
+		print_at(pos, item_names[tile->item].glyph);
+	else if (!(g.nightmare && L2(pos - g.monsters[g.nightmare].pos) < 8))
+		print_at(pos, floor_glyphs[tile->type]);
 }
 
 static void display_trap(const Trap *t)
 {
-	if (TILE(t->pos).monster)
-		return;
-	print_at(t->pos, t->type == BOUNCE ? dir_to_arrow(t->dir) : trap_glyphs[t->type]);
+	const char *glyph = t->type == BOUNCE ? dir_to_arrow(t->dir) : trap_glyphs[t->type];
+	print_at(t->pos, WHITE "%s", glyph);
 }
 
 static void display_hearts(const Monster *m)
@@ -182,7 +176,9 @@ static void display_monster(const Monster *m, Coords &pos)
 	++pos.y;
 	if (cursor == m->pos || (cursor.x >= pos.x && cursor.y == pos.y))
 		printf(REVERSE);
-	print_at(m->pos, "%s", TYPE(m).glyph);
+	print_at(m->pos, WHITE "%s", TYPE(m).glyph);
+	if (m->type == SHOPKEEPER && g.current_beat % 2)
+		printf("♪");
 	print_at(pos, "%s ", TYPE(m).glyph);
 	printf("%s", m->aggro ? ORANGE "!" : " ");
 	printf("%s", m->delay ? BLACK "◔" : " ");
@@ -190,7 +186,7 @@ static void display_monster(const Monster *m, Coords &pos)
 	printf("%s", m->freeze ? CYAN "=" : " ");
 	printf(WHITE "%s ", dir_to_arrow(m->dir));
 	display_hearts(m);
-	printf("%s" CLEAR, additional_info(m));
+	printf("%s\033[K" CLEAR, additional_info(m));
 }
 
 static void display_player(void)
@@ -198,7 +194,8 @@ static void display_player(void)
 	i8 x = 32, y = 0;
 	print_at({x, ++y}, CLEAR "Bard ");
 	display_hearts(&player);
-	print_at({x, ++y}, REVERSE);
+	print_at({x, ++y}, "%32s" REVERSE, "");
+	print_at({x, y}, "");
 	printf("%s", g.monkeyed ? PURPLE "Monkeyed " : "");
 	printf("%s", player.confusion ? YELLOW "Confused " : "");
 	printf("%s", player.freeze ? CYAN "Frozen " : "");
@@ -214,14 +211,13 @@ static void display_player(void)
 	printf(" (%s)", g.boots_on ? "on" : "off");
 	print_at({x, ++y}, "Ring: %s",   item_names[g.ring].friendly);
 	print_at({x, ++y}, "Usable: %s", item_names[g.usable].friendly);
-	print_at(player.pos, REVERSE "%s@" CLEAR, TILE(player.pos).wired ? YELLOW : "");
+	display_tile(player.pos);
+	printf(REVERSE "\b@" CLEAR);
 }
 
 // Clears and redraws the entire interface.
 static void display_all(void)
 {
-	printf("\033[2J");
-
 	for (i8 y = 1; y < ARRAY_SIZE(g.board) - 1; ++y)
 		for (i8 x = 1; x < ARRAY_SIZE(*g.board) - 1; ++x)
 			display_tile({x, y});
@@ -234,6 +230,8 @@ static void display_all(void)
 	for (Monster *m = &g.monsters[g.last_monster]; m != &player; --m)
 		if (m->hp && (m->aggro || TILE(m->pos).revealed || g.head == HEAD_CIRCLET))
 			display_monster(m, pos);
+	for (++pos.y; pos.y < 50; ++pos.y)
+		print_at(pos, "\033[K");
 
 	display_player();
 	print_at({0, 0}, "");
@@ -278,7 +276,7 @@ void animation(Animation id, Coords pos, Coords dir)
 
 	for (const char **step = animation_steps[(i64) id]; **step; ++step) {
 		for (i64 i = 0; i < target_count; ++i)
-			if (targets[i].x > 0 && targets[i].x < 31 && targets[i].y > 0 && targets[i].y < 31)
+			if (TILE(pos).revealed && TILE(targets[i]).revealed)
 				print_at(targets[i], *step);
 		fflush(stdout);
 		struct timeval timeout = { .tv_usec = 42000 };
@@ -298,7 +296,7 @@ int main(i32 argc, char **argv)
 			do_beat((u8) *argv[3]++);
 
 	system("stty -echo -icanon eol \1");
-	printf("\033[?25l\033[?1002h\033[?1049h");
+	printf("\033[?25l\033[?1003h\033[?1049h");
 
 	while (player.hp) {
 		display_all();
@@ -313,6 +311,6 @@ int main(i32 argc, char **argv)
 			break;
 	}
 
-	printf("\033[?25h\033[?1002l\033[?1049l");
+	printf("\033[?25h\033[?1003l\033[?1049l");
 	printf("%s!\n", player.hp ? "You won" : "See you soon");
 }

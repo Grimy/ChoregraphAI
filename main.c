@@ -340,8 +340,7 @@ static void skull_spawn(const Monster *skull, Coords spawn_dir, Coords dir)
 	u8 spawn_type = skull->type - SKULL_2 + SKELETON_2;
 	for (i8 i = -1; i <= 1; ++i) {
 		Coords pos = skull->pos + spawn_dir * i;
-		if (IS_DIGGABLE(pos))
-			dig(pos, 4, false);
+		dig(pos, 4, false);
 		if (IS_EMPTY(pos)) {
 			Monster *skele = monster_spawn(spawn_type, pos, 1);
 			skele->dir = dir;
