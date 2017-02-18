@@ -883,7 +883,7 @@ bool do_beat(u8 input)
 
 	player_turn(input);
 	if (TILE(player.pos).type == STAIRS && g.locking_enemies == 0)
-		return true;
+		return g.player_won = true;
 	update_fov();
 	before_and_after();
 

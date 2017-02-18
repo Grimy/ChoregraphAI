@@ -333,11 +333,11 @@ struct alignas(2048) GameState {
 
 	// Attributes specific to the player
 	u8 bombs, shovel, weapon, body, head, feet, ring, usable;
+	bool player_won;
 	bool player_moved;
 	bool sliding_on_ice;
 	bool boots_on;
 	u8 iframes;
-	u64: 8;
 	u64: 64;
 };
 

@@ -234,7 +234,7 @@ static void display_all(void)
 		print_at(pos, "\033[K");
 
 	display_player();
-	print_at({0, 0}, "");
+	print_at({0, 0}, g.player_won ? "You won!" : player.hp ? "\033[K" : "You died...");
 }
 
 void animation(Animation id, Coords pos, Coords dir)
@@ -298,19 +298,25 @@ int main(i32 argc, char **argv)
 	system("stty -echo -icanon eol \1");
 	printf("\033[?25l\033[?1003h\033[?1049h");
 
-	while (player.hp) {
+	GameState timeline[32] = {[0 ... 31] = g};
+
+	for (;;) {
+		timeline[g.current_beat & 31] = g;
 		display_all();
 		int c = getchar();
 		if (c == 't')
 			execv(*argv, argv);
+		else if (c == '>' && g.player_won)
+			break;
+		else if (c == 4 || c == 'q')
+			break;
 		else if (c == '\033' && scanf("[M%*c%c%c", &cursor.x, &cursor.y))
 			cursor += {-33, -33};
-		else if (c == 4 || c == 'q')
-			player.hp = 0;
-		else if (do_beat((u8) c))
-			break;
+		else if (c == 'u')
+			g = timeline[(g.current_beat - 1) & 31];
+		else if (player.hp && !g.player_won)
+			do_beat((u8) c);
 	}
 
 	printf("\033[?25h\033[?1003l\033[?1049l");
-	printf("%s!\n", player.hp ? "You won" : "See you soon");
 }
