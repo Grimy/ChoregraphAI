@@ -600,7 +600,7 @@ static void after_move(Coords dir, bool forced)
 bool forced_move(Monster *m, Coords dir)
 {
 	assert(m != &player || dir != Coords {});
-	if (m->freeze || unbog(m) || (m == &player && g.monkeyed))
+	if (m->freeze || unbog(m))
 		return false;
 
 	if (&MONSTER(m->pos + dir) == &player) {
