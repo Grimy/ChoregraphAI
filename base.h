@@ -24,9 +24,9 @@ typedef int64_t  i64;
 #define SWAP(a, b) do { __typeof(a) _swap = (a); (a) = (b); (b) = _swap; } while (0)
 
 constexpr i8 sign(i8 x)         { return (x > 0) - (x < 0); }
-constexpr i64 abs(i64 x)        { return x < 0 ? -x : x; }
-constexpr i64 min(i64 x, i64 y) { return x < y ? x : y; }
-constexpr i64 max(i64 x, i64 y) { return x > y ? x : y; }
+template <class T> constexpr T abs(T x) { return x < 0 ? -x : x; }
+template <class T> constexpr T min(T x, i64 y) { return x < (T) y ? x : (T) y; }
+template <class T> constexpr T max(T x, i64 y) { return x > (T) y ? x : (T) y; }
 
 #define streq(a, b) (!strcmp((a), (b)))
 

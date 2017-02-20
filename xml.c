@@ -40,8 +40,8 @@ static void xml_find_spawn(UNUSED const char* node)
 {
 	if (INT_ATTR("type") >= 100)
 		return;
-	spawn.x = (i8) max(spawn.x, 2 - INT_ATTR("x"));
-	spawn.y = (i8) max(spawn.y, 2 - INT_ATTR("y"));
+	spawn.x = max(spawn.x, 2 - (i8) INT_ATTR("x"));
+	spawn.y = max(spawn.y, 2 - (i8) INT_ATTR("y"));
 }
 
 // Converts an item name to an item ID.
@@ -69,32 +69,33 @@ static void trap_init(Coords pos, i32 type, i32 subtype)
 	trap->dir.y = (i8[]) {0, 0, 1, -1, 1, 1, -1, -1} [subtype & 7];
 }
 
-static TileType floor_types[] = {
+static TileType tile_types[] = {
 	FLOOR, FLOOR, STAIRS, SHOP_FLOOR, WATER, TAR, NONE, SHOP_FLOOR, TAR, STAIRS,
 	FIRE, ICE, NONE, NONE, FLOOR, NONE, NONE, OOZE, LAVA, FLOOR, FLOOR,
+	[21 ... 99] = NONE,
+	DIRT, DIRT, NONE, DOOR, SHOP, NONE, NONE, STONE, CATACOMB, NONE, SHOP,
+	DOOR, SHOP, SHOP, SHOP, SHOP, SHOP, SHOP, DOOR,
 };
 
 static void tile_init(Coords pos, i32 type, i32 zone, bool torch)
 {
-	i8 hp = (i8[100]) {1, 1, 5, 0, 4, 4, 0, 2, 3, 5, 4, 0} [type % 100];
 	TILE(pos).wired = type == 20 || type == 118;
 	TILE(pos).torch = torch;
-	TILE(pos).hp = hp;
-	TILE(pos).type =
-		type < ARRAY_SIZE(floor_types) ? floor_types[type] :
-		type < 100 ? FATAL("Invalid tile type: %d", type) :
-		zone == 4 && (hp == 1 || hp == 2) ? Z4WALL :
-		zone == 2 && hp == 2 ? FIREWALL :
-		zone == 3 && hp == 2 ? ICEWALL :
-		hp ? WALL : DOOR;
 
-	if (TILE(pos).type == NONE)
+	if (type > ARRAY_SIZE(tile_types) || tile_types[type] == NONE)
 		FATAL("Unknown tile type: %d", type);
+
+	type = tile_types[type];
+	if (type == STONE && (zone == 2 || zone == 3))
+		type |= zone == 2 ? ICE : FIRE;
+	if ((type == DIRT || type == STONE) && zone == 4)
+		type |= 8;
+	TILE(pos).type = (u8) type;
 
 	if (torch)
 		adjust_lights(pos, +1, 4.25);
 
-	if (TILE(pos).type == STAIRS) {
+	if (type == STAIRS) {
 		stairs = pos;
 		g.locking_enemies = 1 + (zone == 4);
 	}
@@ -135,7 +136,7 @@ static void enemy_init(Coords pos, i32 type, bool lord)
 	if (lord) {
 		m->damage *= 2;
 		m->hp *= 2;
-		m->digging_power *= 2;
+		m->digging_power = m->digging_power == NONE ? NONE : SHOP;
 		m->flying = true;
 	}
 

@@ -202,8 +202,8 @@ enum MonsterType : u8 {
 
 enum TileType : u8 {
 	FLOOR = 0,
-	FIRE = 1,
-	ICE = 2,
+	ICE = 1,
+	FIRE = 2,
 	WATER = 4,
 	SHOP_FLOOR = 8,
 	TAR = 12,
@@ -211,12 +211,12 @@ enum TileType : u8 {
 	LAVA = 24,
 	STAIRS = 32,
 
-	EDGE = 128,
-	WALL = 136,
-	FIREWALL = 137,
-	ICEWALL = 138,
-	Z4WALL = 144,
-	DOOR = 152,
+	EDGE = 0x80,
+	SHOP = 0x90,
+	CATACOMB = 0xA0,
+	STONE = 0xB0,
+	DIRT = 0xC0,
+	DOOR = 0xD0,
 	NONE = 255,
 };
 
@@ -258,7 +258,7 @@ struct Monster {
 	u8 max_delay;
 	bool flying;
 	i16 radius;
-	i8 digging_power;
+	TileType digging_power;
 	u8 priority;
 
 	Coords pos;
@@ -288,7 +288,7 @@ struct TypeInfos {
 	const u8 max_delay;
 	const bool flying;
 	const i16 radius;
-	const i8 digging_power;
+	const TileType digging_power;
 	const u8 priority;
 	const char *glyph;
 	void (*const act) (Monster*, Coords);
@@ -296,7 +296,7 @@ struct TypeInfos {
 
 struct Tile {
 	u8 type;
-	i8 hp;
+	i8: 8;
 	u8 monster;
 	u8 item;
 	u16 light;
@@ -370,7 +370,7 @@ extern u64 character;
 extern thread_local GameState g;
 bool do_beat(u8 input);
 Monster* monster_spawn(u8 type, Coords pos, u8 delay);
-bool dig(Coords pos, i64 digging_power, bool can_splash);
+bool dig(Coords pos, TileType digging_power, bool can_splash);
 void monster_kill(Monster *m, DamageType type);
 bool damage(Monster *m, i64 dmg, Coords dir, DamageType type);
 void update_fov(void);

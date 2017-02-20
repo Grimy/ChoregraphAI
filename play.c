@@ -63,10 +63,10 @@ static void print_at(Coords pos, const char *fmt, ...) {
 static void display_wall(Coords pos)
 {
 	const char* color =
-		TILE(pos).type == FIREWALL ? RED :
-		TILE(pos).type == ICEWALL ? CYAN :
-		TILE(pos).hp == 3 ? BLACK :
-		TILE(pos).hp == 4 ? YELLOW : WHITE;
+		TILE(pos).type & FIRE ? RED :
+		TILE(pos).type & ICE ? CYAN :
+		TILE(pos).type == CATACOMB ? BLACK :
+		TILE(pos).type == SHOP ? YELLOW : WHITE;
 
 	i64 glyph = 0;
 	for (i64 i = 0; i < 4; ++i)
@@ -234,7 +234,7 @@ static void display_all(void)
 		print_at(pos, "\033[K");
 
 	display_player();
-	print_at({0, 0}, g.player_won ? "You won!" : player.hp ? "\033[K" : "You died...");
+	print_at({0, 0}, g.player_won ? "You won!" : player.hp ? "" : "You died...");
 }
 
 void animation(Animation id, Coords pos, Coords dir)

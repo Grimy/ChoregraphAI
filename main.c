@@ -102,23 +102,24 @@ static void tile_change(Coords pos, u8 new_type)
 
 // Tries to dig away the given wall, replacing it with floor.
 // Returns whether the dig succeeded.
-bool dig(Coords pos, i64 digging_power, bool can_splash)
+bool dig(Coords pos, TileType digging_power, bool can_splash)
 {
-	if (!IS_DIGGABLE(pos) || TILE(pos).hp > digging_power)
+	if (TILE(pos).type < digging_power)
 		return false;
 
 	Tile *wall = &TILE(pos);
 
-	if (can_splash && wall->type == Z4WALL)
+	if (can_splash && (wall->type & 8))
 		for (Coords d: plus_shape)
-			if (TILE(pos + d).type != DOOR)
-				dig(pos + d, min(digging_power, 2), false);
+			if (!IS_DOOR(pos + d))
+				dig(pos + d, max(digging_power, STONE), false);
 
-	wall->type &= ICE;
+	bool is_door = IS_DOOR(pos);
+	wall->type &= FIRE | ICE;
 
-	if (wall->hp == 0)
+	if (is_door)
 		for (Coords d: plus_shape)
-			dig(pos + d, 0, false);
+			dig(pos + d, DOOR, false);
 
 	if (wall->torch)
 		adjust_lights(pos, -1, 4.25);
@@ -225,20 +226,20 @@ MoveResult enemy_move(Monster *m, Coords dir)
 	}
 
 	// Trampling
-	i32 digging_power = m->confusion ? -1 : m->digging_power;
-	if (!m->aggro && digging_power == 4) {
+	TileType digging_power = m->confusion ? NONE : m->digging_power;
+	if (!m->aggro && digging_power == SHOP) {
 		for (Coords d: plus_shape) {
-			dig(m->pos + d, 4, false);
+			dig(m->pos + d, SHOP, false);
 			damage(&MONSTER(m->pos + d), 4, d, DMG_NORMAL);
 		}
 		return MOVE_SPECIAL;
 	}
 
 	// Digging
-	digging_power += (m->type == MINOTAUR_1 || m->type == MINOTAUR_2) && m->state;
-	if (dig(m->pos + dir, digging_power, m->type == DIGGER)) {
+	if ((m->type == MINOTAUR_1 || m->type == MINOTAUR_2) && m->state)
+		digging_power = CATACOMB;
+	if (dig(m->pos + dir, digging_power, m->type == DIGGER))
 		return MOVE_SPECIAL;
-	}
 
 	m->delay = 0;
 	return MOVE_FAIL;
@@ -339,7 +340,7 @@ static void skull_spawn(const Monster *skull, Coords spawn_dir, Coords dir)
 	u8 spawn_type = skull->type - SKULL_2 + SKELETON_2;
 	for (i8 i = -1; i <= 1; ++i) {
 		Coords pos = skull->pos + spawn_dir * i;
-		dig(pos, 4, false);
+		dig(pos, SHOP, false);
 		if (IS_EMPTY(pos)) {
 			Monster *skele = monster_spawn(spawn_type, pos, 1);
 			skele->dir = dir;
@@ -582,9 +583,9 @@ static void after_move(Coords dir, bool forced)
 	}
 
 	if (g.head == HEAD_MINERS) {
-		i32 digging_power = TILE(player.pos).type == OOZE ? 0 : player.digging_power;
+		TileType max_dig = TILE(player.pos).type == OOZE ? DOOR : player.digging_power;
 		for (Coords d: plus_shape)
-			dig(player.pos + d, digging_power, true);
+			dig(player.pos + d, max_dig, true);
 	}
 
 	if (g.monkeyed)
@@ -677,8 +678,8 @@ static void player_move(i8 x, i8 y)
 	Coords dest = player.pos + dir;
 
 	if (BLOCKS_LOS(dest)) {
-		i32 digging_power = TILE(player.pos).type == OOZE ? 0 : player.digging_power;
-		dig(player.pos + dir, digging_power, true);
+		TileType max_dig = tile->type == OOZE ? DOOR : player.digging_power;
+		dig(player.pos + dir, max_dig, true);
 	} else if (TILE(dest).monster) {
 		damage(&MONSTER(dest), dmg, dir, DMG_WEAPON);
 		if (IS_WIRE(player.pos))
@@ -726,7 +727,8 @@ u8 pickup_item(u8 item)
 		break;
 	}
 
-	player.digging_power = 1 + (g.shovel == SHOVEL_TIT) + (g.head == HEAD_MINERS);
+	u8 dig = (g.shovel == SHOVEL_TIT) + (g.head == HEAD_MINERS);
+	player.digging_power = (TileType[]) { DIRT, STONE, CATACOMB, SHOP } [dig];
 	return item;
 }
 
