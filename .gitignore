@@ -1,6 +1,8 @@
 *.out*
-*.svg
+input
+output
 tags
+*bin
 core.*
 perf.data*
 los.c

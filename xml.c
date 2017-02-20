@@ -2,6 +2,12 @@
 
 #include "chore.h"
 
+#define IS_OOB(pos) ((pos).x < 1 || (pos).y < 1 || (pos).x > 30 || (pos).y > 30)
+
+#define HASH(key) (*(key) % 46 % (strlen(key) ^ 13) & 7)
+#define STR_ATTR(key) (attribute_map[HASH(key)])
+#define INT_ATTR(key) (atoi(STR_ATTR(key)))
+
 const ItemNames item_names[] {
 	[NO_ITEM]        = { "",                       "None",                 "" },
 	[HEART_1]        = { "misc_heart_container",   "",                     RED "ღ" },
@@ -21,13 +27,9 @@ const ItemNames item_names[] {
 };
 
 // Initial position of the player.
-static Coords spawn;
+static Coords spawn = {1, 1};
 
 static char attribute_map[8][32];
-
-#define HASH(key) (*(key) % 46 % (strlen(key) ^ 13) & 7)
-#define STR_ATTR(key) (attribute_map[HASH(key)])
-#define INT_ATTR(key) (atoi(STR_ATTR(key)))
 
 // Computes the position of the spawn relative to the top-left corner.
 // The game uses the spawn as the {0, 0} point, but we use the top-left corner,
@@ -36,8 +38,10 @@ static char attribute_map[8][32];
 // coordinates to index into the tile array, so they have to be positive.
 static void xml_find_spawn(UNUSED const char* node)
 {
-	spawn.x = (i8) max(spawn.x, 1 - (i8) INT_ATTR("x"));
-	spawn.y = (i8) max(spawn.y, 1 - (i8) INT_ATTR("y"));
+	if (INT_ATTR("type") >= 100)
+		return;
+	spawn.x = (i8) max(spawn.x, 2 - INT_ATTR("x"));
+	spawn.y = (i8) max(spawn.y, 2 - INT_ATTR("y"));
 }
 
 // Converts an item name to an item ID.
@@ -67,26 +71,33 @@ static void trap_init(Coords pos, i32 type, i32 subtype)
 
 static void tile_init(Coords pos, i32 type, i32 zone, bool torch)
 {
-	static const i8 wall_hp[19] = {1, 1, 5, 0, 4, 4, 0, 2, 3, 5, 4, 0};
-
+	i8 hp = (i8[100]) {1, 1, 5, 0, 4, 4, 0, 2, 3, 5, 4, 0} [type % 100];
 	TILE(pos).wired = type == 20 || type == 118;
 	TILE(pos).torch = torch;
+	TILE(pos).hp = hp;
+	TILE(pos).type =
+		type == 0  ? FLOOR :
+		type == 3  ? FLOOR :
+		type == 4  ? WATER :
+		type == 8  ? TAR :
+		type == 9  ? STAIRS :
+		type == 10 ? FIRE :
+		type == 11 ? ICE :
+		type == 17 ? OOZE :
+		type == 20 ? FLOOR :
+		type < 100 ? FATAL("Invalid tile type: %d", type) :
+		zone == 4 && (hp == 1 || hp == 2) ? Z4WALL :
+		zone == 2 && hp == 2 ? FIREWALL :
+		zone == 3 && hp == 2 ? ICEWALL :
+		hp ? WALL : DOOR;
+
 	if (torch)
 		adjust_lights(pos, +1, 4.25);
 
-	if (type >= 100) {
-		i8 hp = wall_hp[type - 100];
-		TILE(pos).hp = hp;
-		type = zone == 4 && (hp == 1 || hp == 2) ? Z4WALL :
-			zone == 2 && hp == 2 ? FIREWALL :
-			zone == 3 && hp == 2 ? ICEWALL :
-			hp ? WALL : DOOR;
-	} else if (type == STAIRS) {
+	if (TILE(pos).type == STAIRS) {
 		stairs = pos;
 		g.locking_enemies = 1 + (zone == 4);
 	}
-
-	TILE(pos).type = (u8) type;
 }
 
 // Guesses at a zombie’s initial orientation.
@@ -112,9 +123,12 @@ static void enemy_init(Coords pos, i32 type, bool lord)
 		CRYSTAL_1,     // Z5
 	};
 
-	u8 id = enemy_id[type / 100] + type % 100;
+	u8 id = enemy_id[(type / 100) & 7] + type % 100;
 	if (id == GHAST || id == GHOUL || id == WRAITH || id == WIGHT)
 		return;
+
+	if (id >= PLAYER)
+		FATAL("Invalid enemy type: %d", type);
 
 	Monster *m = monster_spawn(id, pos, 0);
 
@@ -139,11 +153,15 @@ static void enemy_init(Coords pos, i32 type, bool lord)
 static void xml_process_node(const char *name)
 {
 	i32 type = INT_ATTR("type");
-	Coords pos = {(i8) INT_ATTR("x"), (i8) INT_ATTR("y")};
+	if (type < 0)
+		FATAL("Invalid %s type: %d", name, type);
 
-	pos += spawn;
-	if (pos.x >= ARRAY_SIZE(g.board) - 1 || pos.y >= ARRAY_SIZE(*g.board) - 1)
-		return;
+	Coords pos = Coords {(i8) INT_ATTR("x"), (i8) INT_ATTR("y")} + spawn;
+	if (IS_OOB(pos)) {
+		if (type >= 100)
+			return;
+		FATAL("Out of bounds entity: (%d, %d)", INT_ATTR("x"), INT_ATTR("y"));
+	}
 
 	if (streq(name, "trap"))
 		trap_init(pos, type, INT_ATTR("subtype"));
@@ -163,29 +181,39 @@ static void xml_process_node(const char *name)
 		TILE(pos).item = xml_item("type");
 }
 
-static void xml_process_file(char *file, i64 level, void (callback)(const char*))
+static void dungeon_init(i32 level)
+{
+	character = INT_ATTR("character") % 1000;
+	if (level > INT_ATTR("numLevels"))
+		FATAL("No level %d in dungeon (max: %d)", level, INT_ATTR("numLevels"));
+}
+
+static void xml_process_file(char *file, i32 level, void (callback)(const char*))
 {
 	FILE *xml = fopen(file, "r");
 	char node[16];
 	char key[16];
+	bool ok = false;
 
 	if (!xml)
 		FATAL("Cannot open file: %s", file);
 
-	while (fscanf(xml, "<%15[?/a-z] ", node) > 0) {
-		while (fscanf(xml, "%15[a-zA-Z]", key) > 0)
-			fscanf(xml, " = \"%31[^\"]\" ", STR_ATTR(key));
-		fscanf(xml, "%*[?/>] ");
+	while (fscanf(xml, " <%15[?/a-z]", node) > 0) {
+		memset(attribute_map, 0, sizeof(attribute_map));
+		while (fscanf(xml, " %12[a-zA-Z]", key) > 0)
+			fscanf(xml, " = \"%31[^\"]\"", STR_ATTR(key));
+		fscanf(xml, " %*[?/>]");
+
 		if (streq(node, "dungeon"))
-			character = INT_ATTR("character") % 1000;
+			dungeon_init(level);
 		else if (streq(node, "level"))
-			--level;
-		else if (!level)
+			ok = INT_ATTR("num") == level;
+		else if (ok && (INT_ATTR("x") > -180 || INT_ATTR("y") > -180))
 			callback(node);
 	}
 
-	if (level > 0)
-		FATAL("File isn’t valid XML: %s", file);
+	if (!streq(node, "/dungeon") || fscanf(xml, "%*c") != EOF)
+		FATAL("File isn’t valid dungeon XML: %s", file);
 }
 
 // Compares the priorities of two monsters. Callback for qsort.
@@ -203,7 +231,10 @@ void xml_parse(i32 argc, char **argv)
 {
 	if (argc < 2)
 		FATAL("Usage: %s dungeon_file.xml [level]", argv[0]);
-	i32 level = argc >= 3 ? *argv[2] - '0' : 1;
+
+	i32 level = argc >= 3 ? atoi(argv[2]) : 1;
+	if (level <= 0)
+		FATAL("Invalid level: %s (expected a positive integer)", argv[2]);
 
 	g.monsters[0].untrapped = true;
 	g.monsters[0].electrified = true;
@@ -213,6 +244,9 @@ void xml_parse(i32 argc, char **argv)
 	xml_process_file(argv[1], level, xml_find_spawn);
 	monster_spawn(PLAYER, spawn, 0);
 	xml_process_file(argv[1], level, xml_process_node);
+
+	if (MONSTER(spawn).type != PLAYER)
+		FATAL("Non-player entity at spawn: %s", TYPE(&MONSTER(spawn)).glyph);
 
 	qsort(g.monsters + 2, g.last_monster - 1, sizeof(Monster), compare_priorities);
 	for (u8 i = 1; g.monsters[i].type; ++i) {

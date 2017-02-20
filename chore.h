@@ -207,7 +207,7 @@ enum TileType : u8 {
 	SHOP_FLOOR = 3,
 	WATER = 4,
 	TAR = 8,
-	STAIRS = 9,
+	STAIRS = 42,
 	FIRE = 10,
 	ICE = 11,
 	OOZE = 17,

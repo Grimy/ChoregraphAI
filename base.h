@@ -46,6 +46,6 @@ constexpr i64 max(i64 x, i64 y) { return x > y ? x : y; }
 #define WHITE   "\033[97m"
 
 // Die verbosely
-#define FATAL(message, ...) do { \
+#define FATAL(message, ...) ({ \
 	fprintf(stderr, RED message WHITE "\n", __VA_ARGS__); \
-	exit(255); } while (0);
+	exit(255); 0; })
