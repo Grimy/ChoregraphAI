@@ -19,7 +19,6 @@ BUGFIXES:
 
 REFACTORS:
 * Consider moving: tile_change, adjust_lights, pickup_item, can_move
-* Store item/enemy data as plain text?
 * Use more references
 * Refactor chain_lightning
 * Rename _can_charge → something

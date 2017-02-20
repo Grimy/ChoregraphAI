@@ -10,7 +10,7 @@ Coords stairs;
 // ID of the player’s character.
 u64 character;
 
-__extension__ thread_local GameState g = {
+thread_local GameState g = {
 	.board = {[0 ... 31] = {[0 ... 31] = {.type = EDGE}}},
 	.bombs = 3,
 	.boots_on = true,

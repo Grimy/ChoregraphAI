@@ -4,8 +4,8 @@ ARGS := BARDZ4.xml 3
 
 CFLAGS += -std=c++11 -Weverything -Werror -march=native -mtune=native
 CFLAGS += -Wno-c++98-compat-pedantic -Wno-c99-extensions -Wno-c++11-narrowing
-CFLAGS += -Wno-old-style-cast -Wno-format-nonliteral -Wno-disabled-macro-expansion
-CFLAGS += -Wno-gnu-designator -Wno-gnu-statement-expression -Wno-gnu-case-range
+CFLAGS += -Wno-old-style-cast -Wno-format-nonliteral
+CFLAGS += -Wno-gnu-designator -Wno-gnu-case-range
 CFLAGS += -fstrict-aliasing -fstrict-overflow -fno-asynchronous-unwind-tables
 CFLAGS += -fno-exceptions -fno-rtti -fopenmp=libomp
 
@@ -19,7 +19,7 @@ los.c: los.pl
 	./$< >$@
 
 define BUILDTYPE
-$(1)/%.o: %.c chore.h base.h Makefile
+$(1)/%.o: %.c chore.h Makefile
 	+echo CC $$@
 	mkdir -p $(1)
 	$(2) -xc++ -nostdinc++ $$(CFLAGS) $$< -c -o $$@
@@ -40,7 +40,7 @@ debug: dbin/solve
 
 fuzz: fbin/play
 	mkdir -p input output
-	afl-fuzz -iinput -ooutput $^ @@ 1 '<<<<<<'
+	afl-fuzz -iinput -ooutput $^ @@ 1 '<e<fij'
 
 long-funcs:
 	perl -nE '/^\w.*?(\w+)\(/?$$-=print$$1:/^}$$/?say": $$-":++$$-' *.c | sort -rnk2 | sed 31q

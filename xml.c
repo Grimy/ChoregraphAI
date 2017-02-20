@@ -8,6 +8,11 @@
 #define STR_ATTR(key) (attribute_map[HASH(key)])
 #define INT_ATTR(key) (atoi(STR_ATTR(key)))
 
+// Die verbosely
+#define FATAL(message, ...) do { \
+	fprintf(stderr, RED message WHITE "\n", __VA_ARGS__); \
+	exit(255); } while (0)
+
 const ItemNames item_names[] {
 	[NO_ITEM]        = { "",                       "None",                 "" },
 	[HEART_1]        = { "misc_heart_container",   "",                     RED "ღ" },
@@ -42,6 +47,8 @@ static void xml_find_spawn(UNUSED const char* node)
 		return;
 	spawn.x = max(spawn.x, 2 - (i8) INT_ATTR("x"));
 	spawn.y = max(spawn.y, 2 - (i8) INT_ATTR("y"));
+	if (IS_OOB(spawn))
+		FATAL("Tile too far away from spawn: (%d, %d)", INT_ATTR("x"), INT_ATTR("y"));
 }
 
 // Converts an item name to an item ID.
@@ -79,26 +86,26 @@ static TileType tile_types[] = {
 
 static void tile_init(Coords pos, i32 type, i32 zone, bool torch)
 {
-	TILE(pos).wired = type == 20 || type == 118;
-	TILE(pos).torch = torch;
-
 	if (type > ARRAY_SIZE(tile_types) || tile_types[type] == NONE)
 		FATAL("Unknown tile type: %d", type);
 
-	type = tile_types[type];
-	if (type == STONE && (zone == 2 || zone == 3))
-		type |= zone == 2 ? ICE : FIRE;
-	if ((type == DIRT || type == STONE) && zone == 4)
-		type |= 8;
-	TILE(pos).type = (u8) type;
+	u8 id = tile_types[type];
+	if (id == STONE && (zone == 2 || zone == 3))
+		id |= zone == 2 ? ICE : FIRE;
+	if ((id == DIRT || id == STONE) && zone == 4)
+		id |= 8;
 
 	if (torch)
 		adjust_lights(pos, +1, 4.25);
 
-	if (type == STAIRS) {
+	if (id == STAIRS) {
 		stairs = pos;
 		g.locking_enemies = 1 + (zone == 4);
 	}
+
+	TILE(pos).wired = type == 20 || type == 118;
+	TILE(pos).torch = torch;
+	TILE(pos).type = id;
 }
 
 // Guesses at a zombie’s initial orientation.

@@ -451,8 +451,7 @@ static void harpy(Monster *m, Coords d)
 	}
 	Coords best_move = {0, 0};
 	i64 min = L1(d);
-	for (u64 i = 0; i < ARRAY_SIZE(moves); ++i) {
-		Coords move = moves[i];
+	for (Coords move: moves) {
 		i64 score = L1(d - move);
 		if (!score || score >= min || !can_move(m, move))
 			continue;
