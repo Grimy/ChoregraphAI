@@ -8,6 +8,7 @@
 #include "chore.h"
 
 static Coords cursor;
+static bool run_animations = false;
 
 static const char* floor_glyphs[] = {
 	[FLOOR] = WHITE ".", WHITE ".", WHITE ".",
@@ -239,6 +240,8 @@ static void display_all(void)
 
 void animation(Animation id, Coords pos, Coords dir)
 {
+	if (!run_animations)
+		return;
 	static Coords targets[32];
 	i64 target_count = 0;
 
@@ -295,6 +298,8 @@ int main(i32 argc, char **argv)
 		while (*argv[3])
 			do_beat((u8) *argv[3]++);
 
+	run_animations = true;
+
 	system("stty -echo -icanon eol \1");
 	printf("\033[?25l\033[?1003h\033[?1049h");
 
@@ -306,8 +311,6 @@ int main(i32 argc, char **argv)
 		int c = getchar();
 		if (c == 't')
 			execv(*argv, argv);
-		else if (c == '>' && g.player_won)
-			break;
 		else if (c == 4 || c == 'q')
 			break;
 		else if (c == '\033' && scanf("[M%*c%c%c", &cursor.x, &cursor.y))
@@ -316,6 +319,8 @@ int main(i32 argc, char **argv)
 			g = timeline[(g.current_beat - 1) & 31];
 		else if (player.hp && !g.player_won)
 			do_beat((u8) c);
+		else
+			break;
 	}
 
 	printf("\033[?25h\033[?1003l\033[?1049l");
