@@ -69,6 +69,11 @@ static void trap_init(Coords pos, i32 type, i32 subtype)
 	trap->dir.y = (i8[]) {0, 0, 1, -1, 1, 1, -1, -1} [subtype & 7];
 }
 
+static TileType floor_types[] = {
+	FLOOR, FLOOR, STAIRS, SHOP_FLOOR, WATER, TAR, NONE, SHOP_FLOOR, TAR, STAIRS,
+	FIRE, ICE, NONE, NONE, FLOOR, NONE, NONE, OOZE, LAVA, FLOOR, FLOOR,
+};
+
 static void tile_init(Coords pos, i32 type, i32 zone, bool torch)
 {
 	i8 hp = (i8[100]) {1, 1, 5, 0, 4, 4, 0, 2, 3, 5, 4, 0} [type % 100];
@@ -76,20 +81,15 @@ static void tile_init(Coords pos, i32 type, i32 zone, bool torch)
 	TILE(pos).torch = torch;
 	TILE(pos).hp = hp;
 	TILE(pos).type =
-		type == 0  ? FLOOR :
-		type == 3  ? FLOOR :
-		type == 4  ? WATER :
-		type == 8  ? TAR :
-		type == 9  ? STAIRS :
-		type == 10 ? FIRE :
-		type == 11 ? ICE :
-		type == 17 ? OOZE :
-		type == 20 ? FLOOR :
+		type < ARRAY_SIZE(floor_types) ? floor_types[type] :
 		type < 100 ? FATAL("Invalid tile type: %d", type) :
 		zone == 4 && (hp == 1 || hp == 2) ? Z4WALL :
 		zone == 2 && hp == 2 ? FIREWALL :
 		zone == 3 && hp == 2 ? ICEWALL :
 		hp ? WALL : DOOR;
+
+	if (TILE(pos).type == NONE)
+		FATAL("Unknown tile type: %d", type);
 
 	if (torch)
 		adjust_lights(pos, +1, 4.25);

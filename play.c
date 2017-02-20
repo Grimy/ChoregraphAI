@@ -11,7 +11,7 @@ static Coords cursor;
 static bool run_animations = false;
 
 static const char* floor_glyphs[] = {
-	[FLOOR] = WHITE ".", WHITE ".", WHITE ".",
+	[FLOOR] = WHITE ".",
 	[SHOP_FLOOR] = YELLOW ".",
 	[WATER] = BLUE "≈",
 	[TAR] = BLACK "≈",
@@ -19,7 +19,6 @@ static const char* floor_glyphs[] = {
 	[FIRE] = RED "░",
 	[ICE] = CYAN "█",
 	[OOZE] = GREEN "░",
-	[WIRE] = WHITE ".",
 };
 
 static const char* trap_glyphs[] = {

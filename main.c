@@ -67,7 +67,7 @@ bool can_move(const Monster *m, Coords dir)
 		return &MONSTER(m->pos + dir) == &player;
 	if (m->type == SPIDER)
 		return IS_DIGGABLE(dest) && !IS_DOOR(dest) && !TILE(dest).torch;
-	if (m->type == MOLE && (TILE(dest).type == WATER || TILE(dest).type == TAR))
+	if (m->type == MOLE && (TILE(dest).type & WATER))
 		return false;
 	return !BLOCKS_LOS(dest);
 }
@@ -93,9 +93,8 @@ static void tile_change(Coords pos, u8 new_type)
 {
 	Tile *tile = &TILE(pos);
 	tile->type =
-		tile->type == STAIRS ? STAIRS :
-		BLOCKS_LOS(pos) ? tile->type :
-		tile->type * new_type == FIRE * ICE ? WATER :
+		tile->type >= STAIRS ? tile->type :
+		(tile->type ^ new_type) == (FIRE ^ ICE) ? WATER :
 		tile->type == WATER && new_type == FIRE ? FLOOR :
 		new_type;
 	tile->destroyed = true;

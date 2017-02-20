@@ -12,12 +12,10 @@
 
 #define BLOCKS_LOS(pos) (TILE(pos).type >> 7)
 #define IS_EMPTY(pos) (!BLOCKS_LOS(pos) && !TILE(pos).monster)
-#define IS_DIGGABLE(pos) (TILE(pos).type >= DOOR)
+#define IS_DIGGABLE(pos) (TILE(pos).type > EDGE)
 #define IS_DOOR(pos) (TILE(pos).type == DOOR)
 
-#define IS_BOGGED(m) (!(m)->untrapped \
-	&& (TILE((m)->pos).type == WATER \
-	|| (TILE((m)->pos).type == TAR)))
+#define IS_BOGGED(m) (!(m)->untrapped && (TILE((m)->pos).type & WATER))
 
 // Gets the TypeInfos entry of the given monster’s type.
 #define TYPE(m) (type_infos[(m)->type])
@@ -204,21 +202,22 @@ enum MonsterType : u8 {
 
 enum TileType : u8 {
 	FLOOR = 0,
-	SHOP_FLOOR = 3,
+	FIRE = 1,
+	ICE = 2,
 	WATER = 4,
-	TAR = 8,
-	STAIRS = 42,
-	FIRE = 10,
-	ICE = 11,
-	OOZE = 17,
-	WIRE = 20,
+	SHOP_FLOOR = 8,
+	TAR = 12,
+	OOZE = 16,
+	LAVA = 24,
+	STAIRS = 32,
 
 	EDGE = 128,
-	DOOR = 129,
-	WALL = 130,
-	Z4WALL = 133,
-	FIREWALL = 138,
-	ICEWALL = 139,
+	WALL = 136,
+	FIREWALL = 137,
+	ICEWALL = 138,
+	Z4WALL = 144,
+	DOOR = 152,
+	NONE = 255,
 };
 
 enum TrapType {
