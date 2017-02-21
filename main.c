@@ -681,12 +681,10 @@ u8 pickup_item(u8 item)
 	case DAGGER_BASE:
 	case DAGGER_JEWELED:
 		SWAP(item, g.weapon);
-		player.damage = g.weapon == DAGGER_JEWELED ? 5 : 1;
 		break;
 	case HEAD_MINERS:
 	case HEAD_CIRCLET:
 		SWAP(item, g.head);
-		player.radius = g.head == HEAD_MINERS ? 5 : 2;
 		break;
 	case FEET_LUNGING:
 	case FEET_LEAPING:
@@ -696,6 +694,8 @@ u8 pickup_item(u8 item)
 
 	u8 dig = (g.shovel == SHOVEL_TIT) + (g.head == HEAD_MINERS);
 	player.digging_power = (TileType[]) { DIRT, STONE, CATACOMB, SHOP } [dig];
+	player.damage = g.weapon == DAGGER_JEWELED ? 5 : 1;
+	player.radius = g.head == HEAD_MINERS ? 5 : 2;
 	return item;
 }
 

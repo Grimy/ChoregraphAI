@@ -1,5 +1,7 @@
 // xml.c - deals with custom dungeon XML files
 
+#include <unistd.h>
+
 #include "chore.h"
 
 #define IS_OOB(pos) ((pos).x < 1 || (pos).y < 1 || (pos).x > 30 || (pos).y > 30)
@@ -54,9 +56,9 @@ static void xml_find_spawn(UNUSED const char* node)
 // Converts an item name to an item ID.
 static u8 xml_item(const char* key)
 {
-	u8 type = ITEM_LAST;
-	while (--type && !streq(STR_ATTR(key), item_names[type].xml));
-	return type;
+	u8 item = ARRAY_SIZE(item_names);
+	while (--item && !streq(STR_ATTR(key), item_names[item].xml));
+	return item;
 }
 
 // Adds a new trap to the list.
@@ -249,21 +251,45 @@ static i32 compare_priorities(const void *a, const void *b)
 // Valid, non-dungeon XML yields undefined results (most likely, an empty dungeon).
 void xml_parse(i32 argc, char **argv)
 {
-	if (argc < 2)
-		FATAL("Usage: %s dungeon_file.xml [level]", argv[0]);
-
-	i32 level = argc >= 3 ? atoi(argv[2]) : 1;
-	if (level <= 0)
-		FATAL("Invalid level: %s (expected a positive integer)", argv[2]);
+	i32 opt;
+	i32 level = 1;
+	u8 item = ARRAY_SIZE(item_names);
+	char moves[32] = "";
 
 	g.monsters[0].untrapped = true;
 	g.monsters[0].electrified = true;
 	pickup_item(DAGGER_BASE);
 	pickup_item(SHOVEL_BASE);
 
-	xml_process_file(argv[1], level, xml_find_spawn);
+	while ((opt = getopt(argc, argv, "i:l:m:s:")) != -1) {
+		switch (opt) {
+		case 'i':
+			while (--item && !strstr(item_names[item].xml, optarg));
+			pickup_item(item);
+			break;
+		case 'l':
+			level = atoi(optarg);
+			break;
+		case 'm':
+			strcpy(moves, optarg);
+			break;
+		case 's':
+			g.seed = (u32) atoi(optarg);
+			break;
+		case '?':
+			exit(255);
+		}
+	}
+
+	if (level <= 0)
+		FATAL("Invalid level: %s (expected a positive integer)", argv[2]);
+
+	if (argc <= optind)
+		FATAL("Usage: %s [options] dungeon_file.xml", argv[0]);
+
+	xml_process_file(argv[optind], level, xml_find_spawn);
 	monster_spawn(PLAYER, spawn, 0);
-	xml_process_file(argv[1], level, xml_process_node);
+	xml_process_file(argv[optind], level, xml_process_node);
 
 	if (MONSTER(spawn).type != PLAYER)
 		FATAL("Non-player entity at spawn: %s", TYPE(&MONSTER(spawn)).glyph);
@@ -278,10 +304,15 @@ void xml_parse(i32 argc, char **argv)
 	}
 
 	assert(player.type == PLAYER);
+	pickup_item(NO_ITEM);
+
 	if (character == BARD) {
 		do_beat('X');
 		--g.current_beat;
 	} else {
 		update_fov();
 	}
+
+	for (char *p = moves; *p; ++p)
+		do_beat((u8) *p);
 }

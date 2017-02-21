@@ -124,7 +124,6 @@ enum ItemType : u8 {
 	FEET_LEAPING,
 	USE_PACEMAKER,
 	USE_FREEZE,
-	ITEM_LAST,
 };
 
 struct ItemNames {

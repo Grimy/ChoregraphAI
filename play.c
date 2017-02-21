@@ -294,12 +294,8 @@ void animation(Animation id, Coords pos, Coords dir)
 // `play` entry point: an interactive interface to the simulation.
 int main(i32 argc, char **argv)
 {
-	xml_parse(argc, argv);
 	g.seed = (u32) time(NULL);
-	if (argc == 4)
-		while (*argv[3])
-			do_beat((u8) *argv[3]++);
-
+	xml_parse(argc, argv);
 	run_animations = true;
 
 	system("stty -echo -icanon eol \1");
@@ -310,9 +306,9 @@ int main(i32 argc, char **argv)
 	for (;;) {
 		timeline[g.current_beat & 31] = g;
 		display_all();
-		int c = getchar();
+		i32 c = getchar();
 		if (c == 't')
-			execv(*argv, argv);
+			g = timeline[0];
 		else if (c == 4 || c == 'q')
 			break;
 		else if (c == '\033' && scanf("[M%*c%c%c", &cursor.x, &cursor.y))

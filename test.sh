@@ -4,7 +4,7 @@ set -euo pipefail
 
 solve() {
 	printf "%d-%d: " "$1" "$2"
-	if out=$({ /bin/time -f%e bin/solve "dungeons/BARDZ$1.xml" "$2" | grep -Pq "\t$3$"; } 2>&1); then
+	if out=$({ /bin/time -f%e bin/solve -l "$2" "dungeons/BARDZ$1.xml" | grep -Pq "\t$3$"; } 2>&1); then
 		set -- $out
 		echo "$1 beats in $2s"
 		time=$(echo "$time + $2" | bc)
