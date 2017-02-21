@@ -153,8 +153,6 @@ static void enemy_init(Coords pos, i32 type, bool lord)
 		adjust_lights(pos, +1, 4.5);
 	else if (id == ZOMBIE || id == WIRE_ZOMBIE)
 		m->dir = orient_zombie(pos);
-	else if (m->type == NIGHTMARE_1 || m->type == NIGHTMARE_2)
-		g.nightmare = g.last_monster;
 }
 
 // Converts a single XML node into an appropriate object (trap, tile, monster or item).
@@ -258,8 +256,11 @@ void xml_parse(i32 argc, char **argv)
 
 	qsort(g.monsters + 2, g.last_monster - 1, sizeof(Monster), compare_priorities);
 	for (u8 i = 1; g.monsters[i].type; ++i) {
-		g.monsters[i].aggro = false;
-		TILE(g.monsters[i].pos).monster = i;
+		Monster &m = g.monsters[i];
+		m.aggro = false;
+		TILE(m.pos).monster = i;
+		if (m.type == NIGHTMARE_1 || m.type == NIGHTMARE_2)
+			g.nightmare = i;
 	}
 
 	assert(player.type == PLAYER);

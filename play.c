@@ -10,15 +10,23 @@
 static Coords cursor;
 static bool run_animations = false;
 
-static const char* floor_glyphs[] = {
+static const char* tile_glyphs[] = {
 	[FLOOR] = WHITE ".",
 	[SHOP_FLOOR] = YELLOW ".",
 	[WATER] = BLUE "≈",
 	[TAR] = BLACK "≈",
-	[STAIRS] = ">",
+	[STAIRS] = WHITE ">",
 	[FIRE] = RED "░",
 	[ICE] = CYAN "█",
 	[OOZE] = GREEN "░",
+	[EDGE] = " ",
+	[DOOR] = BROWN "+",
+	[DIRT] = WHITE, [DIRT | 8] = WHITE,
+	[STONE] = WHITE, [STONE | 8] = WHITE,
+	[STONE | FIRE] = RED,
+	[STONE | ICE] = CYAN,
+	[CATACOMB] = BLACK,
+	[SHOP] = YELLOW,
 };
 
 static const char* trap_glyphs[] = {
@@ -27,8 +35,8 @@ static const char* trap_glyphs[] = {
 	[TRAPDOOR] = BROWN "▫",
 	[CONFUSE] = YELLOW "◆",
 	[TELEPORT] = YELLOW "▫",
-	[TEMPO_DOWN] = YELLOW "⇐",
-	[TEMPO_UP] = YELLOW "⇒",
+	[TEMPO_DOWN] = YELLOW "«",
+	[TEMPO_UP] = YELLOW "»",
 	[BOMBTRAP] = BROWN "●",
 	[SCATTER_TRAP] = BROWN "×",
 };
@@ -63,16 +71,10 @@ static void print_at(Coords pos, const char *fmt, ...) {
 // For example, when tiles to the bottom and right are walls too, use '┌'.
 static void display_wall(Coords pos)
 {
-	const char* color =
-		TILE(pos).type & FIRE ? RED :
-		TILE(pos).type & ICE ? CYAN :
-		TILE(pos).type == CATACOMB ? BLACK :
-		TILE(pos).type == SHOP ? YELLOW : WHITE;
-
 	i64 glyph = 0;
 	for (i64 i = 0; i < 4; ++i)
 		glyph |= IS_DIGGABLE(pos + plus_shape[i]) << i;
-	print_at(pos, "%s%3.3s", color, &"──│┘│┐│┤──└┴┌┬├┼"[3 * glyph]);
+	print_at(pos, "%3.3s", &"──│┘│┐│┤──└┴┌┬├┼"[3 * glyph]);
 }
 
 static void display_wire(Coords pos)
@@ -88,18 +90,15 @@ static void display_tile(Coords pos)
 {
 	Tile *tile = &TILE(pos);
 
-	if (tile->type == EDGE || !tile->revealed)
-		print_at(pos, " ");
-	else if (IS_DOOR(pos))
-		print_at(pos, BROWN "+");
-	else if (IS_DIGGABLE(pos))
+	print_at(pos, tile_glyphs[tile->type]);
+	if (IS_DIGGABLE(pos) && !IS_DOOR(pos))
 		display_wall(pos);
-	else if (IS_WIRE(pos))
+	if (IS_WIRE(pos) && !IS_DOOR(pos))
 		display_wire(pos);
-	else if (tile->item)
+	if (tile->item)
 		print_at(pos, item_names[tile->item].glyph);
-	else if (!(g.nightmare && L2(pos - g.monsters[g.nightmare].pos) < 8))
-		print_at(pos, floor_glyphs[tile->type]);
+	if (!tile->revealed || (g.nightmare && L2(pos - g.monsters[g.nightmare].pos) < 8))
+		print_at(pos, " ");
 }
 
 static void display_trap(const Trap *t)
@@ -301,7 +300,7 @@ int main(i32 argc, char **argv)
 	run_animations = true;
 
 	system("stty -echo -icanon eol \1");
-	printf("\033[?25l\033[?1003h\033[?1049h");
+	printf("\033[?25l\033[?1003;1049h");
 
 	GameState timeline[32] = {[0 ... 31] = g};
 
@@ -323,5 +322,5 @@ int main(i32 argc, char **argv)
 			break;
 	}
 
-	printf("\033[?25h\033[?1003l\033[?1049l");
+	printf("\033[?25h\033[?1003;1049l");
 }
