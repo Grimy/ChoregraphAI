@@ -833,8 +833,8 @@ const TypeInfos type_infos[] = {
 	[BLACK_SLIME]  = {  3, 1,  0, false, 999,  NONE, 35, BLACK "P",  slime },
 	[CURSE_WRAITH] = {  0, 1,  0,  true,   9,  NONE,  5, YELLOW "W", basic_seek },
 	[SHOP_MIMIC]   = {  2, 1,  0, false,   2,  NONE, 22, YELLOW "m", moore_mimic },
-	[STONE_STATUE] = {  0, 1,  0, false,   0,  NONE,  0, BLACK "S",  NULL },
-	[GOLD_STATUE]  = {  0, 3,  0, false,   0,  NONE,  0, BLACK "S",  NULL },
+	[STONE_STATUE] = {  1, 1,  0, false,   0,  NONE,  0, BLACK "S",  NULL },
+	[GOLD_STATUE]  = {  1, 3,  0, false,   0,  NONE,  0, BLACK "S",  NULL },
 
 	[DIREBAT_1]    = {  3, 2,  1,  true,   9,  NONE, 70, YELLOW "B", bat },
 	[DIREBAT_2]    = {  4, 3,  1,  true,   9,  NONE, 74, "B",        bat },

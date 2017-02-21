@@ -1,8 +1,3 @@
-TEST:
-* Earthquake vs Metrognome
-* Phasing vs gorgon
-* Check fakewall vs mimic priority
-
 FEATURES:
 * metal doors (type=111)
 * earth dragons
