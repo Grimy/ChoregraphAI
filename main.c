@@ -834,6 +834,10 @@ static void trap_turn(const Trap *trap)
 	case TEMPO_DOWN:
 	case TEMPO_UP:
 		break;
+	case SCATTER_TRAP:
+		if (m == &player)
+			monster_kill(m, DMG_NORMAL);
+		break;
 	}
 }
 

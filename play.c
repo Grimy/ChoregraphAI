@@ -30,6 +30,7 @@ static const char* trap_glyphs[] = {
 	[TEMPO_DOWN] = YELLOW "⇐",
 	[TEMPO_UP] = YELLOW "⇒",
 	[BOMBTRAP] = BROWN "●",
+	[SCATTER_TRAP] = BROWN "×",
 };
 
 static const char* animation_steps[][6] = {

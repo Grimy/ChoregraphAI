@@ -271,6 +271,7 @@ enum TrapType {
 	TEMPO_UP,
 	RAND_BOUNCE, // not implemented
 	BOMBTRAP,
+	SCATTER_TRAP = 14,
 };
 
 // When an enemy attempts a movement, it can either:
