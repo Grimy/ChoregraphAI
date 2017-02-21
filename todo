@@ -21,4 +21,3 @@ REFACTORS:
 * Use more references
 * Refactor chain_lightning
 * Rename _can_charge → something
-* Rename cast_light → something with octants

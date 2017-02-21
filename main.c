@@ -250,14 +250,14 @@ void update_fov(void)
 {
 	Tile *tile = &TILE(player.pos);
 	tile->revealed = true;
-	cast_light(tile, +1, +ARRAY_SIZE(g.board));
-	cast_light(tile, +1, -ARRAY_SIZE(g.board));
-	cast_light(tile, -1, +ARRAY_SIZE(g.board));
-	cast_light(tile, -1, -ARRAY_SIZE(g.board));
-	cast_light(tile, +ARRAY_SIZE(g.board), +1);
-	cast_light(tile, -ARRAY_SIZE(g.board), +1);
-	cast_light(tile, +ARRAY_SIZE(g.board), -1);
-	cast_light(tile, -ARRAY_SIZE(g.board), -1);
+	update_fov_octant(tile, +1, +ARRAY_SIZE(g.board));
+	update_fov_octant(tile, +1, -ARRAY_SIZE(g.board));
+	update_fov_octant(tile, -1, +ARRAY_SIZE(g.board));
+	update_fov_octant(tile, -1, -ARRAY_SIZE(g.board));
+	update_fov_octant(tile, +ARRAY_SIZE(g.board), +1);
+	update_fov_octant(tile, -ARRAY_SIZE(g.board), +1);
+	update_fov_octant(tile, +ARRAY_SIZE(g.board), -1);
+	update_fov_octant(tile, -ARRAY_SIZE(g.board), -1);
 }
 
 // Knockback is a special kind of forced movement that can be caused by damage.

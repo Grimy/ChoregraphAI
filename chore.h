@@ -391,7 +391,7 @@ enum Animation {
 };
 
 // Defined by los.c
-void cast_light(Tile *tile, i64 x, i64 y);
+void update_fov_octant(Tile *tile, i64 x, i64 y);
 
 // Defined by xml.c
 extern const ItemNames item_names[];

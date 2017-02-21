@@ -11,7 +11,7 @@ static Coords cursor;
 static bool run_animations = false;
 
 static const char* tile_glyphs[] = {
-	[FLOOR] = WHITE ".",
+	[FLOOR] = ".",
 	[SHOP_FLOOR] = YELLOW ".",
 	[WATER] = BLUE "≈",
 	[TAR] = BLACK "≈",
@@ -90,14 +90,20 @@ static void display_tile(Coords pos)
 {
 	Tile *tile = &TILE(pos);
 
+	bool light =
+		(g.nightmare && L2(pos - g.monsters[g.nightmare].pos) < 8) ? false :
+		L2(pos - player.pos) <= player.radius ? true :
+		tile->light >= 7777;
+	printf(light ? WHITE : BLACK);
 	print_at(pos, tile_glyphs[tile->type]);
+
 	if (IS_DIGGABLE(pos) && !IS_DOOR(pos))
 		display_wall(pos);
 	if (IS_WIRE(pos) && !IS_DOOR(pos))
 		display_wire(pos);
 	if (tile->item)
 		print_at(pos, item_names[tile->item].glyph);
-	if (!tile->revealed || (g.nightmare && L2(pos - g.monsters[g.nightmare].pos) < 8))
+	if (!tile->revealed)
 		print_at(pos, " ");
 }
 
