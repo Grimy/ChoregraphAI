@@ -197,19 +197,14 @@ enum MonsterType : u8 {
 	FIREPIG, // a fire trap (they’re treated as monsters, not traps)
 
 	// Z5 enemies
-	CRYSTAL_1,
-	SKULL_1,
 	WATER_BALL,
-	CENSORED,
 	ELECTRO_1, ELECTRO_2, ELECTRO_3,
 	ORB_1, ORB_2, ORB_3,
-	GORGON_1,
 	WIRE_ZOMBIE,
-	SKULL_2, SKULL_3,
-	CRYSTAL_2, CRYSTAL_3, CRYSTAL_4,
-	EVIL_EYE_1,
-	GORGON_2,
-	EVIL_EYE_2,
+	SKULL_1, SKULL_2, SKULL_3,
+	GORGON_1, GORGON_2,
+	STONE_STATUE, GOLD_STATUE,
+	EVIL_EYE_1, EVIL_EYE_2,
 	ORC_1, ORC_2, ORC_3,
 	DEVIL_1, DEVIL_2,
 	PURPLE_SLIME,
@@ -218,8 +213,6 @@ enum MonsterType : u8 {
 	BLACK_SLIME, WHITE_SLIME,
 	MIMIC_4, MIMIC_5,
 	TAR_BALL,
-	STONE_STATUE,
-	GOLD_STATUE,
 
 	// Minibosses
 	DIREBAT_1, DIREBAT_2,
@@ -257,7 +250,7 @@ enum TileType : u8 {
 	STONE = 0xB0,
 	DIRT = 0xC0,
 	DOOR = 0xD0,
-	NONE = 255,
+	NONE = 0xFF,
 };
 
 enum TrapType {

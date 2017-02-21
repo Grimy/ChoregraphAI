@@ -128,10 +128,15 @@ static void enemy_init(Coords pos, i32 type, bool lord)
 		DIREBAT_1,     // Minibosses
 		SKELETON_1,    // Debug
 		SHOPKEEPER,    // Special
-		CRYSTAL_1,     // Z5
+		WATER_BALL,    // Z5
 	};
 
+	static const i8 z5remap[100] = {0, 10, 1, [10] = 4, -1, [17] = 1, -3 };
+	if (type >= 700)
+		type += z5remap[type % 100] - 3;
+
 	u8 id = enemy_id[(type / 100) & 7] + type % 100;
+
 	if (id == GHAST || id == GHOUL || id == WRAITH || id == WIGHT)
 		return;
 

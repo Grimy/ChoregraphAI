@@ -318,10 +318,8 @@ void monster_kill(Monster *m, DamageType type)
 		tile_change(m->pos, WATER);
 		break;
 	case GORGON_1:
-		monster_spawn(STONE_STATUE, m->pos, 0);
-		return;
 	case GORGON_2:
-		monster_spawn(GOLD_STATUE, m->pos, 0);
+		monster_spawn(m->type + STONE_STATUE - GORGON_1, m->pos, 0);
 		return;
 	case SARCO_1 ... SARCO_3:
 	case DIREBAT_1 ... EARTH_DRAGON:
@@ -337,7 +335,7 @@ void monster_kill(Monster *m, DamageType type)
 // Spawns three skeletons in a line.
 static void skull_spawn(const Monster *skull, Coords spawn_dir, Coords dir)
 {
-	u8 spawn_type = skull->type - SKULL_2 + SKELETON_2;
+	u8 spawn_type = skull->type - SKULL_1 + SKELETON_1;
 	for (i8 i = -1; i <= 1; ++i) {
 		Coords pos = skull->pos + spawn_dir * i;
 		dig(pos, SHOP, false);
@@ -426,9 +424,7 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 		if (m->state == 1)
 			break;
 		return true;
-	case ORB_1:
-	case ORB_2:
-	case ORB_3:
+	case ORB_1 ... ORB_3:
 		return true;
 	case DEVIL_1:
 	case DEVIL_2:
@@ -446,16 +442,12 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 			m->state = 1;
 		}
 		return true;
-	case RIDER_1:
-	case RIDER_2:
-	case RIDER_3:
+	case RIDER_1 ... RIDER_3:
 		monster_transform(m, m->type - RIDER_1 + SKELETANK_1);
 		m->flying = m->untrapped = false;
 		knockback(m, dir, 1);
 		return false;
-	case SKELETANK_1:
-	case SKELETANK_2:
-	case SKELETANK_3:
+	case SKELETANK_1 ... SKELETANK_3:
 		if (dir != -m->dir)
 			break;
 		if (dmg >= TYPE(m).max_hp)
@@ -486,18 +478,12 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 			tile_change(player.pos, OOZE);
 		}
 		break;
-	case ORC_1:
-	case ORC_2:
-	case ORC_3:
+	case ORC_1 ... ORC_3:
 		if (dir != -m->dir)
 			break;
 		knockback(m, dir, 1);
 		return false;
-	case SKULL_1:
-		m->type = SKULL_2 - 1;
-		[[clang::fallthrough]];
-	case SKULL_2:
-	case SKULL_3:
+	case SKULL_1 ... SKULL_3:
 		monster_kill(m, DMG_NORMAL);
 		skull_spawn(m, { dir.x == 0, dir.x != 0 }, -CARDINAL(dir));
 		return false;
@@ -530,8 +516,6 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	case SKELETANK_3:
 		if (m->hp > 1)
 			break;
-		static_assert(SKELETON_2 & 1, "");
-		static_assert(SKELETANK_2 & 1, "");
 		monster_transform(m, m->type & 1 ? HEADLESS_2 : HEADLESS_3);
 		m->delay = 0;
 		m->prev_pos = m->pos - dir;
