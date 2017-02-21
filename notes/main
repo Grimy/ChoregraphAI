@@ -1,0 +1,34 @@
+Handling tiles:
+99:static bool dig(Coords pos, i32 digging_power)
+278:void tile_change(Coords pos, TileClass new_class)
+62:void adjust_lights(Coords pos, i8 diff, double radius)
+254:void update_fov(void)
+
+Handling monsters:
+19:static void monster_new(MonsterClass type, Coords pos, u8 delay)
+32:Monster* monster_spawn(MonsterClass type, Coords pos, u8 delay)
+291:void monster_kill(Monster *m, DamageType type)
+49:bool can_move(Monster *m, Coords dir)
+40:static void move(Monster *m, Coords dest)
+17:static bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
+191:static bool unbog(Monster *m)
+142:static void enemy_attack(Monster *attacker)
+204:MoveResult enemy_move(Monster *m, Coords dir)
+598:bool forced_move(Monster *m, Coords dir)
+268:static void knockback(Monster *m, Coords dir, u8 delay)
+
+Actions specific to some monsters:
+355:static void skull_spawn(Monster *skull, Coords pos)
+
+Maing game loop:
+575:static void after_move(Coords dir, bool forced)
+618:static void chain_lightning(Coords pos, Coords dir)
+721:ItemClass pickup_item(ItemClass item)
+648:static void player_move(i8 x, i8 y)
+734:static void player_turn(u8 input)
+714:bool player_won()
+794:static void trap_turn(Trap *this)
+834:static bool has_priority(Monster *m1, Monster *m2)
+843:static void priority_insert(Monster **queue, u64 queue_length, Monster *m)
+767:static bool check_aggro(Monster *m, Coords d, bool bomb_exploded)
+855:void do_beat(u8 input)

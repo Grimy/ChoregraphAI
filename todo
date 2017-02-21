@@ -26,3 +26,4 @@ REFACTORS:
 * Use more references
 * Refactor chain_lightning
 * Rename _can_charge → something
+* Use an explicit Z4 flag instead of & 8

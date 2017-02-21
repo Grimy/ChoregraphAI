@@ -1,6 +1,5 @@
 *.out*
-input
-output
+fuzz-output
 tags
 *bin
 core.*

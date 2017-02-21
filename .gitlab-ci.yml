@@ -1,5 +1,0 @@
-test:
-  image: finalduty/archlinux:latest
-  script:
-  - pacman --noconfirm -S clang make libxml2
-  - make test

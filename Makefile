@@ -39,8 +39,7 @@ debug: dbin/solve
 	lldb $< $(ARGS)
 
 fuzz: fbin/play
-	mkdir -p input output
-	afl-fuzz -iinput -ooutput $^ @@ 1 '<e<fij'
+	afl-fuzz -idungeons -ofuzz-output $^ @@ 1 '<e<fij'
 
 long-funcs:
 	perl -nE '/^\w.*?(\w+)\(/?$$-=print$$1:/^}$$/?say": $$-":++$$-' *.c | sort -rnk2 | sed 31q
