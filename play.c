@@ -157,9 +157,6 @@ static const char* additional_info(const Monster *m)
 	case TARMONSTER:
 	case MIMIC_1:
 	case MIMIC_2:
-	case MIMIC_3:
-	case MIMIC_4:
-	case MIMIC_5:
 	case WHITE_MIMIC:
 	case WALL_MIMIC:
 	case MIMIC_STATUE:

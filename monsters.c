@@ -256,16 +256,15 @@ static bool magic(Monster *m, Coords d, bool condition)
 static void slime(Monster *m, UNUSED Coords d)
 {
 	static const Coords moves[][4] = {
-		{{ 1, 0}, {-1,  1}, {-1,  0}, { 1, -1}}, // black
 		{{ 0, 0}, { 0,  0}, { 0,  0}, { 0,  0}}, // green
 		{{ 0, 1}, { 0, -1}, { 0,  1}, { 0, -1}}, // blue
 		{{ 1, 0}, { 0,  1}, {-1,  0}, { 0, -1}}, // yellow
-		{{-1, 1}, { 1,  0}, {-1, -1}, { 1,  0}}, // purple
-		{{ 0, 0}, { 0,  0}, { 0,  0}, { 0,  0}}, // unassigned
 		{{-1, 1}, { 1,  1}, { 1, -1}, {-1, -1}}, // fire
 		{{ 1, 1}, {-1,  1}, {-1, -1}, { 1, -1}}, // ice
+		{{-1, 1}, { 1,  0}, {-1, -1}, { 1,  0}}, // purple
+		{{ 1, 0}, {-1,  1}, {-1,  0}, { 1, -1}}, // black
 	};
-	if (enemy_move(m, moves[m->type & 7][m->state]) == MOVE_SUCCESS)
+	if (enemy_move(m, moves[m->type - GREEN_SLIME][m->state]) == MOVE_SUCCESS)
 		m->state = (m->state + 1) & 3;
 }
 
@@ -729,9 +728,6 @@ const TypeInfos type_infos[] = {
 	[WRAITH]       = {  1, 1,  0,  true,   9,  NONE, 14, RED "W",    basic_seek },
 	[MIMIC_1]      = {  2, 1,  0, false,   1,  NONE, 22, ORANGE "m", mimic },
 	[MIMIC_2]      = {  3, 1,  0, false,   1,  NONE, 33, BLUE "m",   mimic },
-	[MIMIC_3]      = {  2, 1,  0, false,   1,  NONE, 22, ORANGE "m", mimic },
-	[MIMIC_4]      = {  2, 1,  0, false,   1,  NONE, 22, ORANGE "m", mimic },
-	[MIMIC_5]      = {  2, 1,  0, false,   1,  NONE, 22, ORANGE "m", mimic },
 	[WHITE_MIMIC]  = {  3, 1,  0, false,   1,  NONE, 33, "m",        mimic },
 	[HEADLESS_2]   = {  3, 1,  0, false,   0,  NONE,  0, YELLOW "∠", charge },
 	[HEADLESS_3]   = {  4, 1,  0, false,   0,  NONE,  0, BLACK "∠",  charge },
@@ -806,8 +802,7 @@ const TypeInfos type_infos[] = {
 	[MIMIC_STATUE] = {  4, 1,  0, false,   1,  NONE, 46, BLACK "g",  mimic },
 	[BOMB_STATUE]  = {  4, 1,  0, false,   0,  NONE, 46, YELLOW "g", bomb_statue },
 	[MINE_STATUE]  = {  4, 1,  0, false,   0,  NONE,  0, RED "g",    NULL },
-	[CRATE_1]      = {  0, 1,  0, false,   0,  NONE,  0, "(",        NULL },
-	[CRATE_2]      = {  0, 1,  0, false,   0,  NONE,  0, "(",        NULL },
+	[CRATE]        = {  0, 1,  0, false,   0,  NONE,  0, "(",        NULL },
 	[BARREL]       = {  1, 1,  0, false, 999,  DIRT,  2, BROWN "(",  charge },
 	[TEH_URN]      = {  0, 3,  0, false,   0,  NONE,  0, PURPLE "(", NULL },
 	[CHEST]        = {  0, 1,  0, false,   0,  NONE,  0, BLACK "(",  NULL },
@@ -836,8 +831,7 @@ const TypeInfos type_infos[] = {
 	[DEVIL_2]      = {  4, 2,  2, false,   9,  NONE, 53, GREEN "&",  devil },
 	[PURPLE_SLIME] = {  3, 1,  0, false, 999,  NONE, 35, PURPLE "P", slime },
 	[BLACK_SLIME]  = {  3, 1,  0, false, 999,  NONE, 35, BLACK "P",  slime },
-	[WHITE_SLIME]  = {  3, 1,  0, false, 999,  NONE, 35, "P",        slime },
-	[CURSE]        = {  0, 1,  0,  true,   9,  NONE,  5, YELLOW "W", basic_seek },
+	[CURSE_WRAITH] = {  0, 1,  0,  true,   9,  NONE,  5, YELLOW "W", basic_seek },
 	[SHOP_MIMIC]   = {  2, 1,  0, false,   2,  NONE, 22, YELLOW "m", moore_mimic },
 	[STONE_STATUE] = {  0, 1,  0, false,   0,  NONE,  0, BLACK "S",  NULL },
 	[GOLD_STATUE]  = {  0, 3,  0, false,   0,  NONE,  0, BLACK "S",  NULL },

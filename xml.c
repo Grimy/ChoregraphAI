@@ -118,30 +118,39 @@ static Coords orient_zombie(Coords pos)
 	return {1, 0};
 }
 
+static MonsterType monster_types[] = {
+	GREEN_SLIME, BLUE_SLIME, YELLOW_SLIME, SKELETON_1, SKELETON_2, SKELETON_3,
+	BLUE_BAT, RED_BAT, GREEN_BAT, MONKEY_1, MONKEY_2, GHOST, ZOMBIE, WRAITH,
+	MIMIC_1, MIMIC_2, WHITE_MIMIC,
+	[100] = SKELETANK_1, SKELETANK_2, SKELETANK_3, WINDMAGE_1, WINDMAGE_2,
+	WINDMAGE_3, MUSHROOM_1, MUSHROOM_2, GOLEM_1, GOLEM_2, ARMADILLO_1, ARMADILLO_2,
+	CLONE, TARMONSTER, MOLE, WIGHT, WALL_MIMIC, LIGHTSHROOM, BOMBSHROOM,
+	[200] = FIRE_SLIME, ICE_SLIME, RIDER_1, RIDER_2, RIDER_3, EFREET, DJINN,
+	ASSASSIN_1, ASSASSIN_2, FIRE_BEETLE, ICE_BEETLE, HELLHOUND, SHOVE_1,
+	YETI, GHAST, FIRE_MIMIC, ICE_MIMIC, FIRE_POT, ICE_POT, SHOVE_2,
+	[300] = BOMBER, DIGGER, BLACK_BAT, ARMADILDO, BLADENOVICE, BLADEMASTER,
+	GHOUL, GOOLEM, HARPY, LICH_1, LICH_2, LICH_3, CONF_MONKEY, TELE_MONKEY, PIXIE,
+	SARCO_1, SARCO_2, SARCO_3, SPIDER, WARLOCK_1, WARLOCK_2, MUMMY, WIND_STATUE,
+	MIMIC_STATUE, BOMB_STATUE, MINE_STATUE, CRATE, CRATE,
+	[400] = DIREBAT_1, DIREBAT_2, DRAGON, RED_DRAGON, BLUE_DRAGON,
+	BANSHEE_1, BANSHEE_2, MINOTAUR_1, MINOTAUR_2, NIGHTMARE_1, NIGHTMARE_2,
+	MOMMY, OGRE, METROGNOME_1, METROGNOME_2, EARTH_DRAGON,
+	[600] = SHOPKEEPER,
+	[701] = SKULL_1, WATER_BALL, NO_MONSTER, ELECTRO_1, ELECTRO_2, ELECTRO_3,
+	ORB_1, ORB_2, ORB_3, GORGON_1, WIRE_ZOMBIE, SKULL_2, SKULL_3, NO_MONSTER,
+	NO_MONSTER, NO_MONSTER, EVIL_EYE_1, GORGON_2, EVIL_EYE_2, ORC_1, ORC_2, ORC_3,
+	DEVIL_1, DEVIL_2, PURPLE_SLIME, CURSE_WRAITH, MIMIC_1, SHOP_MIMIC,
+	BLACK_SLIME, NO_MONSTER, MIMIC_1, MIMIC_1, TAR_BALL,
+};
+
 static void enemy_init(Coords pos, i32 type, bool lord)
 {
-	static const u8 enemy_id[] = {
-		GREEN_SLIME,   // Z1
-		SKELETANK_1,   // Z2
-		FIRE_SLIME,    // Z3
-		BOMBER,        // Z4
-		DIREBAT_1,     // Minibosses
-		SKELETON_1,    // Debug
-		SHOPKEEPER,    // Special
-		WATER_BALL,    // Z5
-	};
-
-	static const i8 z5remap[100] = {0, 10, 1, [10] = 4, -1, [17] = 1, -3 };
-	if (type >= 700)
-		type += z5remap[type % 100] - 3;
-
-	u8 id = enemy_id[(type / 100) & 7] + type % 100;
-
-	if (id == GHAST || id == GHOUL || id == WRAITH || id == WIGHT)
-		return;
-
-	if (id >= PLAYER)
+	if (type > ARRAY_SIZE(monster_types) || monster_types[type] == NO_MONSTER)
 		FATAL("Invalid enemy type: %d", type);
+
+	MonsterType id = monster_types[type];
+	if (id >= GHAST && id <= CURSE_WRAITH)
+		return;
 
 	Monster *m = monster_spawn(id, pos, 0);
 
@@ -183,7 +192,7 @@ static void xml_process_node(const char *name)
 	else if (streq(name, "chest"))
 		monster_spawn(CHEST, pos, 0)->item = xml_item("contents");
 	else if (streq(name, "crate"))
-		monster_spawn(CRATE_2 + (u8) type, pos, 0)->item = xml_item("contents");
+		monster_spawn(CRATE + (u8) type, pos, 0)->item = xml_item("contents");
 	else if (streq(name, "shrine"))
 		monster_spawn(SHRINE, pos, 0);
 	else if (streq(name, "item") && pos == spawn)

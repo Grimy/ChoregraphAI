@@ -138,10 +138,7 @@ static void enemy_attack(Monster *attacker)
 	Coords d = player.pos - attacker->pos;
 
 	switch (attacker->type) {
-	case MONKEY_1:
-	case MONKEY_2:
-	case CONF_MONKEY:
-	case TELE_MONKEY:
+	case MONKEY_1 ... TELE_MONKEY:
 	case TARMONSTER:
 		if (g.monkeyed)
 			break; // One monkey at a time, please
@@ -281,10 +278,7 @@ void monster_kill(Monster *m, DamageType type)
 	case TARMONSTER:
 		tile_change(m->pos, TAR);
 		[[clang::fallthrough]];
-	case MONKEY_1:
-	case MONKEY_2:
-	case CONF_MONKEY:
-	case TELE_MONKEY:
+	case MONKEY_1 ... TELE_MONKEY:
 		if (m == &g.monsters[g.monkeyed]) {
 			g.monkeyed = 0;
 			TILE(player.pos).monster = 1;
@@ -322,7 +316,7 @@ void monster_kill(Monster *m, DamageType type)
 		monster_spawn(m->type + STONE_STATUE - GORGON_1, m->pos, 0);
 		return;
 	case SARCO_1 ... SARCO_3:
-	case DIREBAT_1 ... EARTH_DRAGON:
+	case DIREBAT_1 ... METROGNOME_2:
 		--g.locking_enemies;
 		if (m->type == NIGHTMARE_1 || m->type == NIGHTMARE_2)
 			g.nightmare = 0;
@@ -361,8 +355,7 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 			break;
 		knockback(m, dir, m->state ? 2 : 0);
 		return false;
-	case CRATE_1:
-	case CRATE_2:
+	case CRATE:
 		if (dmg >= 3)
 			break; // Literally
 		knockback(m, dir, 0);
@@ -404,17 +397,7 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 		m->delay = 3;
 		return false;
 	case TARMONSTER:
-	case MIMIC_1:
-	case MIMIC_2:
-	case MIMIC_3:
-	case MIMIC_4:
-	case MIMIC_5:
-	case WHITE_MIMIC:
-	case WALL_MIMIC:
-	case MIMIC_STATUE:
-	case FIRE_MIMIC:
-	case ICE_MIMIC:
-	case SHOP_MIMIC:
+	case MIMIC_1 ... SHOP_MIMIC:
 	case SHRINE:
 		if (type == DMG_BOMB || m->state == 2)
 			break;
@@ -516,7 +499,7 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	case SKELETANK_3:
 		if (m->hp > 1)
 			break;
-		monster_transform(m, m->type & 1 ? HEADLESS_2 : HEADLESS_3);
+		monster_transform(m, HEADLESS_2 + (m->type == SKELETON_3 || m->type == SKELETANK_3));
 		m->delay = 0;
 		m->prev_pos = m->pos - dir;
 		return false;
@@ -763,7 +746,7 @@ static bool check_aggro(Monster *m, Coords d, bool bomb_exploded)
 		&& TILE(m->pos).revealed
 		&& (TILE(m->pos).light >= 7777
 			|| shadowed
-			|| (m->type >= DIREBAT_1 && m->type <= EARTH_DRAGON)
+			|| (m->type >= DIREBAT_1 && m->type <= METROGNOME_2)
 			|| L2(player.pos - m->pos) < 8);
 
 	if (m->aggro && (m->type == BLUE_DRAGON || m->type == EARTH_DRAGON))
