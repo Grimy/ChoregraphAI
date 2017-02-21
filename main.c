@@ -734,6 +734,8 @@ u8 pickup_item(u8 item)
 
 static void player_turn(u8 input)
 {
+	g.player_moved = false;
+
 	switch (input) {
 	case 'e':
 		player_move(-1,  0);
@@ -871,7 +873,7 @@ static void before_and_after()
 {
 	for (Coords d: plus_shape) {
 		Monster *m = &MONSTER(player.pos + d);
-		if (m->type == FIRE_BEETLE || m->type == ICE) {
+		if (m->type == FIRE_BEETLE || m->type == ICE_BEETLE) {
 			tile_change(m->pos, m->type == FIRE_BEETLE ? FIRE : ICE);
 			m->type = BEETLE;
 		}
@@ -948,8 +950,6 @@ bool do_beat(u8 input)
 
 	if (!g.player_moved && TILE(player.pos).type == FIRE)
 		damage(&player, 2, Coords {}, DMG_NORMAL);
-
-	g.player_moved = false;
 
 	// Traps’ turns
 	for (Trap *t = g.traps; t->pos.x; ++t)
