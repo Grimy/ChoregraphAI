@@ -1,7 +1,3 @@
-TESTS:
-* kill warlock onto bounce/omnibounce trap
-* 14403972, 2-3: is skeletank_2 aggroed after fffff?
-
 FEATURES:
 * metal doors (type=111)
 * earth dragons

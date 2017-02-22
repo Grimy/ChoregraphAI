@@ -94,11 +94,9 @@ static void display_tile(Coords pos)
 {
 	Tile *tile = &TILE(pos);
 
-	bool light =
-		(g.nightmare && L2(pos - g.monsters[g.nightmare].pos) < 8) ? false :
-		L2(pos - player.pos) <= player.radius ? true :
-		tile->light >= 7777;
-	printf(light ? WHITE : BLACK);
+	printf(shadowed(pos) ? DARK :
+		L2(pos - player.pos) <= player.radius ? WHITE :
+		tile->light >= 7777 ? WHITE : BLACK);
 	print_at(pos, tile_glyphs[tile->type]);
 
 	if (IS_DIGGABLE(pos) && !IS_DOOR(pos))
@@ -218,8 +216,9 @@ static void display_player(void)
 	printf(" (%s)", g.boots_on ? "on" : "off");
 	print_at({x, ++y}, "Ring: %s",   item_names[g.ring].friendly);
 	print_at({x, ++y}, "Usable: %s", item_names[g.usable].friendly);
-	display_tile(player.pos);
-	printf(REVERSE "\b@" CLEAR);
+	if (!player.untrapped)
+		print_at(player.pos, "%s", tile_glyphs[TILE(player.pos).type]);
+	print_at(player.pos, REVERSE "@" CLEAR);
 }
 
 // Clears and redraws the entire interface.
@@ -320,7 +319,7 @@ int main(i32 argc, char **argv)
 			cursor += {-33, -33};
 		else if (c == 4 || c == 'q')
 			break;
-		else
+		else if (!g.game_over)
 			g.game_over = do_beat((char) c);
 	}
 }

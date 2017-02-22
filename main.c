@@ -740,14 +740,18 @@ static void player_turn(char input)
 		forced_move(&player, direction(player.pos - player.prev_pos));
 }
 
+bool shadowed(Coords pos) {
+	return g.nightmare && L2(pos - g.monsters[g.nightmare].pos) <
+		(g.monsters[g.nightmare].type == NIGHTMARE_2 ? 12 : 6);
+}
+
 static bool check_aggro(Monster *m, Coords d, bool bomb_exploded)
 {
-	bool shadowed = g.nightmare && L2(m->pos - g.monsters[g.nightmare].pos) < 8;
 	m->aggro = (d.y >= -5 && d.y <= 6)
 		&& (d.x >= -9 && d.x <= 10)
 		&& TILE(m->pos).revealed
 		&& (TILE(m->pos).light >= 7777
-			|| shadowed
+			|| shadowed(m->pos)
 			|| (m->type >= DIREBAT_1 && m->type <= METROGNOME_2)
 			|| L2(player.pos - m->pos) < 8);
 
@@ -755,7 +759,7 @@ static bool check_aggro(Monster *m, Coords d, bool bomb_exploded)
 		return true;
 
 	// The nightmare-bomb-aggro bug
-	if (m->aggro && (bomb_exploded || shadowed) && m->radius)
+	if (m->aggro && (bomb_exploded || shadowed(m->pos)) && m->radius)
 		return true;
 
 	if (L2(d) <= m->radius) {

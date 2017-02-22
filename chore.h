@@ -35,6 +35,7 @@ template <class T> constexpr T max(T x, i64 y) { return x > (T) y ? x : (T) y; }
 #define BROWN   "\033[33m"
 #define BLUE    "\033[34m"
 #define PINK    "\033[35m"
+#define DARK    "\033[37m"
 #define BLACK   "\033[90m"
 #define ORANGE  "\033[91m"
 #define GREEN   "\033[92m"
@@ -391,6 +392,7 @@ void monster_kill(Monster *m, DamageType type);
 bool damage(Monster *m, i64 dmg, Coords dir, DamageType type);
 void update_fov(void);
 void adjust_lights(Coords pos, i64 diff, double radius);
+bool shadowed(Coords pos);
 u8 pickup_item(u8 item);
 bool can_move(const Monster *m, Coords dir);
 MoveResult enemy_move(Monster *m, Coords dir);
