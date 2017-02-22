@@ -470,7 +470,7 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 		return false;
 	case SKULL_1 ... SKULL_3:
 		monster_kill(m, DMG_NORMAL);
-		skull_spawn(m, { dir.x == 0, dir.x != 0 }, -CARDINAL(dir));
+		skull_spawn(m, { dir.x == 0, dir.x != 0 }, -cardinal(dir));
 		return false;
 	case WIRE_ZOMBIE:
 		if (IS_WIRE(player.pos) || !(IS_WIRE(m->pos) || TILE(m->pos).type == STAIRS))
@@ -608,7 +608,7 @@ static void chain_lightning(Coords pos, Coords dir)
 			if (m->electrified || m == &player)
 				continue;
 			m->electrified = true;
-			damage(m, 1, CARDINAL(arc), DMG_NORMAL);
+			damage(m, 1, cardinal(arc), DMG_NORMAL);
 			queue[queue_length++] = queue[i] + arc;
 		}
 	}
@@ -737,7 +737,7 @@ static void player_turn(char input)
 	}
 
 	if (g.sliding_on_ice)
-		forced_move(&player, DIRECTION(player.pos - player.prev_pos));
+		forced_move(&player, direction(player.pos - player.prev_pos));
 }
 
 static bool check_aggro(Monster *m, Coords d, bool bomb_exploded)
@@ -781,7 +781,7 @@ static void trap_turn(const Trap *trap)
 	switch (trap->type) {
 	case OMNIBOUNCE:
 		animation(BOUNCE_TRAP, m->pos, {});
-		forced_move(m, DIRECTION(m->pos - m->prev_pos));
+		forced_move(m, direction(m->pos - m->prev_pos));
 		break;
 	case BOUNCE:
 		animation(BOUNCE_TRAP, m->pos, {});
@@ -920,7 +920,7 @@ bool do_beat(char input)
 
 	// Ice and Fire
 	g.sliding_on_ice = g.player_moved && TILE(player.pos).type == ICE
-		&& can_move(&player, DIRECTION(player.pos - player.prev_pos));
+		&& can_move(&player, direction(player.pos - player.prev_pos));
 
 	if (!g.player_moved && TILE(player.pos).type == FIRE)
 		damage(&player, 2, Coords {}, DMG_NORMAL);

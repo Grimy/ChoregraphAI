@@ -2,15 +2,12 @@
 
 #include "chore.h"
 
-#define WORK_FACTOR 3
-
-// Don’t explore routes that exceed those thresholds
-static i32 _Atomic best_cost;
+static _Atomic i32 simulated_beats;
+static _Atomic i32 best_cost;
 
 static GameState initial_state;
+static i32 initial_cost;
 static i32 initial_distance;
-
-static _Atomic i32 simulated_beats;
 
 void animation(UNUSED Animation id, UNUSED Coords pos, UNUSED Coords dir) { }
 
@@ -18,16 +15,13 @@ void animation(UNUSED Animation id, UNUSED Coords pos, UNUSED Coords dir) { }
 // This is the number of beats it takes, plus the value of spent resources.
 static i32 cost_function()
 {
-	return g.current_beat
-		+ (initial_state.monsters[1].hp - g.monsters[1].hp)
-		+ (initial_state.monsters[1].damage - g.monsters[1].damage)
-		+ (initial_state.bombs - g.bombs);
+	return g.current_beat - player.hp - player.damage - g.bombs;
 }
 
 // Estimates the number of beats it will take to clear the level.
 static i32 distance_function()
 {
-	return (i32) ((L1(player.pos - g.stairs) + 2) / 3) + 2 * g.locking_enemies;
+	return (L1(player.pos - g.stairs) + 2) / 3 + 2 * g.locking_enemies;
 }
 
 // When a winning route is found with RNG disabled, estimate its probability
@@ -36,7 +30,7 @@ static i32 distance_function()
 static void handle_victory()
 {
 	u32 ok = 0;
-	i32 cost = cost_function();
+	i32 cost = cost_function() - initial_cost;
 	u32 length = g.current_beat;
 	char input[ARRAY_SIZE(g.input)];
 	memcpy(input, g.input, sizeof(g.input));
@@ -73,8 +67,8 @@ static void explore(GameState const *route)
 			continue;
 		}
 
-		i32 cost = cost_function();
-		i32 distance = WORK_FACTOR + initial_distance - distance_function();
+		i32 cost = cost_function() - initial_cost;
+		i32 distance = work_factor + initial_distance - distance_function();
 
 		if (cost < best_cost && distance * best_cost >= initial_distance * cost) {
 			GameState copy = g;
@@ -90,10 +84,10 @@ int main(i32 argc, char **argv)
 	xml_parse(argc, argv);
 	initial_state = g;
 	initial_distance = distance_function();
-	best_cost = initial_distance + 2 + WORK_FACTOR;
+	initial_cost = cost_function();
+	best_cost = initial_distance + 5;
 
 	printf("Goal: %d\n", best_cost);
-	assert(g.current_beat == 0);
 
 	#pragma omp parallel
 	#pragma omp single nowait

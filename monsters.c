@@ -29,7 +29,7 @@ static bool can_breathe(const Monster *m, Coords d)
 	if (m->type != BLUE_DRAGON && d.y)
 		return false;
 
-	Coords move = DIRECTION(d);
+	Coords move = direction(d);
 	for (Coords pos = m->pos + move; pos.x != player.pos.x; pos += move)
 		if (BLOCKS_LOS(pos))
 			return false;
@@ -77,12 +77,12 @@ static bool _can_charge(Monster *m, Coords dest)
 	if (d.x * d.y != 0 && !(m->type == ARMADILDO && abs(d.x) == abs(d.y)))
 		return false;
 
-	Coords move = DIRECTION(d);
+	Coords move = direction(d);
 	for (Coords pos = m->pos + move; pos != dest; pos += move)
 		if (!IS_EMPTY(pos))
 			return false;
 
-	m->prev_pos = m->pos - DIRECTION(d);
+	m->prev_pos = m->pos - direction(d);
 	return true;
 }
 
@@ -230,7 +230,7 @@ static void charge(Monster *m, UNUSED Coords d)
 {
 	Coords charging_dir = m->pos - m->prev_pos;
 	if (m->type != ARMADILDO && m->type != BARREL)
-		charging_dir = CARDINAL(charging_dir);
+		charging_dir = cardinal(charging_dir);
 	if (enemy_move(m, charging_dir) != MOVE_SUCCESS)
 		m->state = 0;
 	if (m->type != BARREL)
@@ -245,7 +245,7 @@ static bool magic(Monster *m, Coords d, bool condition)
 		basic_seek(m, d);
 		return false;
 	} else {
-		m->dir = DIRECTION(d);
+		m->dir = direction(d);
 		return true;
 	}
 }
@@ -308,8 +308,8 @@ static void ghost(Monster *m, Coords d)
 
 static void wind_mage(Monster *m, Coords d)
 {
-	if (magic(m, d, L2(d) == 4 && can_move(m, DIRECTION(d))))
-		forced_move(&player, -DIRECTION(d));
+	if (magic(m, d, L2(d) == 4 && can_move(m, direction(d))))
+		forced_move(&player, -direction(d));
 }
 
 // Attack in a 3x3 zone without moving.
@@ -335,7 +335,7 @@ static void armadillo(Monster *m, Coords d)
 static void clone(Monster *m, UNUSED Coords d)
 {
 	if (g.player_moved)
-		enemy_move(m, DIRECTION(player.prev_pos - player.pos));
+		enemy_move(m, direction(player.prev_pos - player.pos));
 }
 
 static void tarmonster(Monster *m, Coords d)
@@ -415,9 +415,9 @@ static void blademaster(Monster *m, Coords d)
 {
 	if (m->state == 2) {
 		m->state = 0;
-	} else if (m->state == 1 && can_move(m, DIRECTION(player.prev_pos - m->prev_pos))) {
-		enemy_move(m, DIRECTION(player.prev_pos - m->prev_pos));
-		enemy_move(m, DIRECTION(player.prev_pos - m->prev_pos));
+	} else if (m->state == 1 && can_move(m, direction(player.prev_pos - m->prev_pos))) {
+		enemy_move(m, direction(player.prev_pos - m->prev_pos));
+		enemy_move(m, direction(player.prev_pos - m->prev_pos));
 		m->delay = 0;
 		m->state = 2;
 		m->requeued = false;
@@ -455,13 +455,13 @@ static void harpy(Monster *m, Coords d)
 		if (!score || score >= min || !can_move(m, move))
 			continue;
 		if ((L2(move) == 9 || L2(move) == 4)
-		    && (BLOCKS_LOS(m->pos + DIRECTION(move))
-		    || BLOCKS_LOS(m->pos + DIRECTION(move) * 2)))
+		    && (BLOCKS_LOS(m->pos + direction(move))
+		    || BLOCKS_LOS(m->pos + direction(move) * 2)))
 			continue;
 		if (L2(move) == 5
 		    && BLOCKS_LOS(m->pos + move / 2)
-		    && (BLOCKS_LOS(m->pos + DIRECTION(move))
-		    || BLOCKS_LOS(m->pos + DIRECTION(move) - move / 2)))
+		    && (BLOCKS_LOS(m->pos + direction(move))
+		    || BLOCKS_LOS(m->pos + direction(move) - move / 2)))
 			continue;
 		min = score;
 		best_move = move;
@@ -473,7 +473,7 @@ static void harpy(Monster *m, Coords d)
 
 static void lich(Monster *m, Coords d)
 {
-	if (magic(m, d, L2(d) == 4 && can_move(m, DIRECTION(d)) && !player.confusion))
+	if (magic(m, d, L2(d) == 4 && can_move(m, direction(d)) && !player.confusion))
 		player.confusion = 5;
 }
 
@@ -683,7 +683,7 @@ static void mommy(Monster *m, Coords d)
 static void ogre(Monster *m, Coords d)
 {
 	if (m->state == 2) {
-		Coords clonk_dir = CARDINAL(player.prev_pos - m->pos);
+		Coords clonk_dir = cardinal(player.prev_pos - m->pos);
 		for (i8 i = 1; i <= 3; ++i) {
 			Coords pos = m->pos + clonk_dir * i;
 			dig(pos, SHOP, false);

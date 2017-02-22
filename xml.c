@@ -33,6 +33,8 @@ const ItemNames item_names[] {
 	[USE_FREEZE]     = { "scroll_freeze_enemies",  "Freeze Scroll",        "?" },
 };
 
+i32 work_factor = 3;
+
 // Initial position of the player.
 static Coords spawn = {1, 1};
 
@@ -249,42 +251,13 @@ static i32 compare_priorities(const void *a, const void *b)
 // Initializes the game’s state based on the given custom dungeon file.
 // Aborts if the file doesn’t exist or isn’t valid XML.
 // Valid, non-dungeon XML yields undefined results (most likely, an empty dungeon).
-void xml_parse(i32 argc, char **argv)
+static void read_dungeon(char *file, i32 level)
 {
-	i32 opt;
-	i32 level = 1;
-	u8 item = ARRAY_SIZE(item_names);
-
-	while ((opt = getopt(argc, argv, "i:l:m:s:")) != -1) {
-		switch (opt) {
-		case 'i':
-			while (--item && !strstr(item_names[item].xml, optarg));
-			pickup_item(item);
-			break;
-		case 'l':
-			level = atoi(optarg);
-			break;
-		case 'm':
-			strncpy(g.input, optarg, sizeof(g.input));
-			break;
-		case 's':
-			g.seed = (u32) atoi(optarg);
-			break;
-		case '?':
-			exit(255);
-		}
-	}
-
-	if (level <= 0)
-		FATAL("Invalid level: %s (expected a positive integer)", argv[2]);
-
-	if (argc <= optind)
-		FATAL("Usage: %s [options] dungeon_file.xml", argv[0]);
-
-	xml_process_file(argv[optind], level, xml_find_spawn);
+	xml_process_file(file, level, xml_find_spawn);
 	monster_spawn(PLAYER, spawn, 0);
-	xml_process_file(argv[optind], level, xml_process_node);
+	xml_process_file(file, level, xml_process_node);
 
+	assert(player.type == PLAYER);
 	if (MONSTER(spawn).type != PLAYER)
 		FATAL("Non-player entity at spawn: %s", TYPE(&MONSTER(spawn)).glyph);
 
@@ -301,10 +274,45 @@ void xml_parse(i32 argc, char **argv)
 		g.input[0] = 'X';
 	else
 		update_fov();
+}
+
+void xml_parse(i32 argc, char **argv)
+{
+	i32 level = 1;
+	u8 item;
+
+	getopt: switch (getopt(argc, argv, "i:l:m:s:w:")) {
+	case 'i':
+		item = ARRAY_SIZE(item_names);
+		while (--item && !strstr(item_names[item].xml, optarg));
+		pickup_item(item);
+		goto getopt;
+	case 'l':
+		level = atoi(optarg);
+		if (level <= 0)
+			FATAL("Invalid level: %s (need a positive integer)", optarg);
+		goto getopt;
+	case 'm':
+		strncpy(g.input, optarg, sizeof(g.input));
+		goto getopt;
+	case 's':
+		g.seed = (u32) atoi(optarg);
+		goto getopt;
+	case 'w':
+		work_factor = atoi(optarg);
+		if (work_factor <= 0)
+			FATAL("Invalid work factor: %s (need a positive integer)", optarg);
+		goto getopt;
+	case '?':
+		exit(255);
+	}
+
+	if (argc <= optind)
+		FATAL("Usage: %s [options] dungeon_file.xml", argv[0]);
+
+	read_dungeon(argv[optind], level);
 
 	for (char *p = g.input; *p; ++p)
 		do_beat(*p);
-
-	assert(player.type == PLAYER);
 	g.current_beat = 0;
 }

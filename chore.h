@@ -81,17 +81,17 @@ struct Coords {
 
 // Converts relative coordinates to a direction.
 // For example, {5, -7} becomes {1, -1}.
-#define DIRECTION(d) ((Coords) {sign((d).x), sign((d).y)})
+constexpr Coords direction(Coords d) { return {sign(d.x), sign(d.y)}; }
 
 // Converts relative coordinates to a *cardinal* direction.
 // Like DIRECTION, but diagonals are turned into horizontals.
-#define CARDINAL(d) ((Coords) {sign((d).x), (d).x ? 0 : sign((d).y)})
+constexpr Coords cardinal(Coords d) { return {sign(d.x), d.x ? 0 : sign(d.y)}; }
 
 // L¹ norm of a vector (= number of beats it takes to move to this relative position).
-static inline i64 L1(Coords d) { return abs((i64) d.x) + abs((i64) d.y); }
+constexpr i32 L1(Coords d) { return abs(d.x) + abs(d.y); }
 
 // *Square* of the L² norm of a vector (mostly used for aggro/lighting).
-static inline i64 L2(Coords d) { return d.x * d.x + d.y * d.y; }
+constexpr i32 L2(Coords d) { return d.x * d.x + d.y * d.y; }
 
 // Playable characters.
 enum CharId {
@@ -371,6 +371,7 @@ void update_fov_octant(Tile *tile, i64 x, i64 y);
 
 // Defined by xml.c
 extern const ItemNames item_names[];
+extern i32 work_factor;
 void xml_parse(i32 argc, char **argv);
 
 // Defined by monsters.c
