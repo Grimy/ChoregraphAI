@@ -1,5 +1,7 @@
 // solve.c - finds the optimal route for a level
 
+#include <signal.h>
+
 #include "chore.h"
 
 static _Atomic i32 simulated_beats;
@@ -68,9 +70,13 @@ static void explore(GameState const *route)
 		}
 
 		i32 cost = cost_function() - initial_cost;
-		i32 distance = work_factor + initial_distance - distance_function();
+		i32 distance = initial_distance - distance_function();
+		i32 work = initial_distance * cost - distance * best_cost;
 
-		if (cost < best_cost && distance * best_cost >= initial_distance * cost) {
+		if (work < 5) {
+			GameState copy = g;
+			explore(&copy);
+		} else if (cost < best_cost && work < work_factor) {
 			GameState copy = g;
 			#pragma omp task
 			explore(&copy);
@@ -87,6 +93,7 @@ int main(i32 argc, char **argv)
 	initial_cost = cost_function();
 	best_cost = initial_distance + 5;
 
+	signal(SIGPIPE, SIG_IGN);
 	printf("Goal: %d\n", best_cost);
 
 	#pragma omp parallel

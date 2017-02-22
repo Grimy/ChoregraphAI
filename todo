@@ -1,5 +1,6 @@
 TESTS:
 * kill warlock onto bounce/omnibounce trap
+* 14403972, 2-3: is skeletank_2 aggroed after fffff?
 
 FEATURES:
 * metal doors (type=111)
@@ -24,6 +25,6 @@ BUGFIXES:
 REFACTORS:
 * Consider moving: tile_change, adjust_lights, pickup_item, can_move
 * Use more references
-* Refactor chain_lightning
+* Refactor chain_lightning AND its animation
 * Rename _can_charge → something
 * Use an explicit Z4 flag instead of & 8

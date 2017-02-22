@@ -311,16 +311,15 @@ struct TypeInfos {
 };
 
 struct Tile {
+	bool revealed;
 	u8 type;
-	i8: 8;
 	u8 monster;
 	u8 item;
 	u16 light;
-	bool revealed;
 	bool torch: 1;
 	bool destroyed: 1;
 	bool wired: 1;
-	i8 padding: 5;
+	i16: 13;
 };
 
 struct Trap {

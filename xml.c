@@ -33,7 +33,7 @@ const ItemNames item_names[] {
 	[USE_FREEZE]     = { "scroll_freeze_enemies",  "Freeze Scroll",        "?" },
 };
 
-i32 work_factor = 3;
+i32 work_factor = 36;
 
 // Initial position of the player.
 static Coords spawn = {1, 1};
