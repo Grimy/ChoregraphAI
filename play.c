@@ -225,7 +225,6 @@ static void display_player(void)
 // Clears and redraws the entire interface.
 static void display_all(void)
 {
-	printf("\033[K");
 	for (i8 y = 1; y < ARRAY_SIZE(g.board) - 1; ++y)
 		for (i8 x = 1; x < ARRAY_SIZE(*g.board) - 1; ++x)
 			display_tile({x, y});
@@ -242,7 +241,7 @@ static void display_all(void)
 		print_at(pos, "\033[K");
 
 	display_player();
-	print_at({0, 0}, "");
+	print_at({0, 0}, "%s\033[K", g.game_over? player.hp ? "You won!" : "You died..." : "");
 }
 
 void animation(Animation id, Coords pos, Coords dir)
@@ -321,7 +320,7 @@ int main(i32 argc, char **argv)
 			cursor += {-33, -33};
 		else if (c == 4 || c == 'q')
 			break;
-		else if ((g.game_over = g.game_over || do_beat((char) c)))
-			printf("%s", player.hp ? "You won!" : "You died...");
+		else
+			g.game_over = do_beat((char) c);
 	}
 }

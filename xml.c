@@ -18,8 +18,8 @@
 
 const ItemNames item_names[] {
 	[NO_ITEM]        = { "",                       "None",                 "" },
-	[HEART_1]        = { "misc_heart_container",   "",                     RED "ღ" },
-	[HEART_2]        = { "misc_heart_container2",  "",                     RED "ღ" },
+	[HEART_1]        = { "perm_heart2",            "",                     "" },
+	[HEART_2]        = { "perm_heart3",            "",                     "" },
 	[BOMB_1]         = { "bomb",                   "",                     "●" },
 	[BOMB_3]         = { "bomb_3",                 "",                     "●" },
 	[SHOVEL_BASE]    = { "shovel_basic",           "Base Shovel",          BROWN "(" },
@@ -36,9 +36,6 @@ const ItemNames item_names[] {
 
 i32 work_factor = 36;
 
-// Initial position of the player.
-static Coords spawn = {1, 1};
-
 static char attribute_map[8][32];
 
 // Computes the position of the spawn relative to the top-left corner.
@@ -50,9 +47,9 @@ static void xml_find_spawn(UNUSED const char* node)
 {
 	if (INT_ATTR("type") >= 100)
 		return;
-	spawn.x = max(spawn.x, 2 - (i8) INT_ATTR("x"));
-	spawn.y = max(spawn.y, 2 - (i8) INT_ATTR("y"));
-	if (IS_OOB(spawn))
+	player.pos.x = max(player.pos.x, 2 - (i8) INT_ATTR("x"));
+	player.pos.y = max(player.pos.y, 2 - (i8) INT_ATTR("y"));
+	if (IS_OOB(player.pos))
 		FATAL("Tile too far away from spawn: (%d, %d)", INT_ATTR("x"), INT_ATTR("y"));
 }
 
@@ -181,7 +178,7 @@ static void xml_process_node(const char *name)
 	if (type < 0)
 		FATAL("Invalid %s type: %d", name, type);
 
-	Coords pos = Coords {(i8) INT_ATTR("x"), (i8) INT_ATTR("y")} + spawn;
+	Coords pos = Coords {(i8) INT_ATTR("x"), (i8) INT_ATTR("y")} + player.pos;
 	if (IS_OOB(pos)) {
 		if (type >= 100)
 			return;
@@ -200,7 +197,7 @@ static void xml_process_node(const char *name)
 		monster_spawn(CRATE + (u8) type, pos, 0)->item = xml_item("contents");
 	else if (streq(name, "shrine"))
 		monster_spawn(SHRINE, pos, 0);
-	else if (streq(name, "item") && pos == spawn)
+	else if (streq(name, "item") && pos == player.pos)
 		pickup_item(xml_item("type"));
 	else if (streq(name, "item"))
 		TILE(pos).item = xml_item("type");
@@ -255,12 +252,7 @@ static i32 compare_priorities(const void *a, const void *b)
 static void read_dungeon(char *file, i32 level)
 {
 	xml_process_file(file, level, xml_find_spawn);
-	monster_spawn(PLAYER, spawn, 0);
 	xml_process_file(file, level, xml_process_node);
-
-	assert(player.type == PLAYER);
-	if (MONSTER(spawn).type != PLAYER)
-		FATAL("Non-player entity at spawn: %s", TYPE(&MONSTER(spawn)).glyph);
 
 	qsort(g.monsters + 2, g.last_monster - 1, sizeof(Monster), compare_priorities);
 	for (u8 i = 1; g.monsters[i].type; ++i) {
@@ -270,6 +262,10 @@ static void read_dungeon(char *file, i32 level)
 		if (m.type == NIGHTMARE_1 || m.type == NIGHTMARE_2)
 			g.nightmare = i;
 	}
+
+	player.prev_pos = player.pos;
+	if (MONSTER(player.pos).type != PLAYER)
+		FATAL("Non-player entity at player.pos: %s", TYPE(&MONSTER(player.pos)).glyph);
 
 	if (g.character == BARD)
 		g.input[0] = 'X';
@@ -291,6 +287,8 @@ void xml_parse(i32 argc, char **argv)
 	signal(SIGABRT, signal_handler);
 	signal(SIGINT, signal_handler);
 	signal(SIGPIPE, SIG_IGN);
+
+	monster_spawn(PLAYER, {2, 2}, 0);
 
 	getopt: switch (getopt(argc, argv, "i:l:m:s:w:")) {
 	case 'i':
@@ -327,4 +325,7 @@ void xml_parse(i32 argc, char **argv)
 		do_beat(*p);
 	g.current_beat = 0;
 	memset(g.input, 0, sizeof(g.input));
+
+	if (!player.hp)
+		exit(0);
 }

@@ -304,7 +304,7 @@ void monster_kill(Monster *m, DamageType type)
 	case WARLOCK_2:
 		if (type == DMG_WEAPON)
 			move(&player, m->pos);
-		break;
+		return;
 	case BOMBER:
 		monster_new(BOMB, m->pos, 3);
 		break;
