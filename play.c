@@ -221,6 +221,7 @@ static void display_player(void)
 // Clears and redraws the entire interface.
 static void display_all(void)
 {
+	printf("\033[K");
 	for (i8 y = 1; y < ARRAY_SIZE(g.board) - 1; ++y)
 		for (i8 x = 1; x < ARRAY_SIZE(*g.board) - 1; ++x)
 			display_tile({x, y});
@@ -237,7 +238,7 @@ static void display_all(void)
 		print_at(pos, "\033[K");
 
 	display_player();
-	print_at({0, 0}, g.player_won ? "You won!" : player.hp ? "" : "You died...");
+	print_at({0, 0}, "");
 }
 
 void animation(Animation id, Coords pos, Coords dir)
@@ -308,17 +309,15 @@ int main(i32 argc, char **argv)
 		display_all();
 		i32 c = getchar();
 		if (c == 't')
-			g = timeline[0];
-		else if (c == 4 || c == 'q')
-			break;
-		else if (c == '\033' && scanf("[M%*c%c%c", &cursor.x, &cursor.y))
-			cursor += {-33, -33};
+			execv(*argv, argv);
 		else if (c == 'u')
 			g = timeline[(g.current_beat - 1) & 31];
-		else if (player.hp && !g.player_won)
-			do_beat((u8) c);
-		else
+		else if (c == '\033' && scanf("[M%*c%c%c", &cursor.x, &cursor.y))
+			cursor += {-33, -33};
+		else if (c == 4 || c == 'q')
 			break;
+		else if ((g.game_over = g.game_over || do_beat((u8) c)))
+			printf("%s", player.hp ? "You won!" : "You died...");
 	}
 
 	printf("\033[?25h\033[?1003;1049l");

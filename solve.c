@@ -57,34 +57,29 @@ static void handle_victory()
 }
 
 // Recursively try all possible inputs, starting at the given point.
-static void explore(GameState const *route, bool omp)
+static void explore(GameState const *route)
 {
-	static const u8 symbols[6] = {'e', 'f', 'i', 'j', '<', ' '};
+	static const u8 inputs[] = {'e', 'j', 'i', 'f', ' ', '<'};
 
-	simulated_beats += ARRAY_SIZE(symbols);
-	// printf("%s\n", g.input);
+	i64 length = 5 + (g.bombs > 0);
+	simulated_beats += length;
 
-	for (u8 i = 0; i < ARRAY_SIZE(symbols); ++i) {
-		if (i || omp)
-			g = *route;
+	for (u8 i = 0; i < length; ++i) {
+		g = *route;
 
-		if (do_beat(symbols[i])) {
-			handle_victory();
+		if (do_beat(inputs[i])) {
+			if (player.hp)
+				handle_victory();
 			continue;
 		}
 
 		i32 cost = cost_function();
-		if (cost >= best_cost || !player.hp)
-			continue;
-
 		i32 distance = WORK_FACTOR + initial_distance - distance_function();
-		double best_speed = initial_distance / (double) best_cost;
-		double speed = distance / (double) cost;
 
-		if (speed >= best_speed) {
+		if (cost < best_cost && distance * best_cost >= initial_distance * cost) {
 			GameState copy = g;
 			#pragma omp task
-			explore(&copy, true);
+			explore(&copy);
 		}
 	}
 }
@@ -101,7 +96,7 @@ int main(i32 argc, char **argv)
 
 	#pragma omp parallel
 	#pragma omp single nowait
-	explore(&initial_state, true);
+	explore(&initial_state);
 
 	fprintf(stderr, "%d\n", simulated_beats);
 }

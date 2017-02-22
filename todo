@@ -4,6 +4,8 @@ FEATURES:
 * confusion de-aggroing enemies + set radius=0
 
 BUGFIXES:
+* minotaurs/armadillos: only charge if L1(d) <= 6
+* armadillos: charge if path *was* free on previous beat
 * yetis/mummies/sarcos: should have been aggroed for a full turn
 * firepig should have trap priority
 * banshees/skeletons should have different activation radii depending on the zone

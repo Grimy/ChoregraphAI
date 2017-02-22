@@ -1,6 +1,7 @@
 // main.c - core game logic
 
 #include <math.h>
+#include <setjmp.h>
 
 #include "chore.h"
 
@@ -10,9 +11,11 @@ Coords stairs;
 // ID of the player’s character.
 u64 character;
 
+static thread_local jmp_buf player_died;
+
 thread_local GameState g = {
 	.board = {[0 ... 31] = {[0 ... 31] = {.type = EDGE}}},
-	.bombs = 3,
+	.bombs = 0,
 	.boots_on = true,
 };
 
@@ -321,6 +324,8 @@ void monster_kill(Monster *m, DamageType type)
 		if (m->type == NIGHTMARE_1 || m->type == NIGHTMARE_2)
 			g.nightmare = 0;
 		break;
+	case PLAYER:
+		longjmp(player_died, true);
 	}
 
 	TILE(m->pos).monster = 0;
@@ -855,9 +860,14 @@ bool do_beat(u8 input)
 	// Player’s turn
 	g.input[g.current_beat++ & 31] = input;
 
+	if (setjmp(player_died))
+		return true;
+
 	player_turn(input);
+
 	if (TILE(player.pos).type == STAIRS && g.locking_enemies == 0)
-		return g.player_won = true;
+		return true;
+
 	update_fov();
 	before_and_after();
 
