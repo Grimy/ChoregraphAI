@@ -305,6 +305,7 @@ int main(i32 argc, char **argv)
 
 	system("stty -echo -icanon eol \1");
 	printf("\033[?25l\033[?1003;1049h");
+	atexit([]() { printf("\033[?25h\033[?1003;1049l"); });
 
 	GameState timeline[32] = {[0 ... 31] = g};
 
@@ -323,6 +324,4 @@ int main(i32 argc, char **argv)
 		else if ((g.game_over = g.game_over || do_beat((char) c)))
 			printf("%s", player.hp ? "You won!" : "You died...");
 	}
-
-	printf("\033[?25h\033[?1003;1049l");
 }

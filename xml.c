@@ -1,5 +1,6 @@
 // xml.c - deals with custom dungeon XML files
 
+#include <signal.h>
 #include <unistd.h>
 
 #include "chore.h"
@@ -276,10 +277,20 @@ static void read_dungeon(char *file, i32 level)
 		update_fov();
 }
 
+static void __attribute__((noreturn)) signal_handler(int signal)
+{
+	FATAL("\033[?1049lCaught signal %d after inputs '%s'", signal, g.input);
+}
+
 void xml_parse(i32 argc, char **argv)
 {
 	i32 level = 1;
 	u8 item;
+
+	signal(SIGSEGV, signal_handler);
+	signal(SIGABRT, signal_handler);
+	signal(SIGINT, signal_handler);
+	signal(SIGPIPE, SIG_IGN);
 
 	getopt: switch (getopt(argc, argv, "i:l:m:s:w:")) {
 	case 'i':
@@ -315,4 +326,5 @@ void xml_parse(i32 argc, char **argv)
 	for (char *p = g.input; *p; ++p)
 		do_beat(*p);
 	g.current_beat = 0;
+	memset(g.input, 0, sizeof(g.input));
 }

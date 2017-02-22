@@ -95,6 +95,7 @@ constexpr i32 L2(Coords d) { return d.x * d.x + d.y * d.y; }
 
 // Playable characters.
 enum CharId {
+	ANY_CHAR = -1,
 	CADENCE,
 	MELODY,
 	ARIA,     // <3

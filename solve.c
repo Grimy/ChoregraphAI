@@ -1,7 +1,5 @@
 // solve.c - finds the optimal route for a level
 
-#include <signal.h>
-
 #include "chore.h"
 
 static _Atomic i32 simulated_beats;
@@ -93,7 +91,6 @@ int main(i32 argc, char **argv)
 	initial_cost = cost_function();
 	best_cost = initial_distance + 5;
 
-	signal(SIGPIPE, SIG_IGN);
 	printf("Goal: %d\n", best_cost);
 
 	#pragma omp parallel
