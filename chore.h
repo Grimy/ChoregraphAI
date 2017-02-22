@@ -335,25 +335,26 @@ struct alignas(2048) GameState {
 	Monster monsters[72];
 	Trap traps[32];
 
-	// Global properties
-	u32 seed;
-	u8 input[32];
-	u8 current_beat;
-	u8 locking_enemies;
-	u8 nightmare;
-	u8 monkeyed;
-	u8 mommy_spawn;
-	u8 sarco_spawn;
-	u8 last_monster;
+	u32 seed;            // Current state of the PRNG
+	char input[32];      // Last 32 player inputs
+	Coords stairs;       // Position of the exit stairs.
+	u8 locking_enemies;  // Number of enemies to kill to unlock the stairs
+	u8 current_beat;     // Number of beats spent in the level
+	u8 nightmare;        // ID of the nightmare
+	u8 monkeyed;         // ID of the enemy grabbing the player
+	u8 mommy_spawn;      // ID of the mummy spawned by a mommy
+	u8 sarco_spawn;      // ID of the skeleton spawned by a sarco
+	u8 last_monster;     // ID of the most recently spawned monster
+	bool game_over;      // True iff the game ended (win or loss)
 
-	// Attributes specific to the player
-	u8 bombs, shovel, weapon, body, head, feet, ring, usable;
+	// Inventory
+	u8 bombs, shovel, weapon, body, head, feet, ring, usable, torch, spell;
+
+	CharId character;
 	bool player_moved;
 	bool sliding_on_ice;
-	bool boots_on;
-	bool game_over;
-	u8 iframes;
-	u64: 64;
+	bool boots_on;       // State of lunging/leaping
+	u8 iframes;          // Beat # where invincibility wears off
 };
 
 enum Animation {
@@ -381,10 +382,8 @@ void fireball(Coords pos, i8 dir);
 void bomb_detonate(Monster *m, Coords d);
 
 // Defined by main.c
-extern Coords stairs;
-extern u64 character;
 extern thread_local GameState g;
-bool do_beat(u8 input);
+bool do_beat(char input);
 Monster* monster_spawn(u8 type, Coords pos, u8 delay);
 bool dig(Coords pos, TileType digging_power, bool can_splash);
 void monster_kill(Monster *m, DamageType type);

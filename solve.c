@@ -27,7 +27,7 @@ static i32 cost_function()
 // Estimates the number of beats it will take to clear the level.
 static i32 distance_function()
 {
-	return (i32) ((L1(player.pos - stairs) + 2) / 3) + 2 * g.locking_enemies;
+	return (i32) ((L1(player.pos - g.stairs) + 2) / 3) + 2 * g.locking_enemies;
 }
 
 // When a winning route is found with RNG disabled, estimate its probability
@@ -37,8 +37,8 @@ static void handle_victory()
 {
 	u32 ok = 0;
 	i32 cost = cost_function();
-	i32 length = g.current_beat;
-	u8 input[ARRAY_SIZE(g.input)];
+	u32 length = g.current_beat;
+	char input[ARRAY_SIZE(g.input)];
 	memcpy(input, g.input, sizeof(g.input));
 
 	for (u32 i = 1; i <= 256; ++i) {
@@ -59,7 +59,7 @@ static void handle_victory()
 // Recursively try all possible inputs, starting at the given point.
 static void explore(GameState const *route)
 {
-	static const u8 inputs[] = {'e', 'j', 'i', 'f', ' ', '<'};
+	static const char inputs[] = "ejif <";
 
 	i64 length = 5 + (g.bombs > 0);
 	simulated_beats += length;
@@ -93,6 +93,7 @@ int main(i32 argc, char **argv)
 	best_cost = initial_distance + 2 + WORK_FACTOR;
 
 	printf("Goal: %d\n", best_cost);
+	assert(g.current_beat == 0);
 
 	#pragma omp parallel
 	#pragma omp single nowait

@@ -5,16 +5,13 @@
 
 #include "chore.h"
 
-// Position of the exit stairs.
-Coords stairs;
-
-// ID of the player’s character.
-u64 character;
-
 static thread_local jmp_buf player_died;
 
 thread_local GameState g = {
 	.board = {[0 ... 31] = {[0 ... 31] = {.type = EDGE}}},
+	.monsters = {{.untrapped = true, .electrified = true}},
+	.weapon = DAGGER_BASE,
+	.shovel = SHOVEL_BASE,
 	.bombs = 0,
 	.boots_on = true,
 };
@@ -522,8 +519,8 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 		return false;
 	case METROGNOME_1:
 	case METROGNOME_2:
-		MONSTER(stairs).hp = 0;
-		move(m, stairs);
+		MONSTER(g.stairs).hp = 0;
+		move(m, g.stairs);
 		m->delay = 1;
 		m->state = 1;
 		return true;
@@ -704,7 +701,7 @@ u8 pickup_item(u8 item)
 	return item;
 }
 
-static void player_turn(u8 input)
+static void player_turn(char input)
 {
 	g.player_moved = false;
 
@@ -855,7 +852,7 @@ static void before_and_after()
 // Runs one full beat of the game.
 // During each beat, the player acts first, enemies second and traps last.
 // Enemies act in decreasing priority order. Traps have an arbitrary order.
-bool do_beat(u8 input)
+bool do_beat(char input)
 {
 	// Player’s turn
 	g.input[g.current_beat++ & 31] = input;

@@ -101,7 +101,7 @@ static void tile_init(Coords pos, i32 type, i32 zone, bool torch)
 		adjust_lights(pos, +1, 4.25);
 
 	if (id == STAIRS) {
-		stairs = pos;
+		g.stairs = pos;
 		g.locking_enemies = 1 + (zone == 4);
 	}
 
@@ -205,7 +205,7 @@ static void xml_process_node(const char *name)
 
 static void dungeon_init(i32 level)
 {
-	character = INT_ATTR("character") % 1000;
+	g.character = (CharId) (INT_ATTR("character") % 1000);
 	if (level > INT_ATTR("numLevels"))
 		FATAL("No level %d in dungeon (max: %d)", level, INT_ATTR("numLevels"));
 }
@@ -254,12 +254,6 @@ void xml_parse(i32 argc, char **argv)
 	i32 opt;
 	i32 level = 1;
 	u8 item = ARRAY_SIZE(item_names);
-	char moves[32] = "";
-
-	g.monsters[0].untrapped = true;
-	g.monsters[0].electrified = true;
-	pickup_item(DAGGER_BASE);
-	pickup_item(SHOVEL_BASE);
 
 	while ((opt = getopt(argc, argv, "i:l:m:s:")) != -1) {
 		switch (opt) {
@@ -271,7 +265,7 @@ void xml_parse(i32 argc, char **argv)
 			level = atoi(optarg);
 			break;
 		case 'm':
-			strcpy(moves, optarg);
+			strncpy(g.input, optarg, sizeof(g.input));
 			break;
 		case 's':
 			g.seed = (u32) atoi(optarg);
@@ -303,16 +297,14 @@ void xml_parse(i32 argc, char **argv)
 			g.nightmare = i;
 	}
 
-	assert(player.type == PLAYER);
-	pickup_item(NO_ITEM);
-
-	if (character == BARD) {
-		do_beat('X');
-		--g.current_beat;
-	} else {
+	if (g.character == BARD)
+		g.input[0] = 'X';
+	else
 		update_fov();
-	}
 
-	for (char *p = moves; *p; ++p)
-		do_beat((u8) *p);
+	for (char *p = g.input; *p; ++p)
+		do_beat(*p);
+
+	assert(player.type == PLAYER);
+	g.current_beat = 0;
 }

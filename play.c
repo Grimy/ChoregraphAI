@@ -72,16 +72,20 @@ static void print_at(Coords pos, const char *fmt, ...) {
 static void display_wall(Coords pos)
 {
 	i64 glyph = 0;
-	for (i64 i = 0; i < 4; ++i)
-		glyph |= IS_DIGGABLE(pos + plus_shape[i]) << i;
+	for (i64 i = 0; i < 4; ++i) {
+		Tile &tile = TILE(pos + plus_shape[i]);
+		glyph |= (tile.revealed && tile.type >= EDGE) << i;
+	}
 	print_at(pos, "%3.3s", &"──│┘│┐│┤──└┴┌┬├┼"[3 * glyph]);
 }
 
 static void display_wire(Coords pos)
 {
 	i64 glyph = 0;
-	for (i64 i = 0; i < 4; ++i)
-		glyph |= (TILE(pos + plus_shape[i]).wired) << i;
+	for (i64 i = 0; i < 4; ++i) {
+		Tile &tile = TILE(pos + plus_shape[i]);
+		glyph |= (tile.revealed && tile.wired) << i;
+	}
 	print_at(pos, YELLOW "%3.3s", &"⋅╴╵╯╷╮│┤╶─╰┴╭┬├┼"[3 * glyph]);
 }
 
@@ -316,7 +320,7 @@ int main(i32 argc, char **argv)
 			cursor += {-33, -33};
 		else if (c == 4 || c == 'q')
 			break;
-		else if ((g.game_over = g.game_over || do_beat((u8) c)))
+		else if ((g.game_over = g.game_over || do_beat((char) c)))
 			printf("%s", player.hp ? "You won!" : "You died...");
 	}
 
