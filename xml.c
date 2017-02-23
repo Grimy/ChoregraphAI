@@ -325,7 +325,4 @@ void xml_parse(i32 argc, char **argv)
 		do_beat(*p);
 	g.current_beat = 0;
 	memset(g.input, 0, sizeof(g.input));
-
-	if (!player.hp)
-		exit(0);
 }

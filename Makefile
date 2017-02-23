@@ -39,7 +39,7 @@ debug: dbin/solve
 	lldb $< $(ARGS)
 
 fuzz: fbin/play
-	afl-fuzz -idungeons -ofuzz-output $^ @@ -ibomb -m'eifj<  zz'
+	afl-fuzz -idungeons -ooutput $^ @@ -ibomb -m'eifj<  zz'
 
 long-funcs:
 	perl -nE '/^\w.*?(\w+)\(/?$$-=print$$1:/^}$$/?say": $$-":++$$-' *.c | sort -rnk2 | sed 31q

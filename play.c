@@ -317,7 +317,7 @@ int main(i32 argc, char **argv)
 			g = timeline[(g.current_beat - 1) & 31];
 		else if (c == '\033' && scanf("[M%*c%c%c", &cursor.x, &cursor.y))
 			cursor += {-33, -33};
-		else if (c == 4 || c == 'q')
+		else if (c == EOF || c == 4 || c == 'q')
 			break;
 		else if (!g.game_over)
 			g.game_over = do_beat((char) c);

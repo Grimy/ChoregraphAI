@@ -12,7 +12,6 @@ BUGFIXES:
 * banshees/skeletons should have different activation radii depending on the zone
 * charged breath attacks should have extreme priority
 * clonking should hit both player and monkey
-* metrognomes should reset tracking dir when hit with weapons
 * bombs shouldn’t damage fresh skull spawns
 * bombs shouldn’t damage unaggroed enemies
 * pixies should emit light
