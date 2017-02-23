@@ -16,27 +16,15 @@
 	fprintf(stderr, RED message WHITE "\n", __VA_ARGS__); \
 	exit(255); } while (0)
 
-const ItemNames item_names[] {
-	[NO_ITEM]        = { "",                       "None",                 "" },
-	[HEART_1]        = { "perm_heart2",            "",                     "" },
-	[HEART_2]        = { "perm_heart3",            "",                     "" },
-	[BOMB_1]         = { "bomb",                   "",                     "●" },
-	[BOMB_3]         = { "bomb_3",                 "",                     "●" },
-	[SHOVEL_BASE]    = { "shovel_basic",           "Base Shovel",          BROWN "(" },
-	[SHOVEL_TIT]     = { "shovel_titanium",        "Titanium Shovel",      "(" },
-	[DAGGER_BASE]    = { "weapon_dagger",          "Base Dagger",          ")" },
-	[DAGGER_JEWELED] = { "weapon_dagger_jeweled",  "Jeweled Dagger",       BLUE ")" },
-	[HEAD_MINERS]    = { "head_miners_cap",        "Miner’s Cap",          BLACK "[" },
-	[HEAD_CIRCLET]   = { "head_circlet_telepathy", "Circlet of Telepathy", YELLOW "[" },
-	[FEET_LUNGING]   = { "feet_boots_lunging",     "Lunging",              "[" },
-	[FEET_LEAPING]   = { "feet_boots_leaping",     "Frog Socks",           GREEN "[" },
-	[USE_PACEMAKER]  = { "heart_transplant",       "Heart Transplant",     RED "ღ" },
-	[USE_FREEZE]     = { "scroll_freeze_enemies",  "Freeze Scroll",        "?" },
-};
-
 i32 work_factor = 36;
 
 static char attribute_map[8][32];
+
+static const char* item_names[] = {
+#define X(name, slot, xml, friendly, glyph) #xml,
+#include "items.table"
+#undef X
+};
 
 // Computes the position of the spawn relative to the top-left corner.
 // The game uses the spawn as the {0, 0} point, but we use the top-left corner,
@@ -57,7 +45,7 @@ static void xml_find_spawn(UNUSED const char* node)
 static u8 xml_item(const char* key)
 {
 	u8 item = ARRAY_SIZE(item_names);
-	while (--item && !streq(STR_ATTR(key), item_names[item].xml));
+	while (--item && !streq(STR_ATTR(key), item_names[item]));
 	return item;
 }
 
@@ -293,7 +281,7 @@ void xml_parse(i32 argc, char **argv)
 	getopt: switch (getopt(argc, argv, "i:l:m:s:w:")) {
 	case 'i':
 		item = ARRAY_SIZE(item_names);
-		while (--item && !strstr(item_names[item].xml, optarg));
+		while (--item && !strstr(item_names[item], optarg));
 		pickup_item(item);
 		goto getopt;
 	case 'l':

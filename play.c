@@ -47,6 +47,18 @@ static const char* monster_glyphs[] = {
 #undef X
 };
 
+static const char* item_glyphs[] = {
+#define X(name, slot, xml, friendly, glyph) glyph,
+#include "items.table"
+#undef X
+};
+
+static const char* item_names[] = {
+#define X(name, slot, xml, friendly, glyph) friendly,
+#include "items.table"
+#undef X
+};
+
 static const char* animation_steps[][6] = {
 	[EXPLOSION]    = { WHITE "█", YELLOW "▓", ORANGE "▒", RED "▒", BLACK "░", "" },
 	[FIREBALL]     = { WHITE "█", YELLOW "▇", ORANGE "▅", RED "▬", BROWN "▬", "" },
@@ -110,7 +122,7 @@ static void display_tile(Coords pos)
 	if (IS_WIRE(pos) && !IS_DOOR(pos))
 		display_wire(pos);
 	if (tile->item)
-		print_at(pos, item_names[tile->item].glyph);
+		print_at(pos, item_glyphs[tile->item]);
 	if (!tile->revealed)
 		print_at(pos, " ");
 }
@@ -214,14 +226,14 @@ static void display_player(void)
 	printf("%s", g.iframes > g.current_beat ? PINK "I-framed " : "");
 	print_at({x, ++y}, CLEAR);
 	print_at({x, ++y}, "Bombs: %d", g.bombs);
-	print_at({x, ++y}, "Shovel: %s", item_names[g.shovel].friendly);
-	print_at({x, ++y}, "Weapon: %s", item_names[g.weapon].friendly);
-	print_at({x, ++y}, "Body: %s",   item_names[g.body].friendly);
-	print_at({x, ++y}, "Head: %s",   item_names[g.head].friendly);
-	print_at({x, ++y}, "Boots: %s",  item_names[g.feet].friendly);
+	print_at({x, ++y}, "Shovel: %s", item_names[g.shovel]);
+	print_at({x, ++y}, "Weapon: %s", item_names[g.weapon]);
+	print_at({x, ++y}, "Body: %s",   item_names[g.body]);
+	print_at({x, ++y}, "Head: %s",   item_names[g.head]);
+	print_at({x, ++y}, "Boots: %s",  item_names[g.feet]);
 	printf(" (%s)", g.boots_on ? "on" : "off");
-	print_at({x, ++y}, "Ring: %s",   item_names[g.ring].friendly);
-	print_at({x, ++y}, "Usable: %s", item_names[g.usable].friendly);
+	print_at({x, ++y}, "Ring: %s",   item_names[g.ring]);
+	print_at({x, ++y}, "Usable: %s", item_names[g.usable]);
 	if (!player.untrapped)
 		print_at(player.pos, "%s", tile_glyphs[TILE(player.pos).type]);
 	print_at(player.pos, REVERSE "@" CLEAR);

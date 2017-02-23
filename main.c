@@ -657,6 +657,12 @@ static void player_move(i8 x, i8 y)
 	}
 }
 
+static u8 GameState::*const item_slot[] = {
+#define X(name, slot, xml, friendly, glyph) &GameState::slot,
+#include "items.table"
+#undef X
+};
+
 // Adds an item to the player’s inventory.
 // Returns the item the player had in that slot.
 u8 pickup_item(u8 item)
@@ -674,21 +680,10 @@ u8 pickup_item(u8 item)
 	case BOMB_3:
 		g.bombs += 3;
 		return NO_ITEM;
-	case SHOVEL_BASE:
-	case SHOVEL_TIT:
-		SWAP(item, g.shovel);
-		break;
-	case DAGGER_BASE:
-	case DAGGER_JEWELED:
-		SWAP(item, g.weapon);
-		break;
-	case HEAD_MINERS:
-	case HEAD_CIRCLET:
-		SWAP(item, g.head);
-		break;
-	case FEET_LUNGING:
-	case FEET_LEAPING:
-		SWAP(item, g.feet);
+	default:
+		u8 tmp = g.*(item_slot[item]);
+		g.*(item_slot[item]) = item;
+		item = tmp;
 		break;
 	}
 

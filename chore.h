@@ -20,7 +20,6 @@ typedef int64_t  i64;
 // Some basic utility macros/functions
 #define UNUSED __attribute__((unused))
 #define ARRAY_SIZE(arr) ((i64) (sizeof(arr) / sizeof((arr)[0])))
-#define SWAP(a, b) do { __typeof(a) _swap = (a); (a) = (b); (b) = _swap; } while (0)
 #define streq(a, b) (!strcmp((a), (b)))
 
 template <class T> constexpr T sign(T x)       { return (x > 0) - (x < 0); }
@@ -108,27 +107,9 @@ enum CharId {
 };
 
 enum ItemType : u8 {
-	NO_ITEM,
-	HEART_1,
-	HEART_2,
-	BOMB_1,
-	BOMB_3,
-	SHOVEL_BASE,
-	SHOVEL_TIT,
-	DAGGER_BASE,
-	DAGGER_JEWELED,
-	HEAD_MINERS,
-	HEAD_CIRCLET,
-	FEET_LUNGING,
-	FEET_LEAPING,
-	USE_PACEMAKER,
-	USE_FREEZE,
-};
-
-struct ItemNames {
-	const char *xml;
-	const char *friendly;
-	const char *glyph;
+#define X(name, ...) name,
+#include "items.table"
+#undef X
 };
 
 enum MonsterType : u8 {
@@ -279,7 +260,6 @@ enum Animation {
 void update_fov_octant(Tile *tile, i64 x, i64 y);
 
 // Defined by xml.c
-extern const ItemNames item_names[];
 extern i32 work_factor;
 void xml_parse(i32 argc, char **argv);
 
