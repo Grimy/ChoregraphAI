@@ -22,9 +22,7 @@ static void monster_new(u8 type, Coords pos, u8 delay)
 {
 	assert(g.last_monster < ARRAY_SIZE(g.monsters));
 	Monster *m = &g.monsters[++g.last_monster];
-	m->type = type;
-
-	memcpy((void*) m, (const void*) &type_infos[type], 8);
+	*m = proto[type];
 	m->untrapped = m->flying;
 	m->pos = pos;
 	m->prev_pos = pos;
@@ -43,8 +41,8 @@ Monster* monster_spawn(u8 type, Coords pos, u8 delay)
 static void monster_transform(Monster* m, u8 type)
 {
 	m->type = type;
-	m->damage = type_infos[type].damage;
-	m->max_delay = type_infos[type].max_delay;
+	m->damage = proto[type].damage;
+	m->max_delay = proto[type].max_delay;
 }
 
 // Moves the given monster to a specific position.
@@ -159,7 +157,7 @@ static void enemy_attack(Monster *attacker)
 			damage(&player, 1, d, DMG_NORMAL);
 		break;
 	case BOMBER:
-		bomb_detonate(attacker, Coords {});
+		explosion(attacker, Coords {});
 		break;
 	case WATER_BALL:
 		tile_change(player.pos, WATER);
@@ -349,7 +347,7 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	// Crates and gargoyles can be pushed even with 0 damage
 	switch (m->type) {
 	case MINE_STATUE:
-		bomb_detonate(m, Coords {});
+		explosion(m, Coords {});
 		return false;
 	case WIND_STATUE:
 	case BOMB_STATUE:
@@ -435,7 +433,7 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 	case SKELETANK_1 ... SKELETANK_3:
 		if (dir != -m->dir)
 			break;
-		if (dmg >= TYPE(m).max_hp)
+		if (dmg >= proto[m->type].hp)
 			monster_transform(m, m->type - SKELETANK_1 + SKELETON_1);
 		knockback(m, dir, 1);
 		return false;
@@ -455,7 +453,7 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 		return false;
 	case PIXIE:
 	case BOMBSHROOM_:
-		bomb_detonate(m, Coords {});
+		explosion(m, Coords {});
 		return false;
 	case GOOLEM:
 		if (type == DMG_WEAPON && m->state == 0) {
@@ -878,7 +876,7 @@ bool do_beat(char input)
 	bool bomb_exploded = false;
 
 	for (Monster *m = &g.monsters[g.last_monster]; m > &player; --m) {
-		if (!TYPE(m).act || !m->hp)
+		if (!monster_ai[m->type] || !m->hp)
 			continue;
 
 		m->knocked = false;
@@ -908,7 +906,7 @@ bool do_beat(char input)
 		u8 old_state = m->state;
 		Coords old_dir = m->dir;
 		m->delay = m->max_delay;
-		TYPE(m).act(m, player.pos - m->pos);
+		monster_ai[m->type](m, player.pos - m->pos);
 
 		if (m->requeued) {
 			// Undo all side-effects and add it to the back of the priority queue

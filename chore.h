@@ -58,9 +58,6 @@ template <class T> constexpr T max(T x, i64 y) { return x > (T) y ? x : (T) y; }
 
 #define IS_BOGGED(m) (!(m)->untrapped && (TILE((m)->pos).type & WATER))
 
-// Gets the TypeInfos entry of the given monster’s type.
-#define TYPE(m) (type_infos[(m)->type])
-
 // A pair of cartesian coordinates. Each variable of this type is either:
 // * A point, representing an absolute position within the grid (usually named `pos`)
 // * A vector, representing the relative position of another entity (usually named `d`)
@@ -135,86 +132,9 @@ struct ItemNames {
 };
 
 enum MonsterType : u8 {
-	NO_MONSTER,
-
-	// Z1 enemy classes
-	GREEN_SLIME, BLUE_SLIME, YELLOW_SLIME,
-	FIRE_SLIME, ICE_SLIME, PURPLE_SLIME, BLACK_SLIME,
-	SKELETON_1, SKELETON_2, SKELETON_3,
-	HEADLESS_2, HEADLESS_3, // a decapitated skeleton
-	BLUE_BAT, RED_BAT, GREEN_BAT, BLACK_BAT,
-	MONKEY_1, MONKEY_2, CONF_MONKEY, TELE_MONKEY,
-	GHOST,
-	ZOMBIE,
-	WRAITH, WIGHT, GHAST, GHOUL, CURSE_WRAITH,
-	MIMIC_1, MIMIC_2, WHITE_MIMIC, WALL_MIMIC,
-	FIRE_MIMIC, ICE_MIMIC, MIMIC_STATUE, SHOP_MIMIC,
-
-	// Z2 enemies
-	SKELETANK_1, SKELETANK_2, SKELETANK_3,
-	WINDMAGE_1, WINDMAGE_2, WINDMAGE_3,
-	MUSHROOM_1, MUSHROOM_2,
-	GOLEM_1, GOLEM_2,
-	ARMADILLO_1, ARMADILLO_2, ARMADILDO,
-	CLONE,
-	TARMONSTER,
-	MOLE,
-	LIGHTSHROOM, BOMBSHROOM,
-	BOMBSHROOM_, // an “activated” explosive mushroom
-
-	// Z3 enemies
-	RIDER_1, RIDER_2, RIDER_3,
-	EFREET, DJINN,
-	ASSASSIN_1, ASSASSIN_2,
-	FIRE_BEETLE, ICE_BEETLE,
-	BEETLE, // a fire/ice beetle that has shed its armor
-	HELLHOUND,
-	SHOVE_1, SHOVE_2,
-	YETI,
-	FIRE_POT, ICE_POT,
-
-	// Z4 enemies
-	BOMBER,
-	DIGGER,
-	BLADENOVICE, BLADEMASTER,
-	GOOLEM,
-	HARPY,
-	LICH_1, LICH_2, LICH_3,
-	PIXIE,
-	SARCO_1, SARCO_2, SARCO_3,
-	SPIDER,
-	FREE_SPIDER, // a spider that isn’t inside a wall
-	WARLOCK_1, WARLOCK_2,
-	MUMMY,
-	WIND_STATUE, BOMB_STATUE, MINE_STATUE,
-	CRATE, BARREL, TEH_URN,
-
-	// Z5 enemies
-	WATER_BALL, TAR_BALL,
-	ELECTRO_1, ELECTRO_2, ELECTRO_3,
-	ORB_1, ORB_2, ORB_3,
-	WIRE_ZOMBIE,
-	SKULL_1, SKULL_2, SKULL_3,
-	GORGON_1, GORGON_2,
-	STONE_STATUE, GOLD_STATUE,
-	EVIL_EYE_1, EVIL_EYE_2,
-	ORC_1, ORC_2, ORC_3,
-	DEVIL_1, DEVIL_2,
-
-	// Minibosses
-	DIREBAT_1, DIREBAT_2,
-	DRAGON, RED_DRAGON, BLUE_DRAGON, EARTH_DRAGON,
-	BANSHEE_1, BANSHEE_2,
-	MINOTAUR_1, MINOTAUR_2,
-	NIGHTMARE_1, NIGHTMARE_2,
-	MOMMY, OGRE,
-	METROGNOME_1, METROGNOME_2,
-
-	// Other
-	SHOPKEEPER,
-	PLAYER,
-	BOMB,
-	CHEST, SHRINE, FIREPIG, // not technically monsters
+#define X(name, ...) name,
+#include "monsters.table"
+#undef X
 };
 
 enum TileType : u8 {
@@ -271,6 +191,7 @@ enum DamageType {
 
 // A “Monster” can be either an enemy, a bomb, or the player (yes, we are all monsters).
 struct Monster {
+	// Properties that are common to all monsters of a type.
 	i8 damage;
 	i8 hp;
 	u8 max_delay;
@@ -278,11 +199,11 @@ struct Monster {
 	i16 radius;
 	TileType digging_power;
 	u8 priority;
+	u8 type;
 
 	Coords pos;
 	Coords prev_pos;
 	Coords dir;
-	u8 type;
 	u8 item;
 
 	u8 delay;
@@ -297,19 +218,6 @@ struct Monster {
 	bool requeued: 1;
 	bool was_requeued: 1;
 	bool: 4;
-};
-
-// Properties that are common to all monsters of a type.
-struct TypeInfos {
-	const i8 damage;
-	const i8 max_hp;
-	const u8 max_delay;
-	const bool flying;
-	const i16 radius;
-	const TileType digging_power;
-	const u8 priority;
-	const char *glyph;
-	void (*const act) (Monster*, Coords);
 };
 
 struct Tile {
@@ -376,12 +284,13 @@ extern i32 work_factor;
 void xml_parse(i32 argc, char **argv);
 
 // Defined by monsters.c
-extern const TypeInfos type_infos[];
+extern const Monster proto[];
+extern void (*const monster_ai[])(Monster*, Coords);
 extern const Coords plus_shape[4];
 extern const Coords square_shape[9];
 extern const Coords cone_shape[9];
 void fireball(Coords pos, i8 dir);
-void bomb_detonate(Monster *m, Coords d);
+void explosion(Monster *m, Coords d);
 
 // Defined by main.c
 extern thread_local GameState g;

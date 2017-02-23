@@ -41,6 +41,12 @@ static const char* trap_glyphs[] = {
 	[SCATTER_TRAP] = BROWN "×",
 };
 
+static const char* monster_glyphs[] = {
+#define X(name, glyph, ai, ...) glyph,
+#include "monsters.table"
+#undef X
+};
+
 static const char* animation_steps[][6] = {
 	[EXPLOSION]    = { WHITE "█", YELLOW "▓", ORANGE "▒", RED "▒", BLACK "░", "" },
 	[FIREBALL]     = { WHITE "█", YELLOW "▇", ORANGE "▅", RED "▬", BROWN "▬", "" },
@@ -181,10 +187,10 @@ static void display_monster(const Monster *m, Coords &pos)
 	++pos.y;
 	if (cursor == m->pos || (cursor.x >= pos.x && cursor.y == pos.y))
 		printf(REVERSE);
-	print_at(m->pos, WHITE "%s", TYPE(m).glyph);
+	print_at(m->pos, WHITE "%s", monster_glyphs[m->type]);
 	if (m->type == SHOPKEEPER && g.current_beat % 2)
 		printf("♪");
-	print_at(pos, "%s ", TYPE(m).glyph);
+	print_at(pos, "%s ", monster_glyphs[m->type]);
 	printf("%s", m->aggro ? ORANGE "!" : " ");
 	printf("%s", m->delay ? BLACK "◔" : " ");
 	printf("%s", m->confusion ? YELLOW "?" : " ");

@@ -265,7 +265,7 @@ static void read_dungeon(char *file, i32 level)
 
 	player.prev_pos = player.pos;
 	if (MONSTER(player.pos).type != PLAYER)
-		FATAL("Non-player entity at player.pos: %s", TYPE(&MONSTER(player.pos)).glyph);
+		FATAL("Non-player entity at player.pos: %d", MONSTER(player.pos).type);
 
 	if (g.character == BARD)
 		g.input[0] = 'X';

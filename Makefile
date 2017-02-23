@@ -4,7 +4,7 @@ ARGS := BARDZ4.xml 3
 
 CFLAGS += -std=c++11 -Weverything -Werror -march=native -mtune=native
 CFLAGS += -Wno-c++98-compat-pedantic -Wno-c99-extensions -Wno-c++11-narrowing
-CFLAGS += -Wno-old-style-cast -Wno-format-nonliteral
+CFLAGS += -Wno-old-style-cast -Wno-format-nonliteral -Wno-missing-field-initializers
 CFLAGS += -Wno-gnu-designator -Wno-gnu-case-range
 CFLAGS += -fstrict-aliasing -fstrict-overflow -fno-asynchronous-unwind-tables
 CFLAGS += -fno-exceptions -fno-rtti -fopenmp=libomp

@@ -159,7 +159,7 @@ static Coords random_dir(Monster *m)
 // This is called “bomb-order”. Many monster AIs use it as a tiebreaker:
 // when several destination tiles fit all criteria equally well, monsters
 // pick the one that comes first in bomb-order.
-void bomb_detonate(Monster *m, UNUSED Coords _)
+void explosion(Monster *m, UNUSED Coords _)
 {
 	animation(EXPLOSION, m->pos, {});
 
@@ -499,7 +499,7 @@ static void wind_statue(UNUSED Monster *m, Coords d)
 static void bomb_statue(Monster *m, Coords d)
 {
 	if (m->state)
-		bomb_detonate(m, d);
+		explosion(m, d);
 	else if (L1(d) == 1)
 		m->state = 1;
 }
@@ -710,151 +710,14 @@ static void metrognome(Monster *m, Coords d)
 	(m->state ? basic_seek : mushroom)(m, d);
 }
 
-const TypeInfos type_infos[] = {
-	// [Name] = { damage, max_hp, beat_delay, flying, radius, dig, priority, glyph, act }
-	[GREEN_SLIME]  = { 99, 1,  0, false, 999,  NONE, 63, GREEN "P",  slime },
-	[BLUE_SLIME]   = {  2, 2,  1, false, 999,  NONE, 32, BLUE "P",   slime },
-	[YELLOW_SLIME] = {  1, 1,  0, false, 999,  NONE, 14, YELLOW "P", slime },
-	[SKELETON_1]   = {  1, 1,  1, false,   9,  NONE, 18, "Z",        basic_seek },
-	[SKELETON_2]   = {  3, 2,  1, false,   9,  NONE, 40, YELLOW "Z", basic_seek },
-	[SKELETON_3]   = {  4, 3,  1, false,   9,  NONE, 55, BLACK "Z",  basic_seek },
-	[BLUE_BAT]     = {  1, 1,  1,  true,   9,  NONE, 18, BLUE "B",   bat },
-	[RED_BAT]      = {  2, 1,  0,  true,   9,  NONE, 24, RED "B",    bat },
-	[GREEN_BAT]    = {  3, 1,  0,  true,   9,  NONE, 36, GREEN "B",  green_bat },
-	[MONKEY_1]     = {  0, 1,  0, false,   9,  NONE, 10, PURPLE "Y", basic_seek },
-	[MONKEY_2]     = {  0, 2,  0, false,   9,  NONE, 12, "Y",        basic_seek },
-	[GHOST]        = {  2, 1,  0,  true,   9,  NONE, 23, "8",        ghost },
-	[ZOMBIE]       = {  2, 1,  1, false, 999,  NONE, 25, GREEN "Z",  zombie },
-	[WRAITH]       = {  1, 1,  0,  true,   9,  NONE, 14, RED "W",    basic_seek },
-	[MIMIC_1]      = {  2, 1,  0, false,   1,  NONE, 22, ORANGE "m", mimic },
-	[MIMIC_2]      = {  3, 1,  0, false,   1,  NONE, 33, BLUE "m",   mimic },
-	[WHITE_MIMIC]  = {  3, 1,  0, false,   1,  NONE, 33, "m",        mimic },
-	[HEADLESS_2]   = {  3, 1,  0, false,   0,  NONE,  0, YELLOW "∠", charge },
-	[HEADLESS_3]   = {  4, 1,  0, false,   0,  NONE,  0, BLACK "∠",  charge },
+const Monster proto[] = {
+#define X(name, glyph, ai, ...) { __VA_ARGS__, name },
+#include "monsters.table"
+#undef X
+};
 
-	[SKELETANK_1]  = {  1, 1,  1, false,  25,  NONE, 18, "Ź",        basic_seek },
-	[SKELETANK_2]  = {  3, 2,  1, false,  25,  NONE, 41, YELLOW "Ź", basic_seek },
-	[SKELETANK_3]  = {  5, 3,  1, false,  25,  NONE, 60, BLACK "Ź",  basic_seek },
-	[WINDMAGE_1]   = {  2, 1,  1, false,   0,  NONE, 26, BLUE "@",   wind_mage },
-	[WINDMAGE_2]   = {  4, 2,  1, false,   0,  NONE, 52, YELLOW "@", wind_mage },
-	[WINDMAGE_3]   = {  5, 3,  1, false,   0,  NONE, 60, BLACK "@",  wind_mage },
-	[MUSHROOM_1]   = {  2, 1,  3, false,  25,  NONE, 28, BLUE "F",   mushroom },
-	[MUSHROOM_2]   = {  4, 3,  2, false,  25,  NONE, 56, PURPLE "F", mushroom },
-	[GOLEM_1]      = {  4, 5,  3,  true,  25, STONE, 66, "'",        basic_seek },
-	[GOLEM_2]      = {  6, 7,  3,  true,  25, STONE, 68, BLACK "'",  basic_seek },
-	[ARMADILLO_1]  = {  2, 1,  0, false,  -1, STONE, 23, "q",        armadillo },
-	[ARMADILLO_2]  = {  3, 2,  0, false,  -1, STONE, 39, YELLOW "q", armadillo },
-	[CLONE]        = {  3, 1,  0, false,  25,  NONE, 35, "@",        clone },
-	[TARMONSTER]   = {  3, 1,  0,  true,   1,  NONE, 44, "t",        tarmonster },
-	[MOLE]         = {  2, 1,  0,  true,  25,  NONE,  3, "r",        mole },
-	[WIGHT]        = {  2, 1,  0,  true,  25,  NONE, 24, GREEN "W",  basic_seek },
-	[WALL_MIMIC]   = {  2, 1,  0, false,   1,  NONE, 24, GREEN "m",  mimic },
-	[LIGHTSHROOM]  = {  0, 1,  0, false,   0,  NONE,  0, "F",        NULL },
-	[BOMBSHROOM]   = {  4, 1,  0, false,  25,  NONE, 86, YELLOW "F", NULL },
-	[BOMBSHROOM_]  = {  4, 1,  0, false,  25,  NONE, 86, RED "F",    bomb_detonate },
-
-	[FIRE_SLIME]   = {  3, 1,  0, false, 999, STONE, 34, RED "P",    slime },
-	[ICE_SLIME]    = {  3, 1,  0, false, 999, STONE, 34, CYAN "P",   slime },
-	[RIDER_1]      = {  2, 1,  0,  true,  49,  NONE, 23, "&",        basic_seek },
-	[RIDER_2]      = {  4, 2,  0,  true,  49,  NONE, 51, YELLOW "&", basic_seek },
-	[RIDER_3]      = {  6, 3,  0,  true,  49,  NONE, 62, BLACK "&",  basic_seek },
-	[EFREET]       = {  3, 2,  2,  true,  49, STONE, 65, RED "E",    basic_seek },
-	[DJINN]        = {  3, 2,  2,  true,  49, STONE, 65, CYAN "E",   basic_seek },
-	[ASSASSIN_1]   = {  4, 1,  0, false,  49,  NONE, 47, PURPLE "o", assassin },
-	[ASSASSIN_2]   = {  6, 2,  0, false,  49,  NONE, 61, BLACK "o",  assassin },
-	[FIRE_BEETLE]  = {  3, 3,  1, false,  49,  NONE, 43, RED "a",    basic_seek },
-	[ICE_BEETLE]   = {  3, 3,  1, false,  49,  NONE, 43, CYAN "a",   basic_seek },
-	[BEETLE]       = {  3, 3,  1, false,  49,  NONE, 43, "a",        basic_seek },
-	[HELLHOUND]    = {  3, 1,  1, false,  49,  NONE, 37, RED "d",    moore_seek },
-	[SHOVE_1]      = {  0, 2,  0, false,  49,  NONE,  6, PURPLE "p", basic_seek },
-	[SHOVE_2]      = {  0, 3,  0, false,  49,  NONE,  9, BLACK "p",  basic_seek },
-	[YETI]         = {  3, 1,  3,  true,  49, STONE, 64, CYAN "Y",   yeti },
-	[GHAST]        = {  2, 1,  0,  true,  49,  NONE, 23, PURPLE "W", basic_seek },
-	[FIRE_MIMIC]   = {  2, 1,  0, false,   1,  NONE, 23, RED "m",    mimic },
-	[ICE_MIMIC]    = {  2, 1,  0, false,   1,  NONE, 23, CYAN "m",   mimic },
-	[FIRE_POT]     = {  0, 1,  0, false,   0,  NONE,  0, RED "(",    NULL },
-	[ICE_POT]      = {  0, 1,  0, false,   0,  NONE,  0, CYAN "(",   NULL },
-
-	[BOMBER]       = {  4, 1,  1, false,   0,  NONE, 84, RED "o",    diagonal_seek },
-	[DIGGER]       = {  1, 1,  0, false,   9, STONE, 17, "o",        digger },
-	[BLACK_BAT]    = {  2, 1,  0,  true,   9,  NONE, 48, BLACK "B",  black_bat },
-	[ARMADILDO]    = {  3, 3,  0, false,  -1, STONE, 42, ORANGE "q", armadillo },
-	[BLADENOVICE]  = {  1, 1,  1, false,   9,  NONE, 81, "b",        blademaster },
-	[BLADEMASTER]  = {  2, 2,  1, false,   9,  NONE, 82, YELLOW "b", blademaster },
-	[GHOUL]        = {  1, 1,  0,  true,   9,  NONE, 35, "W",        moore_seek },
-	[GOOLEM]       = {  5, 5,  3,  true,   9, STONE, 67, GREEN "'",  basic_seek },
-	[HARPY]        = {  3, 1,  1,  true,   0,  NONE, 38, GREEN "h",  harpy },
-	[LICH_1]       = {  2, 1,  1, false,   0,  NONE, 57, GREEN "L",  lich },
-	[LICH_2]       = {  3, 2,  1, false,   0,  NONE, 58, PURPLE "L", lich },
-	[LICH_3]       = {  4, 3,  1, false,   0,  NONE, 59, BLACK "L",  lich },
-	[CONF_MONKEY]  = {  0, 1,  0, false,   9,  NONE, 11, GREEN "Y",  basic_seek },
-	[TELE_MONKEY]  = {  0, 2,  0, false,   9,  NONE,  7, PINK "Y",   basic_seek },
-	[PIXIE]        = {  4, 1,  0,  true,   0,  NONE, 46, "n",        basic_seek },
-	[SARCO_1]      = {  0, 1,  7, false,   9,  NONE, 19, "|",        sarcophagus },
-	[SARCO_2]      = {  0, 2,  9, false,   9,  NONE, 20, YELLOW "|", sarcophagus },
-	[SARCO_3]      = {  0, 3, 11, false,   9,  NONE, 21, BLACK "|",  sarcophagus },
-	[SPIDER]       = {  2, 1,  1, false,   9,  NONE, 49, YELLOW "s", basic_seek },
-	[FREE_SPIDER]  = {  2, 1,  0, false,   9,  NONE, 49, RED "s",    diagonal_seek },
-	[WARLOCK_1]    = {  3, 1,  1, false,   9,  NONE, 49, "w",        basic_seek },
-	[WARLOCK_2]    = {  4, 2,  1, false,   9,  NONE, 50, YELLOW "w", basic_seek },
-	[MUMMY]        = {  2, 1,  1, false,   9,  NONE, 69, "M",        moore_seek },
-	[WIND_STATUE]  = {  4, 1,  0, false,   0,  NONE, 46, CYAN "g",   wind_statue },
-	[MIMIC_STATUE] = {  4, 1,  0, false,   1,  NONE, 46, BLACK "g",  mimic },
-	[BOMB_STATUE]  = {  4, 1,  0, false,   0,  NONE, 46, YELLOW "g", bomb_statue },
-	[MINE_STATUE]  = {  4, 1,  0, false,   0,  NONE,  0, RED "g",    NULL },
-	[CRATE]        = {  0, 1,  0, false,   0,  NONE,  0, "(",        NULL },
-	[BARREL]       = {  1, 1,  0, false, 999,  DIRT,  2, BROWN "(",  charge },
-	[TEH_URN]      = {  0, 3,  0, false,   0,  NONE,  0, PURPLE "(", NULL },
-	[CHEST]        = {  0, 1,  0, false,   0,  NONE,  0, BLACK "(",  NULL },
-	[FIREPIG]      = {  5, 1,  0, false,   0,  NONE,  1, RED "q",    firepig },
-
-	[SKULL_1]      = {  1, 1,  1, false,   9,  NONE, 16, WHITE "z",  basic_seek },
-	[SKULL_2]      = {  2, 1,  1, false,   9,  NONE, 31, YELLOW "z", basic_seek },
-	[SKULL_3]      = {  4, 1,  1, false,   9,  NONE, 54, BLACK "z",  basic_seek },
-	[WATER_BALL]   = {  0, 1,  0,  true,   9,  NONE,  4, BLUE "e",   moore_seek },
-	[TAR_BALL]     = {  0, 1,  0,  true,   9,  NONE,  5, BLACK "e",  moore_seek },
-	[ELECTRO_1]    = {  1, 1,  1, false,   0,  NONE, 18, BLUE "L",   electro_lich },
-	[ELECTRO_2]    = {  3, 2,  1, false,   0,  NONE, 40, RED "L",    electro_lich },
-	[ELECTRO_3]    = {  4, 3,  1, false,   0,  NONE, 55, YELLOW "L", electro_lich },
-	[ORB_1]        = {  1, 1,  0,  true, 999,  DIRT, 13, YELLOW "e", orb },
-	[ORB_2]        = {  3, 1,  0,  true, 999,  DIRT, 33, YELLOW "e", orb },
-	[ORB_3]        = {  4, 1,  0,  true, 999,  DIRT, 45, YELLOW "e", orb },
-	[GORGON_1]     = {  0, 1,  0, false,   9,  NONE,  5, GREEN "S",  basic_seek },
-	[GORGON_2]     = {  0, 3,  0, false,   9,  NONE,  8, YELLOW "S", basic_seek },
-	[WIRE_ZOMBIE]  = {  2, 1,  0, false, 999,  NONE, 25, ORANGE "Z", wire_zombie },
-	[EVIL_EYE_1]   = {  1, 1,  0,  true,   0, STONE, 15, GREEN "e",  evil_eye },
-	[EVIL_EYE_2]   = {  2, 2,  0,  true,   0, STONE, 30, PINK "e",   evil_eye },
-	[ORC_1]        = {  1, 1,  0, false,   9,  NONE, 14, GREEN "ô",  orc },
-	[ORC_2]        = {  2, 2,  0, false,   9,  NONE, 29, PINK "ô",   orc },
-	[ORC_3]        = {  3, 3,  0, false,   9,  NONE, 42, PURPLE "ô", orc },
-	[DEVIL_1]      = {  2, 1,  2, false,   9,  NONE, 27, RED "&",    devil },
-	[DEVIL_2]      = {  4, 2,  2, false,   9,  NONE, 53, GREEN "&",  devil },
-	[PURPLE_SLIME] = {  3, 1,  0, false, 999,  NONE, 35, PURPLE "P", slime },
-	[BLACK_SLIME]  = {  3, 1,  0, false, 999,  NONE, 35, BLACK "P",  slime },
-	[CURSE_WRAITH] = {  0, 1,  0,  true,   9,  NONE,  5, YELLOW "W", basic_seek },
-	[SHOP_MIMIC]   = {  2, 1,  0, false,   2,  NONE, 22, YELLOW "m", moore_mimic },
-	[STONE_STATUE] = {  1, 1,  0, false,   0,  NONE,  0, BLACK "S",  NULL },
-	[GOLD_STATUE]  = {  1, 3,  0, false,   0,  NONE,  0, BLACK "S",  NULL },
-
-	[DIREBAT_1]    = {  3, 2,  1,  true,   9,  NONE, 70, YELLOW "B", bat },
-	[DIREBAT_2]    = {  4, 3,  1,  true,   9,  NONE, 74, "B",        bat },
-	[DRAGON]       = {  4, 4,  1,  true,  49,  SHOP, 75, GREEN "D",  basic_seek },
-	[RED_DRAGON]   = {  6, 6,  0,  true, 100,  SHOP, 85, RED "D",    dragon },
-	[BLUE_DRAGON]  = {  6, 6,  0,  true,   0,  SHOP, 83, BLUE "D",   dragon },
-	[EARTH_DRAGON] = {  6, 8,  1,  true,   0,  SHOP, 80, BROWN "D",  basic_seek },
-	[BANSHEE_1]    = {  4, 3,  0,  true,  25,  NONE, 71, BLUE "8",   basic_seek },
-	[BANSHEE_2]    = {  6, 4,  0,  true,   9,  NONE, 79, GREEN "8",  basic_seek },
-	[MINOTAUR_1]   = {  4, 3,  0,  true,  49, STONE, 71, "H",        minotaur },
-	[MINOTAUR_2]   = {  5, 5,  0,  true,  49, STONE, 77, BLACK "H",  minotaur },
-	[NIGHTMARE_1]  = {  4, 3,  1,  true,  81,  SHOP, 73, BLACK "u",  basic_seek },
-	[NIGHTMARE_2]  = {  5, 5,  1,  true,  81,  SHOP, 78, RED "u",    basic_seek },
-	[MOMMY]        = {  4, 6,  3,  true,   9,  NONE, 76, BROWN "@",  mommy },
-	[OGRE]         = {  5, 5,  0,  true,   9, STONE, 77, GREEN "O",  ogre },
-	[METROGNOME_1] = {  4, 3,  0,  true,   9,  DIRT, 72, YELLOW "G", metrognome },
-	[METROGNOME_2] = {  5, 5,  0,  true,   9,  DIRT, 77, GREEN "G",  metrognome },
-
-	[SHOPKEEPER]   = { 20, 9,  0, false,   0,  NONE, 83, "@",        NULL },
-	[PLAYER]       = {  1, 1,  0, false,   2,  DIRT, 99, "@",        NULL },
-	[BOMB]         = {  4, 1,  0, false, 999,  NONE, 98, ORANGE "●", bomb_detonate },
-	[SHRINE]       = {  0, 1,  0, false,   0,  NONE,  0, "_",        NULL },
+void (*const monster_ai[])(Monster*, Coords) = {
+#define X(name, glyph, ai, ...) ai,
+#include "monsters.table"
+#undef X
 };
