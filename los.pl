@@ -52,7 +52,7 @@ for my $y (1..10) {
 		print 'if (tile->type == EDGE) ', $x == 0 || $y == 10 ? 'return;' :
 			sprintf "{ walls |= %#x; goto label$y; }",
 				(1 << id($y + 1, $y)) - (1 << id($x, $y));
-		print "if (torch >= $l2 || @masks) " if $l2 > 2;
+		print $l2 > 5 ? "if (@masks)" : $l2 > 2 ? "if (torch >= $l2 || @masks) " : "";
 		print 'tile->revealed = true;';
 		print('}'), exit if $x == 10;
 		printf "walls |= (u64) (tile->type >> 7) << %d;\n", id($x, $y);

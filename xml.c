@@ -1,6 +1,7 @@
 // xml.c - deals with custom dungeon XML files
 
 #include <signal.h>
+#include <ctype.h>
 #include <unistd.h>
 
 #include "chore.h"
@@ -21,10 +22,23 @@ i32 work_factor = 36;
 static char attribute_map[8][32];
 
 static const char* item_names[] = {
-#define X(name, slot, xml, friendly, glyph) #xml,
-#include "items.table"
+#define X(name, slot, friendly, glyph, power) #name,
+#include "items.h"
 #undef X
 };
+
+// Converts an item name to an Item.
+static Item item(char* name)
+{
+	for (char *p = name; (*p = (char) toupper(*p)); ++p);
+	for (u8 result = 0; result < ARRAY_SIZE(item_names); ++result)
+		if (strstr(item_names[result], name))
+			return (Item) result;
+	for (u8 result = ARRAY_SIZE(item_names) - 1; result; --result)
+		if (strstr(name, item_names[result]))
+			return (Item) result;
+	return NO_ITEM;
+}
 
 // Computes the position of the spawn relative to the top-left corner.
 // The game uses the spawn as the {0, 0} point, but we use the top-left corner,
@@ -39,14 +53,6 @@ static void xml_find_spawn(UNUSED const char* node)
 	player.pos.y = max(player.pos.y, 2 - (i8) INT_ATTR("y"));
 	if (IS_OOB(player.pos))
 		FATAL("Tile too far away from spawn: (%d, %d)", INT_ATTR("x"), INT_ATTR("y"));
-}
-
-// Converts an item name to an item ID.
-static u8 xml_item(const char* key)
-{
-	u8 item = ARRAY_SIZE(item_names);
-	while (--item && !streq(STR_ATTR(key), item_names[item]));
-	return item;
 }
 
 // Adds a new trap to the list.
@@ -180,15 +186,15 @@ static void xml_process_node(const char *name)
 	else if (streq(name, "enemy"))
 		enemy_init(pos, type, INT_ATTR("lord"));
 	else if (streq(name, "chest"))
-		monster_spawn(CHEST, pos, 0)->item = xml_item("contents");
+		monster_spawn(CHEST, pos, 0)->item = item(STR_ATTR("contents"));
 	else if (streq(name, "crate"))
-		monster_spawn(CRATE + (u8) type, pos, 0)->item = xml_item("contents");
+		monster_spawn(CRATE + (u8) type, pos, 0)->item = item(STR_ATTR("contents"));
 	else if (streq(name, "shrine"))
 		monster_spawn(SHRINE, pos, 0);
 	else if (streq(name, "item") && pos == player.pos)
-		pickup_item(xml_item("type"));
+		pickup_item(item(STR_ATTR("type")));
 	else if (streq(name, "item"))
-		TILE(pos).item = xml_item("type");
+		TILE(pos).item = item(STR_ATTR("type"));
 }
 
 static void dungeon_init(i32 level)
@@ -269,7 +275,6 @@ static void __attribute__((noreturn)) signal_handler(int signal)
 void xml_parse(i32 argc, char **argv)
 {
 	i32 level = 1;
-	u8 item;
 
 	signal(SIGSEGV, signal_handler);
 	signal(SIGABRT, signal_handler);
@@ -280,9 +285,7 @@ void xml_parse(i32 argc, char **argv)
 
 	getopt: switch (getopt(argc, argv, "i:l:m:s:w:")) {
 	case 'i':
-		item = ARRAY_SIZE(item_names);
-		while (--item && !strstr(item_names[item], optarg));
-		pickup_item(item);
+		pickup_item(item(optarg));
 		goto getopt;
 	case 'l':
 		level = atoi(optarg);

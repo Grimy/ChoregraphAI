@@ -10,8 +10,8 @@ static thread_local jmp_buf player_died;
 thread_local GameState g = {
 	.board = {[0 ... 31] = {[0 ... 31] = {.type = EDGE}}},
 	.monsters = {{.untrapped = true, .electrified = true}},
-	.weapon = DAGGER_BASE,
-	.shovel = SHOVEL_BASE,
+	.weapon = DAGGER,
+	.shovel = SHOVEL_BASIC,
 	.bombs = 0,
 	.boots_on = true,
 };
@@ -535,14 +535,14 @@ static void after_move(Coords dir, bool forced)
 {
 	g.player_moved = true;
 
-	if (g.feet == FEET_LUNGING && g.boots_on) {
+	if (g.feet == BOOTS_LUNGING && g.boots_on) {
 		i64 steps = 4;
 		while (--steps && !forced && can_move(&player, dir))
 			move(&player, player.pos + dir);
 		Monster *in_my_way = &MONSTER(player.pos + dir);
 		if (steps && damage(in_my_way, 4, dir, DMG_NORMAL))
 			knockback(in_my_way, dir, 1);
-	} else if (g.feet == FEET_LEAPING) {
+	} else if (g.feet == BOOTS_LEAPING) {
 		if (g.boots_on && can_move(&player, dir))
 			move(&player, player.pos + dir);
 		if (IS_BOGGED(&player))
@@ -657,41 +657,42 @@ static void player_move(i8 x, i8 y)
 	}
 }
 
-static u8 GameState::*const item_slot[] = {
-#define X(name, slot, xml, friendly, glyph) &GameState::slot,
-#include "items.table"
+static Item GameState::*const item_slot[] = {
+#define X(name, slot, friendly, glyph, power) &GameState::slot,
+#include "items.h"
+#undef X
+};
+
+static u8 item_power[] = {
+#define X(name, slot, friendly, glyph, power) power,
+#include "items.h"
 #undef X
 };
 
 // Adds an item to the player’s inventory.
 // Returns the item the player had in that slot.
-u8 pickup_item(u8 item)
+Item pickup_item(Item item)
 {
+	Item swapped_out;
+
 	switch (item) {
-	case HEART_1:
-		player.hp += 1;
-		return NO_ITEM;
-	case HEART_2:
-		player.hp += 2;
+	case HEART2:
+	case HEART3:
+		player.hp += item_power[item];
 		return NO_ITEM;
 	case BOMB_1:
-		g.bombs += 1;
-		return NO_ITEM;
 	case BOMB_3:
-		g.bombs += 3;
+		g.bombs += item_power[item];
 		return NO_ITEM;
 	default:
-		u8 tmp = g.*(item_slot[item]);
-		g.*(item_slot[item]) = item;
-		item = tmp;
-		break;
+		swapped_out = g.*item_slot[item];
+		g.*item_slot[item] = item;
 	}
 
-	u8 dig = (g.shovel == SHOVEL_TIT) + (g.head == HEAD_MINERS);
-	player.digging_power = (TileType[]) { DIRT, STONE, CATACOMB, SHOP } [dig];
-	player.damage = g.weapon == DAGGER_JEWELED ? 5 : 1;
+	player.digging_power = (TileType) (item_power[g.shovel] - item_power[g.head]);
+	player.damage = (i8) item_power[g.weapon];
 	player.radius = g.head == HEAD_MINERS ? 5 : 2;
-	return item;
+	return swapped_out;
 }
 
 static void player_turn(char input)

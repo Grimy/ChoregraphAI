@@ -712,12 +712,12 @@ static void metrognome(Monster *m, Coords d)
 
 const Monster proto[] = {
 #define X(name, glyph, ai, ...) { __VA_ARGS__, name },
-#include "monsters.table"
+#include "monsters.h"
 #undef X
 };
 
 void (*const monster_ai[])(Monster*, Coords) = {
 #define X(name, glyph, ai, ...) ai,
-#include "monsters.table"
+#include "monsters.h"
 #undef X
 };

@@ -106,15 +106,15 @@ enum CharId {
 	NOCTURNA,
 };
 
-enum ItemType : u8 {
+enum Item : u8 {
 #define X(name, ...) name,
-#include "items.table"
+#include "items.h"
 #undef X
 };
 
 enum MonsterType : u8 {
 #define X(name, ...) name,
-#include "monsters.table"
+#include "monsters.h"
 #undef X
 };
 
@@ -185,7 +185,7 @@ struct Monster {
 	Coords pos;
 	Coords prev_pos;
 	Coords dir;
-	u8 item;
+	Item item;
 
 	u8 delay;
 	u8 confusion;
@@ -205,7 +205,7 @@ struct Tile {
 	bool revealed;
 	u8 type;
 	u8 monster;
-	u8 item;
+	Item item;
 	u16 light;
 	bool torch: 1;
 	bool destroyed: 1;
@@ -238,7 +238,8 @@ struct alignas(2048) GameState {
 	bool game_over;      // True iff the game ended (win or loss)
 
 	// Inventory
-	u8 bombs, shovel, weapon, body, head, feet, ring, usable, torch, spell;
+	u8 bombs;
+	Item shovel, weapon, body, head, feet, ring, usable, torch, none;
 
 	CharId character;
 	bool player_moved;
@@ -282,7 +283,7 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type);
 void update_fov(void);
 void adjust_lights(Coords pos, i64 diff, double radius);
 bool shadowed(Coords pos);
-u8 pickup_item(u8 item);
+Item pickup_item(Item item);
 bool can_move(const Monster *m, Coords dir);
 MoveResult enemy_move(Monster *m, Coords dir);
 bool forced_move(Monster *m, Coords offset);
