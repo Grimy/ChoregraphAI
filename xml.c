@@ -19,6 +19,7 @@
 
 i32 work_factor = 36;
 
+static i32 default_zone;
 static char attribute_map[8][32];
 
 static const char* item_names[] = {
@@ -45,10 +46,11 @@ static Item item(char* name)
 // so we need this information to convert between the two reference frames.
 // Note: we place {0, 0} on the top-left corner because we want to use
 // coordinates to index into the tile array, so they have to be positive.
-static void xml_find_spawn(UNUSED const char* node)
+static void xml_find_spawn(const char* node)
 {
-	if (INT_ATTR("type") >= 100)
+	if (!streq(node, "tile") || INT_ATTR("type") >= 100)
 		return;
+	default_zone = INT_ATTR("zone");
 	player.pos.x = max(player.pos.x, 2 - (i8) INT_ATTR("x"));
 	player.pos.y = max(player.pos.y, 2 - (i8) INT_ATTR("y"));
 	if (IS_OOB(player.pos))
@@ -94,10 +96,8 @@ static void tile_init(Coords pos, i32 type, i32 zone, bool torch)
 	if (torch)
 		adjust_lights(pos, +1, 4.25);
 
-	if (id == STAIRS) {
+	if (id == STAIRS)
 		g.stairs = pos;
-		g.locking_enemies = 1 + (zone == 4);
-	}
 
 	TILE(pos).wired = type == 20 || type == 118;
 	TILE(pos).torch = torch;
@@ -163,6 +163,8 @@ static void enemy_init(Coords pos, i32 type, bool lord)
 		adjust_lights(pos, +1, 4.5);
 	else if (id == ZOMBIE || id == WIRE_ZOMBIE)
 		m->dir = orient_zombie(pos);
+	else if (id == BANSHEE_1 || id == BANSHEE_2)
+		m->radius = (i8[]) {9, 25, 49, 49, 9} [default_zone];
 }
 
 // Converts a single XML node into an appropriate object (trap, tile, monster or item).
@@ -256,6 +258,8 @@ static void read_dungeon(char *file, i32 level)
 		if (m.type == NIGHTMARE_1 || m.type == NIGHTMARE_2)
 			g.nightmare = i;
 	}
+
+	g.locking_enemies = 1 + (default_zone == 4);
 
 	player.prev_pos = player.pos;
 	if (MONSTER(player.pos).type != PLAYER)

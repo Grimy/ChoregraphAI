@@ -29,6 +29,8 @@ template <class T> constexpr T max(T x, i64 y) { return x > (T) y ? x : (T) y; }
 
 // Terminal ANSI codes
 #define CLEAR   "\033[m"
+#define BOLD    "\033[1m"
+#define ITALIC  "\033[3m"
 #define REVERSE "\033[7m"
 #define RED     "\033[31m"
 #define BROWN   "\033[33m"

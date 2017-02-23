@@ -225,14 +225,13 @@ static void display_player(void)
 	printf("%s", g.sliding_on_ice ? CYAN "Sliding" : "");
 	printf("%s", g.iframes > g.current_beat ? PINK "I-framed " : "");
 	print_at({x, ++y}, CLEAR);
-	print_at({x, ++y}, "Bombs:  %-2d", g.bombs);
+	print_at({x, ++y}, "Bombs:  %-2d",  g.bombs);
 	print_at({x, ++y}, "Shovel: %-20s", item_names[g.shovel]);
 	print_at({x, ++y}, "Weapon: %-20s", item_names[g.weapon]);
-	print_at({x, ++y}, "Body:   %-20s",   item_names[g.body]);
-	print_at({x, ++y}, "Head:   %-20s",   item_names[g.head]);
-	print_at({x, ++y}, "Boots:  %-20s",  item_names[g.feet]);
-	printf(" (%s)", g.boots_on ? "on" : "off");
-	print_at({x, ++y}, "Ring:   %-20s",   item_names[g.ring]);
+	print_at({x, ++y}, "Body:   %-20s", item_names[g.body]);
+	print_at({x, ++y}, "Head:   %-20s", item_names[g.head]);
+	print_at({x, ++y}, "Boots:  %s%-20s" CLEAR, g.boots_on ? BOLD : "", item_names[g.feet]);
+	print_at({x, ++y}, "Ring:   %-20s", item_names[g.ring]);
 	print_at({x, ++y}, "Usable: %-20s", item_names[g.usable]);
 	if (!player.untrapped)
 		print_at(player.pos, "%s", tile_glyphs[TILE(player.pos).type]);

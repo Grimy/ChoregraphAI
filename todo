@@ -9,7 +9,6 @@ BUGFIXES:
 * armadillos: charge if path *was* free on previous beat
 * yetis/mummies/sarcos: should have been aggroed for a full turn
 * firepig should have trap priority
-* banshees/skeletons should have different activation radii depending on the zone
 * charged breath attacks should have extreme priority
 * clonking should hit both player and monkey
 * bombs shouldn’t damage fresh skull spawns
