@@ -8,13 +8,13 @@ const Coords plus_shape[] = {{-1, 0}, {0, -1}, {0, 1}, {1, 0}};
 
 const Coords square_shape[] = {
 	{-1, -1}, {-1, 0}, {-1, 1},
-	{0, -1}, {0, 0}, {0, 1},
-	{1, -1}, {1, 0}, {1, 1},
+	{ 0, -1}, { 0, 0}, { 0, 1},
+	{ 1, -1}, { 1, 0}, { 1, 1},
 };
 
 const Coords cone_shape[] = {
-	{1, 0},
-	{2, -1}, {2, 0}, {2, 1},
+	{1,  0},
+	{2, -1}, {2,  0}, {2, 1},
 	{3, -2}, {3, -1}, {3, 0}, {3, 1}, {3, 2},
 };
 
@@ -36,6 +36,7 @@ static bool can_breathe(const Monster *m, Coords d)
 	return true;
 }
 
+// Change ice to water and water to floor (fireball / explosions)
 static void evaporate(Tile *tile)
 {
 	if (tile->type == ICE)
@@ -713,11 +714,9 @@ static void metrognome(Monster *m, Coords d)
 const Monster proto[] = {
 #define X(name, glyph, ai, ...) { __VA_ARGS__, name },
 #include "monsters.h"
-#undef X
 };
 
 void (*const monster_ai[])(Monster*, Coords) = {
 #define X(name, glyph, ai, ...) ai,
 #include "monsters.h"
-#undef X
 };

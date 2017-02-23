@@ -4,6 +4,7 @@ FEATURES:
 * confusion de-aggroing enemies + set radius=0
 
 BUGFIXES:
+* lunging shouldn’t proc while sliding
 * fix crash when pos == prev_pos == omnibounce
 * minotaurs/armadillos: only charge if L1(d) <= 6
 * armadillos: charge if path *was* free on previous beat

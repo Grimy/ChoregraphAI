@@ -111,13 +111,11 @@ enum CharId {
 enum Item : u8 {
 #define X(name, ...) name,
 #include "items.h"
-#undef X
 };
 
 enum MonsterType : u8 {
 #define X(name, ...) name,
 #include "monsters.h"
-#undef X
 };
 
 enum TileType : u8 {

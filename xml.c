@@ -20,12 +20,49 @@
 i32 work_factor = 36;
 
 static i32 default_zone;
+
+// Holds the attributes of the XML node currently being processed.
 static char attribute_map[8][32];
 
+// Maps CotN tile types to ChoregraphAI tile types.
+static TileType tile_types[] = {
+	FLOOR, FLOOR, STAIRS, SHOP_FLOOR, WATER, TAR, NONE, SHOP_FLOOR, TAR, STAIRS,
+	FIRE, ICE, NONE, NONE, FLOOR, NONE, NONE, OOZE, LAVA, FLOOR, FLOOR,
+	[21 ... 99] = NONE,
+	DIRT, DIRT, NONE, DOOR, SHOP, NONE, NONE, STONE, CATACOMB, NONE, SHOP,
+	DOOR, SHOP, SHOP, SHOP, SHOP, SHOP, SHOP, DOOR,
+};
+
+// Maps CotN enemy types to ChoregraphAI monster types.
+static MonsterType monster_types[] = {
+	GREEN_SLIME, BLUE_SLIME, YELLOW_SLIME, SKELETON_1, SKELETON_2, SKELETON_3,
+	BLUE_BAT, RED_BAT, GREEN_BAT, MONKEY_1, MONKEY_2, GHOST, ZOMBIE, WRAITH,
+	MIMIC_1, MIMIC_2, WHITE_MIMIC,
+	[100] = SKELETANK_1, SKELETANK_2, SKELETANK_3, WINDMAGE_1, WINDMAGE_2,
+	WINDMAGE_3, MUSHROOM_1, MUSHROOM_2, GOLEM_1, GOLEM_2, ARMADILLO_1, ARMADILLO_2,
+	CLONE, TARMONSTER, MOLE, WIGHT, WALL_MIMIC, LIGHTSHROOM, BOMBSHROOM,
+	[200] = FIRE_SLIME, ICE_SLIME, RIDER_1, RIDER_2, RIDER_3, EFREET, DJINN,
+	ASSASSIN_1, ASSASSIN_2, FIRE_BEETLE, ICE_BEETLE, HELLHOUND, SHOVE_1,
+	YETI, GHAST, FIRE_MIMIC, ICE_MIMIC, FIRE_POT, ICE_POT, SHOVE_2,
+	[300] = BOMBER, DIGGER, BLACK_BAT, ARMADILDO, BLADENOVICE, BLADEMASTER,
+	GHOUL, GOOLEM, HARPY, LICH_1, LICH_2, LICH_3, CONF_MONKEY, TELE_MONKEY, PIXIE,
+	SARCO_1, SARCO_2, SARCO_3, SPIDER, WARLOCK_1, WARLOCK_2, MUMMY, WIND_STATUE,
+	MIMIC_STATUE, BOMB_STATUE, MINE_STATUE, CRATE, CRATE,
+	[400] = DIREBAT_1, DIREBAT_2, DRAGON, RED_DRAGON, BLUE_DRAGON,
+	BANSHEE_1, BANSHEE_2, MINOTAUR_1, MINOTAUR_2, NIGHTMARE_1, NIGHTMARE_2,
+	MOMMY, OGRE, METROGNOME_1, METROGNOME_2, EARTH_DRAGON,
+	[600] = SHOPKEEPER,
+	[701] = SKULL_1, WATER_BALL, NO_MONSTER, ELECTRO_1, ELECTRO_2, ELECTRO_3,
+	ORB_1, ORB_2, ORB_3, GORGON_1, WIRE_ZOMBIE, SKULL_2, SKULL_3, NO_MONSTER,
+	NO_MONSTER, NO_MONSTER, EVIL_EYE_1, GORGON_2, EVIL_EYE_2, ORC_1, ORC_2, ORC_3,
+	DEVIL_1, DEVIL_2, PURPLE_SLIME, CURSE_WRAITH, MIMIC_1, SHOP_MIMIC,
+	BLACK_SLIME, NO_MONSTER, MIMIC_1, MIMIC_1, TAR_BALL,
+};
+
+// Maps ChoregraphAI item types to CotN item names.
 static const char* item_names[] = {
 #define X(name, slot, friendly, glyph, power) #name,
 #include "items.h"
-#undef X
 };
 
 // Converts an item name to an Item.
@@ -46,7 +83,7 @@ static Item item(char* name)
 // so we need this information to convert between the two reference frames.
 // Note: we place {0, 0} on the top-left corner because we want to use
 // coordinates to index into the tile array, so they have to be positive.
-static void xml_find_spawn(const char* node)
+static void find_spawn(const char* node)
 {
 	if (!streq(node, "tile") || INT_ATTR("type") >= 100)
 		return;
@@ -57,8 +94,8 @@ static void xml_find_spawn(const char* node)
 		FATAL("Tile too far away from spawn: (%d, %d)", INT_ATTR("x"), INT_ATTR("y"));
 }
 
-// Adds a new trap to the list.
-static void trap_init(Coords pos, i32 type, i32 subtype)
+// Handles a <trap> node.
+static void process_trap(Coords pos, i32 type, i32 subtype)
 {
 	static u64 trap_count;
 
@@ -67,22 +104,15 @@ static void trap_init(Coords pos, i32 type, i32 subtype)
 		return;
 	}
 
-	Trap *trap = &g.traps[trap_count++];
-	trap->type = subtype == 8 ? OMNIBOUNCE : (u8) type;
-	trap->pos = pos;
-	trap->dir.x = (i8[]) {1, -1, 0, 0, 1, -1, -1, 1} [subtype & 7];
-	trap->dir.y = (i8[]) {0, 0, 1, -1, 1, 1, -1, -1} [subtype & 7];
+	Trap &trap = g.traps[trap_count++];
+	trap.type = subtype == 8 ? OMNIBOUNCE : (u8) type;
+	trap.pos = pos;
+	trap.dir.x = (i8[]) {1, -1, 0, 0, 1, -1, -1, 1} [subtype & 7];
+	trap.dir.y = (i8[]) {0, 0, 1, -1, 1, 1, -1, -1} [subtype & 7];
 }
 
-static TileType tile_types[] = {
-	FLOOR, FLOOR, STAIRS, SHOP_FLOOR, WATER, TAR, NONE, SHOP_FLOOR, TAR, STAIRS,
-	FIRE, ICE, NONE, NONE, FLOOR, NONE, NONE, OOZE, LAVA, FLOOR, FLOOR,
-	[21 ... 99] = NONE,
-	DIRT, DIRT, NONE, DOOR, SHOP, NONE, NONE, STONE, CATACOMB, NONE, SHOP,
-	DOOR, SHOP, SHOP, SHOP, SHOP, SHOP, SHOP, DOOR,
-};
-
-static void tile_init(Coords pos, i32 type, i32 zone, bool torch)
+// Handles a <tile> node.
+static void process_tile(Coords pos, i32 type, i32 zone, bool torch)
 {
 	if (type > ARRAY_SIZE(tile_types) || tile_types[type] == NONE)
 		FATAL("Unknown tile type: %d", type);
@@ -114,32 +144,8 @@ static Coords orient_zombie(Coords pos)
 	return {1, 0};
 }
 
-static MonsterType monster_types[] = {
-	GREEN_SLIME, BLUE_SLIME, YELLOW_SLIME, SKELETON_1, SKELETON_2, SKELETON_3,
-	BLUE_BAT, RED_BAT, GREEN_BAT, MONKEY_1, MONKEY_2, GHOST, ZOMBIE, WRAITH,
-	MIMIC_1, MIMIC_2, WHITE_MIMIC,
-	[100] = SKELETANK_1, SKELETANK_2, SKELETANK_3, WINDMAGE_1, WINDMAGE_2,
-	WINDMAGE_3, MUSHROOM_1, MUSHROOM_2, GOLEM_1, GOLEM_2, ARMADILLO_1, ARMADILLO_2,
-	CLONE, TARMONSTER, MOLE, WIGHT, WALL_MIMIC, LIGHTSHROOM, BOMBSHROOM,
-	[200] = FIRE_SLIME, ICE_SLIME, RIDER_1, RIDER_2, RIDER_3, EFREET, DJINN,
-	ASSASSIN_1, ASSASSIN_2, FIRE_BEETLE, ICE_BEETLE, HELLHOUND, SHOVE_1,
-	YETI, GHAST, FIRE_MIMIC, ICE_MIMIC, FIRE_POT, ICE_POT, SHOVE_2,
-	[300] = BOMBER, DIGGER, BLACK_BAT, ARMADILDO, BLADENOVICE, BLADEMASTER,
-	GHOUL, GOOLEM, HARPY, LICH_1, LICH_2, LICH_3, CONF_MONKEY, TELE_MONKEY, PIXIE,
-	SARCO_1, SARCO_2, SARCO_3, SPIDER, WARLOCK_1, WARLOCK_2, MUMMY, WIND_STATUE,
-	MIMIC_STATUE, BOMB_STATUE, MINE_STATUE, CRATE, CRATE,
-	[400] = DIREBAT_1, DIREBAT_2, DRAGON, RED_DRAGON, BLUE_DRAGON,
-	BANSHEE_1, BANSHEE_2, MINOTAUR_1, MINOTAUR_2, NIGHTMARE_1, NIGHTMARE_2,
-	MOMMY, OGRE, METROGNOME_1, METROGNOME_2, EARTH_DRAGON,
-	[600] = SHOPKEEPER,
-	[701] = SKULL_1, WATER_BALL, NO_MONSTER, ELECTRO_1, ELECTRO_2, ELECTRO_3,
-	ORB_1, ORB_2, ORB_3, GORGON_1, WIRE_ZOMBIE, SKULL_2, SKULL_3, NO_MONSTER,
-	NO_MONSTER, NO_MONSTER, EVIL_EYE_1, GORGON_2, EVIL_EYE_2, ORC_1, ORC_2, ORC_3,
-	DEVIL_1, DEVIL_2, PURPLE_SLIME, CURSE_WRAITH, MIMIC_1, SHOP_MIMIC,
-	BLACK_SLIME, NO_MONSTER, MIMIC_1, MIMIC_1, TAR_BALL,
-};
-
-static void enemy_init(Coords pos, i32 type, bool lord)
+// Handles an <enemy> node.
+static void process_enemy(Coords pos, i32 type, bool lord)
 {
 	if (type > ARRAY_SIZE(monster_types) || monster_types[type] == NO_MONSTER)
 		FATAL("Invalid enemy type: %d", type);
@@ -168,7 +174,7 @@ static void enemy_init(Coords pos, i32 type, bool lord)
 }
 
 // Converts a single XML node into an appropriate object (trap, tile, monster or item).
-static void xml_process_node(const char *name)
+static void process_node(const char *name)
 {
 	i32 type = INT_ATTR("type");
 	if (type < 0)
@@ -182,11 +188,11 @@ static void xml_process_node(const char *name)
 	}
 
 	if (streq(name, "trap"))
-		trap_init(pos, type, INT_ATTR("subtype"));
+		process_trap(pos, type, INT_ATTR("subtype"));
 	else if (streq(name, "tile"))
-		tile_init(pos, type, INT_ATTR("zone"), INT_ATTR("torch"));
+		process_tile(pos, type, INT_ATTR("zone"), INT_ATTR("torch"));
 	else if (streq(name, "enemy"))
-		enemy_init(pos, type, INT_ATTR("lord"));
+		process_enemy(pos, type, INT_ATTR("lord"));
 	else if (streq(name, "chest"))
 		monster_spawn(CHEST, pos, 0)->item = item(STR_ATTR("contents"));
 	else if (streq(name, "crate"))
@@ -199,14 +205,18 @@ static void xml_process_node(const char *name)
 		TILE(pos).item = item(STR_ATTR("type"));
 }
 
-static void dungeon_init(i32 level)
+// Reads global information from the root <dungeon> node. 
+static void process_root(i32 level)
 {
 	g.character = (CharId) (INT_ATTR("character") % 1000);
 	if (level > INT_ATTR("numLevels"))
 		FATAL("No level %d in dungeon (max: %d)", level, INT_ATTR("numLevels"));
 }
 
-static void xml_process_file(char *file, i32 level, void (callback)(const char*))
+// Loops over the XML nodes in `file`, filling `attribute_map` with their attributes.
+// `callback` is called once for each node belonging to the `level`th level.
+// Aborts if the file doesn’t exist or isn’t dungeon XML.
+static void parse_xml_file(char *file, i32 level, void (callback)(const char*))
 {
 	FILE *xml = fopen(file, "r");
 	char node[16];
@@ -223,7 +233,7 @@ static void xml_process_file(char *file, i32 level, void (callback)(const char*)
 		fscanf(xml, " %*[?/>]");
 
 		if (streq(node, "dungeon"))
-			dungeon_init(level);
+			process_root(level);
 		else if (streq(node, "level"))
 			ok = INT_ATTR("num") == level;
 		else if (ok && (INT_ATTR("x") > -180 || INT_ATTR("y") > -180))
@@ -242,13 +252,11 @@ static i32 compare_priorities(const void *a, const void *b)
 	return (pa > pb) - (pa < pb);
 }
 
-// Initializes the game’s state based on the given custom dungeon file.
-// Aborts if the file doesn’t exist or isn’t valid XML.
-// Valid, non-dungeon XML yields undefined results (most likely, an empty dungeon).
+// Fills the global GameState with data from the given custom dungeon file.
 static void read_dungeon(char *file, i32 level)
 {
-	xml_process_file(file, level, xml_find_spawn);
-	xml_process_file(file, level, xml_process_node);
+	parse_xml_file(file, level, find_spawn);
+	parse_xml_file(file, level, process_node);
 
 	qsort(g.monsters + 2, g.last_monster - 1, sizeof(Monster), compare_priorities);
 	for (u8 i = 1; g.monsters[i].type; ++i) {
@@ -271,11 +279,14 @@ static void read_dungeon(char *file, i32 level)
 		update_fov();
 }
 
+// Exits cleanly when catching a signal.
+// Also prints all the inputs so far, allowing for easy reproduction of crashes.
 static void __attribute__((noreturn)) signal_handler(int signal)
 {
 	FATAL("\033[?1049lCaught signal %d after inputs '%s'", signal, g.input);
 }
 
+// Parses command-line arguments, sets up signal handlers, initializes the GameState.
 void xml_parse(i32 argc, char **argv)
 {
 	i32 level = 1;

@@ -1,3 +1,5 @@
+// items.h - X macro item data (see https://wikipedia.org/wiki/X_Macro)
+
 X(NO_ITEM,        none,   "None",                 "",             0)
 X(HEART2,         none,   "",                     "",             2)
 X(HEART3,         none,   "",                     "",             3)
@@ -13,3 +15,5 @@ X(BOOTS_LUNGING,  feet,   "Lunging",              "[",            0)
 X(BOOTS_LEAPING,  feet,   "Frog Socks",           GREEN "[",      0)
 X(TRANSPLANT,     usable, "Heart Transplant",     RED "ღ",        0)
 X(SCROLL_FREEZE,  usable, "Freeze Scroll",        "?",            0)
+
+#undef X

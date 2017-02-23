@@ -44,19 +44,16 @@ static const char* trap_glyphs[] = {
 static const char* monster_glyphs[] = {
 #define X(name, glyph, ai, ...) glyph,
 #include "monsters.h"
-#undef X
 };
 
 static const char* item_glyphs[] = {
 #define X(name, slot, friendly, glyph, power) glyph,
 #include "items.h"
-#undef X
 };
 
 static const char* item_names[] = {
 #define X(name, slot, friendly, glyph, power) friendly,
 #include "items.h"
-#undef X
 };
 
 static const char* animation_steps[][6] = {

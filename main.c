@@ -660,13 +660,11 @@ static void player_move(i8 x, i8 y)
 static Item GameState::*const item_slot[] = {
 #define X(name, slot, friendly, glyph, power) &GameState::slot,
 #include "items.h"
-#undef X
 };
 
 static u8 item_power[] = {
 #define X(name, slot, friendly, glyph, power) power,
 #include "items.h"
-#undef X
 };
 
 // Adds an item to the player’s inventory.

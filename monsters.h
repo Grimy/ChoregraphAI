@@ -1,3 +1,5 @@
+// monsters.h - X macro monster data (see https://wikipedia.org/wiki/X_Macro)
+
 X(NO_MONSTER,   NULL,       NULL,         9, 1,  0,  true, 999,  NONE,  0)
 
 X(GREEN_SLIME,  GREEN "P",  slime,        9, 1,  0, false, 999,  NONE, 63)
@@ -146,3 +148,5 @@ X(SHOPKEEPER,   "@",        NULL,         0, 9,  0, false,   0,  NONE, 83)
 X(PLAYER,       "@",        NULL,         1, 1,  0, false,   2,  DIRT, 99)
 X(BOMB,         ORANGE "●", explosion,    4, 1,  0, false, 999,  NONE, 98)
 X(SHRINE,       "_",        NULL,         0, 1,  0, false,   0,  NONE,  0)
+
+#undef X
