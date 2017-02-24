@@ -12,7 +12,6 @@ static bool run_animations = false;
 
 static const char* tile_glyphs[] = {
 	[FLOOR] = ".",
-	[SHOP_FLOOR] = YELLOW ".",
 	[WATER] = BLUE "≈",
 	[TAR] = BLACK "≈",
 	[STAIRS] = WHITE ">",
@@ -286,10 +285,9 @@ void animation(Animation id, Coords pos, Coords dir)
 		break;
 	case ELECTRICITY:
 		for (Monster *m = &player; m->type; ++m) {
-			if (m->electrified) {
-				targets[target_count++] = m->pos;
-				m->electrified = false;
-			}
+			targets[target_count] = m->pos;
+			target_count += m->electrified;
+			m->electrified = false;
 		}
 		break;
 	case BOUNCE_TRAP:

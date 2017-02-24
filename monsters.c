@@ -36,15 +36,6 @@ static bool can_breathe(const Monster *m, Coords d)
 	return true;
 }
 
-// Change ice to water and water to floor (fireball / explosions)
-static void evaporate(Tile *tile)
-{
-	if (tile->type == ICE)
-		tile->type = WATER;
-	else if (tile->type == WATER)
-		tile->type = FLOOR;
-}
-
 // Deals normal damage to all monsters on a horizontal line.
 void fireball(Coords pos, i8 dir)
 {
@@ -52,7 +43,7 @@ void fireball(Coords pos, i8 dir)
 	animation(FIREBALL, pos, {dir, 0});
 	for (pos.x += dir; !BLOCKS_LOS(pos); pos.x += dir) {
 		damage(&MONSTER(pos), 5, {dir, 0}, DMG_NORMAL);
-		evaporate(&TILE(pos));
+		tile_change(pos, WATER);
 	}
 }
 
@@ -169,8 +160,7 @@ void explosion(Monster *m, UNUSED Coords _)
 
 	for (Coords d: square_shape) {
 		Tile *tile = &TILE(m->pos + d);
-		evaporate(tile);
-		tile->destroyed = true;
+		tile_change(m->pos + d, WATER);
 		tile->item = NO_ITEM;
 		dig(m->pos + d, SHOP, false);
 		damage(&MONSTER(m->pos + d), 4, d, DMG_BOMB);

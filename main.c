@@ -87,15 +87,20 @@ void adjust_lights(Coords pos, i64 diff, double radius)
 
 // Overrides a tile with a given floor hazard. Also destroys traps on the tile.
 // Special cases: stairs are immune, fire+ice => water, fire+water => nothing.
-static void tile_change(Coords pos, u8 new_type)
+void tile_change(Coords pos, u8 new_type)
 {
-	Tile *tile = &TILE(pos);
-	tile->type =
-		tile->type >= STAIRS ? tile->type :
-		(tile->type ^ new_type) == (FIRE ^ ICE) ? WATER :
-		tile->type == WATER && new_type == FIRE ? FLOOR :
-		new_type;
-	tile->destroyed = true;
+	static TileType transitions[][6] = {
+		{ FLOOR, ICE,   FIRE,  OOZE, WATER, TAR  },
+		{ ICE,   ICE,   WATER, ICE,  ICE,   ICE  },
+		{ FIRE,  WATER, FIRE,  FIRE, FLOOR, FIRE },
+		{ OOZE,  OOZE,  OOZE,  OOZE, OOZE,  OOZE },
+		{ FLOOR, WATER, FIRE,  OOZE, FLOOR, TAR  },
+		{ TAR,   TAR,   TAR,   TAR,  TAR,   TAR  },
+	};
+
+	Tile &tile = TILE(pos);
+	tile.type = tile.type >= STAIRS ? tile.type : transitions[new_type][tile.type];
+	tile.destroyed = true;
 }
 
 // Tries to dig away the given wall, replacing it with floor.

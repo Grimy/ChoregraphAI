@@ -119,15 +119,13 @@ enum MonsterType : u8 {
 };
 
 enum TileType : u8 {
-	FLOOR = 0,
-	ICE = 1,
-	FIRE = 2,
-	WATER = 4,
-	SHOP_FLOOR = 8,
-	TAR = 12,
-	OOZE = 16,
-	LAVA = 24,
-	STAIRS = 32,
+	FLOOR,
+	ICE,
+	FIRE,
+	OOZE,
+	WATER,
+	TAR,
+	STAIRS = 0x10,
 
 	EDGE = 0x80,
 	SHOP = 0x90,
@@ -280,6 +278,7 @@ Monster* monster_spawn(u8 type, Coords pos, u8 delay);
 bool dig(Coords pos, TileType digging_power, bool can_splash);
 void monster_kill(Monster *m, DamageType type);
 bool damage(Monster *m, i64 dmg, Coords dir, DamageType type);
+void tile_change(Coords pos, u8 new_type);
 void update_fov(void);
 void adjust_lights(Coords pos, i64 diff, double radius);
 bool shadowed(Coords pos);
