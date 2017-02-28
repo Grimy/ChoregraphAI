@@ -90,16 +90,18 @@ void adjust_lights(Coords pos, i64 diff, double radius)
 void tile_change(Coords pos, u8 new_type)
 {
 	static TileType transitions[][6] = {
-		{ FLOOR, ICE,   FIRE,  OOZE, WATER, TAR  },
-		{ ICE,   ICE,   WATER, ICE,  ICE,   ICE  },
-		{ FIRE,  WATER, FIRE,  FIRE, FLOOR, FIRE },
-		{ OOZE,  OOZE,  OOZE,  OOZE, OOZE,  OOZE },
-		{ FLOOR, WATER, FIRE,  OOZE, FLOOR, TAR  },
-		{ TAR,   TAR,   TAR,   TAR,  TAR,   TAR  },
+		{ FLOOR, ICE,   FIRE,  OOZE, WATER, TAR  }, // moles
+		{ ICE,   ICE,   WATER, ICE,  ICE,   ICE  }, // ice enemies
+		{ FIRE,  WATER, FIRE,  FIRE, FLOOR, FIRE }, // fire enemies
+		{ OOZE,  OOZE,  OOZE,  OOZE, OOZE,  OOZE }, // goolems
+		{ FLOOR, WATER, FIRE,  OOZE, FLOOR, TAR  }, // bombs / fireballs
+		{ TAR,   TAR,   TAR,   TAR,  TAR,   TAR  }, // tarmonsters
+		{ FLOOR, ICE,   FLOOR, OOZE, ICE,   ICE  }, // freeze spell
 	};
 
 	Tile &tile = TILE(pos);
-	tile.type = tile.type >= STAIRS ? tile.type : transitions[new_type][tile.type];
+	if (TILE(pos).type < STAIRS)
+		TILE(pos).type = transitions[new_type][TILE(pos).type];
 	tile.destroyed = true;
 }
 
@@ -532,7 +534,7 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 		return false;
 	case METROGNOME_1:
 	case METROGNOME_2:
-		if (TILE(g.stairs).monster > 1)
+		if (&MONSTER(g.stairs) != &player && &MONSTER(g.stairs) != m)
 			monster_kill(&MONSTER(g.stairs), DMG_NORMAL);
 		if (!TILE(g.stairs).monster)
 			move(m, g.stairs);
@@ -732,7 +734,7 @@ static void player_turn(char input)
 			break;
 		g.usable = NO_ITEM;
 		for (Monster *m = &player + 1; m->type; ++m)
-			m->freeze = 16;
+			m->freeze = 15;
 		break;
 	case '<':
 		if (g.bombs) {

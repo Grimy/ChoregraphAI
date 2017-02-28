@@ -1,20 +1,12 @@
-TESTS:
-* Djinns / freeze / greater freeze / blue dragons vs hot coals / floor / water / tar / ooze
-* Moles vs ice / coals / ooze
-* Frozen / confused elementals
-* Club skulls, firepig skulls/sarco
-* Digging Z4 walls while on ooze?
-* Electro-liches casting from L1 > 6?
-* Check metrognome telefrags
-* Check harpy AI
-
 FEATURES:
 * metal doors (type=111)
 * confusion de-aggroing enemies + set radius=0
 
 BUGFIXES:
+* elementals shouldn’t change terrain while frozen
 * phasing enemies shouldn’t conduct electricity
 * fresh skull spawns should conduct electricity
+* freeze should tick down right after the player’s turn
 * lunging shouldn’t proc while sliding
 * fix crash when pos == prev_pos == omnibounce
 * minotaurs/armadillos: only charge if L1(d) <= 6
@@ -22,6 +14,8 @@ BUGFIXES:
 * yetis/mummies/sarcos: should have been aggroed for a full turn
 * firepig should have trap priority
 * charged breath attacks should have extreme priority
+* fix initial spawn order priority
+* digging should only happen after movement failed
 * clonking should hit both player and monkey
 * bombs shouldn’t damage fresh skull spawns
 * bombs shouldn’t damage unaggroed enemies

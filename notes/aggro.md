@@ -19,8 +19,9 @@ roars…), but not when they become activated.
 
 Nightmares and dragons that are activated but not aggroed will **trample** if
 they are blocked from moving toward you. Trampling affects the 4 tiles adjacent
-to the dragon/nightmare, destroying walls and dealing 4 normal damage to anything
-that was standing there.
+to the dragon/nightmare, destroying walls and dealing their normal damage to
+anything that was standing there. (NB: 1 player heart = 2 enemy hearts, so
+green dragons will deal 4 damage to enemies, red dragons 6, etc…).
 
 Non-player bombs and exploding gargoyles do not cause any damage to non-aggroed enemies.
 
@@ -38,8 +39,7 @@ Example: activation radii 7 and 3, visualized using ice tiles.
 Slimes and zombies have an “infinite” radius: they are always active.
 
 Harpies, all mages, goblin bombers, evil eyes, blue dragons, earth dragons,
-mimics, tarmonsters and headless skeletons have a radius of 0: they will only
-move when aggroed.
+and mimics have a radius of 0: they will only move when aggroed.
 
 Green dragons and minotaurs have a radius of 7. Nightmares have a radius of 9.
 Red dragons have a radius of 10.
@@ -47,27 +47,30 @@ Red dragons have a radius of 10.
 For all other enemies, the activation radius is zone-dependant. It’s 5 in Z2, 7
 in Z3, and 3 in the other zones.
 
+When an enemy becomes unaggroed because confusion ends, its activation radius
+is also reset to 0.
+
 More about aggro
 ----------------
 
-An enemy becomes aggroed if it stands on (or moves to) a **revealed** tile.
+An enemy becomes aggroed if its tile is **revealed** and **lit**.
 
-Revealed tiles are those tiles shown on your minimap (without mapping). A tile
-becomes revealed if it’s within your **line-of-sight** and receives enough
-**lighting**. Additionally, torches, miner’s cap and ring of darkness let you
-“see through walls”: all tiles in a circle around you are revealed, even if you
-don’t have line-of-sight to those tiles.
+Revealed tiles are, roughly, the tiles shown on your minimap without mapping. A
+tile becomes revealed if it’s lit and within your **line-of-sight**.
+Additionally, torches, miner’s cap and ring of darkness let you “see through
+walls”: all tiles in a circle around you are revealed, even if you don’t have
+line-of-sight to those tiles.
 
 Line-of-sight: draw straight lines from the center of your current tile to the
 four corners of another tile. You have line-of-sight to that tile iff at least
 one of those lines doesn’t intersect any walls. (I’m skipping over many details
 here, but that’s the heart of the algorithm).
 
-Lighting: the total lighting of a tile is the *sum* of the lighting it
-receives from nearby light sources (it’s not obvious that it should be a sum:
-Minecraft, for example, uses a max). The light provided by an individual source
-is equal to the brightness of the source minus the square of the distance. When
-the total lighting exceeds some fixed threshold, the tile is considered “lit”.
+Lighting: the total lighting of a tile is the *sum* of the lighting it receives
+from nearby light sources (it’s not obvious that it should be a sum: Minecraft,
+for example, uses a max). The light provided by an individual source is equal
+to the brightness of the source minus the (L2) distance. When the total
+light exceeds some fixed threshold, the tile is considered “lit”.
 
 Take the example of a wall torch:
 
