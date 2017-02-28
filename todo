@@ -3,8 +3,10 @@ TESTS:
 * Moles vs ice / coals / ooze
 * Frozen / confused elementals
 * Club skulls, firepig skulls/sarco
-* Check metrognome telefrags
 * Digging Z4 walls while on ooze?
+* Electro-liches casting from L1 > 6?
+* Check metrognome telefrags
+* Check harpy AI
 
 FEATURES:
 * metal doors (type=111)

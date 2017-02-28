@@ -417,6 +417,51 @@ static void blademaster(Monster *m, Coords d)
 	}
 }
 
+static bool harpy_can_move(Coords pos, Coords move)
+{
+	if (!IS_EMPTY(pos + move))
+		return false;
+
+	Coords dir = direction(move);
+	Coords half = { move.x / 2, move.y / 2 };
+
+	switch (L2(move)) {
+	case 1:
+	case 2:
+		return true;
+	case 4:
+		return !BLOCKS_LOS(pos + dir);
+	case 5:
+		return !BLOCKS_LOS(pos + half) ||
+			(!BLOCKS_LOS(pos + dir) && !BLOCKS_LOS(pos + dir - half));
+	case 9:
+		return !BLOCKS_LOS(pos + dir) && !BLOCKS_LOS(pos + dir * 2);
+	default:
+		assert(false);
+	}
+}
+
+static Coords harpy_dir(Coords pos, Coords d)
+{
+	if (L1(d) == 1)
+		return d;
+
+	const i8 dy = d.y > 0 ? 1 : -1;
+	const Coords a = d.x > 0 ? Coords { 0, dy } : Coords { -1, 0 };
+	const Coords b = d.x > 0 ? Coords { 1,  0 } : Coords { 0, dy };
+	const Coords moves[] = {
+		a * 2 + b, b * 2 + a, a * 3, b * 3,
+		a + b, a * 2, b * 2, a, b,
+		a * 2 + b, a * 2 - b, b * 2 + a, b * 2 - a, a * 3, b * 3,
+	};
+
+	for (i64 i = 0; i < ARRAY_SIZE(moves); ++i)
+		if (L1(d - moves[i]) < L1(d) - (i < 4) && harpy_can_move(pos, moves[i]))
+			return moves[i];
+
+	return {};
+}
+
 // Move up to 3 tiles toward the player, but only attack if the player is adjacent.
 // Only move to visible tiles. Move as little as possible in L2 distance.
 //    N
@@ -428,38 +473,7 @@ static void blademaster(Monster *m, Coords d)
 //    N
 static void harpy(Monster *m, Coords d)
 {
-	static const Coords moves[] = {
-		{-1, 0}, {0, -1}, {0, 1}, {1, 0},
-		{-1, -1}, {-1, 1}, {1, -1}, {1, 1},
-		{-2, 0}, {0, -2}, {0, 2}, {2, 0},
-		{-2, -1}, {-2, 1}, {-1, -2}, {-1, 2}, {1, -2}, {1, 2}, {2, -1}, {2, 1},
-		{-3, 0}, {0, -3}, {0, 3}, {3, 0},
-	};
-	if (L1(d) == 1) {
-		enemy_move(m, d);
-		return;
-	}
-	Coords best_move = {0, 0};
-	i64 min = L1(d);
-	for (Coords move: moves) {
-		i64 score = L1(d - move);
-		if (!score || score >= min || !can_move(m, move))
-			continue;
-		if ((L2(move) == 9 || L2(move) == 4)
-		    && (BLOCKS_LOS(m->pos + direction(move))
-		    || BLOCKS_LOS(m->pos + direction(move) * 2)))
-			continue;
-		if (L2(move) == 5
-		    && BLOCKS_LOS(m->pos + move / 2)
-		    && (BLOCKS_LOS(m->pos + direction(move))
-		    || BLOCKS_LOS(m->pos + direction(move) - move / 2)))
-			continue;
-		min = score;
-		best_move = move;
-		if (score == 1 || score == L1(d) - 3)
-			break;
-	}
-	enemy_move(m, best_move);
+	enemy_move(m, harpy_dir(m->pos, d));
 }
 
 static void lich(Monster *m, Coords d)

@@ -73,7 +73,6 @@ struct Coords {
 	constexpr Coords operator+(const Coords &that) const { return { x + that.x, y + that.y }; }
 	constexpr Coords operator-(const Coords &that) const { return { x - that.x, y - that.y }; }
 	constexpr Coords operator*(i8 scalar)          const { return { x * scalar, y * scalar }; }
-	constexpr Coords operator/(i8 scalar)          const { return { x / scalar, y / scalar }; }
 	constexpr bool operator==(const Coords &that)  const { return x == that.x && y == that.y; }
 	constexpr bool operator!=(const Coords &that)  const { return x != that.x || y != that.y; }
 };
