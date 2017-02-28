@@ -1,13 +1,18 @@
 TESTS:
 * Djinns / freeze / greater freeze / blue dragons vs hot coals / floor / water / tar / ooze
 * Moles vs ice / coals / ooze
+* Frozen / confused elementals
+* Club skulls, firepig skulls/sarco
+* Check metrognome telefrags
+* Digging Z4 walls while on ooze?
 
 FEATURES:
 * metal doors (type=111)
-* earth dragons
 * confusion de-aggroing enemies + set radius=0
 
 BUGFIXES:
+* phasing enemies shouldn’t conduct electricity
+* fresh skull spawns should conduct electricity
 * lunging shouldn’t proc while sliding
 * fix crash when pos == prev_pos == omnibounce
 * minotaurs/armadillos: only charge if L1(d) <= 6

@@ -308,7 +308,7 @@ static void mushroom(Monster *m, Coords d)
 {
 	animation(SPORES, m->pos, {});
 	if (L2(d) < 4)
-		damage(&player, m->damage, d, DMG_NORMAL);
+		damage(&player, m->damage, Coords {}, DMG_NORMAL);
 }
 
 // State 0: passive

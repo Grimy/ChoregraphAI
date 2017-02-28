@@ -136,10 +136,8 @@ bool dig(Coords pos, TileType digging_power, bool can_splash)
 
 // Handles an enemy attacking the player.
 // Usually boils down to damaging the player, but some enemies are special-cased.
-static void enemy_attack(Monster *attacker)
+static void enemy_attack(Monster *attacker, Coords dir)
 {
-	Coords d = player.pos - attacker->pos;
-
 	switch (attacker->type) {
 	case MONKEY_1 ... TELE_MONKEY:
 	case TARMONSTER:
@@ -156,10 +154,10 @@ static void enemy_attack(Monster *attacker)
 		break;
 	case SHOVE_1:
 	case SHOVE_2:
-		if (forced_move(&player, d))
-			move(attacker, attacker->pos + d);
+		if (forced_move(&player, dir))
+			move(attacker, attacker->pos + dir);
 		else
-			damage(&player, 1, d, DMG_NORMAL);
+			damage(&player, 1, dir, DMG_NORMAL);
 		break;
 	case BOMBER:
 		explosion(attacker, Coords {});
@@ -175,7 +173,7 @@ static void enemy_attack(Monster *attacker)
 		monster_kill(attacker, DMG_NORMAL);
 		break;
 	default:
-		damage(&player, attacker->damage, d, DMG_NORMAL);
+		damage(&player, attacker->damage, dir, DMG_NORMAL);
 	}
 }
 
@@ -208,7 +206,7 @@ MoveResult enemy_move(Monster *m, Coords dir)
 
 	// Attack
 	if (m->pos + dir == player.pos) {
-		enemy_attack(m);
+		enemy_attack(m, dir);
 		return MOVE_ATTACK;
 	}
 
@@ -396,6 +394,8 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 		return false;
 
 	// Before-damage triggers
+	Coords orthogonal = { dir.y, dir.x };
+
 	switch (m->type) {
 	case BOMBSHROOM:
 		monster_transform(m, BOMBSHROOM_);
@@ -461,10 +461,10 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 		explosion(m, Coords {});
 		return false;
 	case GOOLEM:
-		if (type == DMG_WEAPON && m->state == 0) {
-			m->state = 1;
-			tile_change(player.pos, OOZE);
-		}
+		if (type != DMG_WEAPON || m->state)
+			break;
+		m->state = 1;
+		tile_change(player.pos, OOZE);
 		break;
 	case ORC_1 ... ORC_3:
 		if (dir != -m->dir)
@@ -472,14 +472,24 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 		knockback(m, dir, 1);
 		return false;
 	case SKULL_1 ... SKULL_3:
+		assert(dir == cardinal(dir));
 		monster_kill(m, DMG_NORMAL);
-		skull_spawn(m, { dir.x == 0, dir.x != 0 }, -cardinal(dir));
+		skull_spawn(m, orthogonal, -dir);
 		return false;
 	case WIRE_ZOMBIE:
 		if (IS_WIRE(player.pos) || !(IS_WIRE(m->pos) || TILE(m->pos).type == STAIRS))
 			break;
 		knockback(m, dir, 2);
 		return false;
+	case EARTH_DRAGON:
+		if (type != DMG_WEAPON || m->state)
+			break;
+		m->state = 1;
+		for (i8 i = -1; i <= 1; ++i) {
+			Tile &tile = TILE(player.pos - dir + Coords({dir.y, dir.x}) * i);
+			tile.type = tile.type >= STAIRS || tile.monster ? tile.type : CATACOMB;
+		}
+		break;
 	case PLAYER:
 		if (g.iframes > g.current_beat)
 			return false;
@@ -522,8 +532,10 @@ bool damage(Monster *m, i64 dmg, Coords dir, DamageType type)
 		return false;
 	case METROGNOME_1:
 	case METROGNOME_2:
-		MONSTER(g.stairs).hp = 0;
-		move(m, g.stairs);
+		if (TILE(g.stairs).monster > 1)
+			monster_kill(&MONSTER(g.stairs), DMG_NORMAL);
+		if (!TILE(g.stairs).monster)
+			move(m, g.stairs);
 		m->delay = 1;
 		m->state = 1;
 		return true;
@@ -576,7 +588,7 @@ bool forced_move(Monster *m, Coords dir)
 		return false;
 
 	if (&MONSTER(m->pos + dir) == &player) {
-		enemy_attack(m);
+		enemy_attack(m, dir);
 		return true;
 	} else if (IS_EMPTY(m->pos + dir)) {
 		m->prev_pos = m->pos;
