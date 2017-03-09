@@ -13,6 +13,7 @@ BUGFIXES:
 * armadillos: charge if path *was* free on previous beat
 * yetis/mummies/sarcos: should have been aggroed for a full turn
 * firepig should have trap priority
+* firepig should have 4 range when unlit
 * charged breath attacks should have extreme priority
 * fix initial spawn order priority
 * digging should only happen after movement failed

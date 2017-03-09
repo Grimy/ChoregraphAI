@@ -89,8 +89,6 @@ static bool can_charge(Monster *m)
 // Helper function for basic_seek and its variants.
 static Coords seek_dir(const Monster *m, Coords d)
 {
-	// Ignore the player’s previous position if they moved more than one tile
-	Coords prev_pos = L1(player.pos - player.prev_pos) > 1 ? player.pos : player.prev_pos;
 	Coords vertical = {0, sign(d.y)};
 	Coords horizontal = {sign(d.x), 0};
 
@@ -105,14 +103,14 @@ static Coords seek_dir(const Monster *m, Coords d)
 		!can_move(m, horizontal) ? 1 :
 
 		// #3: move toward the player’s previous position
-		m->pos.y == prev_pos.y ? 0 :
-		m->pos.x == prev_pos.x ? 1 :
+		m->pos.y == player.prev_pos.y ? 0 :
+		m->pos.x == player.prev_pos.x ? 1 :
 
 		// #4: weird edge cases
 		m->prev_pos.y == player.pos.y ? 0 :
 		m->prev_pos.x == player.pos.x ? 1 :
-		m->prev_pos.y == prev_pos.y ? abs(d.x) == 1 :
-		m->prev_pos.x == prev_pos.x ? abs(d.y) != 1 :
+		m->prev_pos.y == player.prev_pos.y ? abs(d.x) == 1 :
+		m->prev_pos.x == player.prev_pos.x ? abs(d.y) != 1 :
 
 		// #5: keep moving along the same axis
 		m->dir.y != 0;
