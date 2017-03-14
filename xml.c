@@ -14,7 +14,7 @@
 
 // Die verbosely
 #define FATAL(message, ...) do { \
-	fprintf(stderr, RED message WHITE "\n", __VA_ARGS__); \
+	fprintf(stderr, message "\n", __VA_ARGS__); \
 	exit(255); } while (0)
 
 i32 work_factor = 36;

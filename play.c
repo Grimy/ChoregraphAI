@@ -7,6 +7,22 @@
 
 #include "chore.h"
 
+// Terminal ANSI codes
+#define CLEAR   "\033[m"
+#define BOLD    "\033[1m"
+#define REVERSE "\033[7m"
+#define RED     "\033[31m"
+#define BROWN   "\033[33m"
+#define BLUE    "\033[34m"
+#define PINK    "\033[35m"
+#define BLACK   "\033[90m"
+#define ORANGE  "\033[91m"
+#define GREEN   "\033[92m"
+#define YELLOW  "\033[93m"
+#define CYAN    "\033[94m"
+#define PURPLE  "\033[95m"
+#define WHITE   "\033[97m"
+
 static Coords cursor;
 static bool run_animations = false;
 
@@ -108,9 +124,10 @@ static void display_tile(Coords pos)
 {
 	Tile *tile = &TILE(pos);
 
-	printf(shadowed(pos) ? DARK :
-		L2(pos - player.pos) <= player.radius ? WHITE :
-		tile->light >= 7777 ? WHITE : BLACK);
+	int light = shadowed(pos) ? 0 :
+		L2(pos - player.pos) <= player.radius ? 7777 :
+		min(tile->light, 7777);
+	printf("\033[38;5;%dm", 232 + light / 338);
 	print_at(pos, tile_glyphs[tile->type]);
 
 	if (IS_DIGGABLE(pos) && !IS_DOOR(pos))

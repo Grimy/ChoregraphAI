@@ -27,24 +27,6 @@ template <class T> constexpr T abs(T x)        { return x < 0 ? -x : x; }
 template <class T> constexpr T min(T x, i64 y) { return x < (T) y ? x : (T) y; }
 template <class T> constexpr T max(T x, i64 y) { return x > (T) y ? x : (T) y; }
 
-// Terminal ANSI codes
-#define CLEAR   "\033[m"
-#define BOLD    "\033[1m"
-#define ITALIC  "\033[3m"
-#define REVERSE "\033[7m"
-#define RED     "\033[31m"
-#define BROWN   "\033[33m"
-#define BLUE    "\033[34m"
-#define PINK    "\033[35m"
-#define BLACK   "\033[37m"
-#define DARK    "\033[90m"
-#define ORANGE  "\033[91m"
-#define GREEN   "\033[92m"
-#define YELLOW  "\033[93m"
-#define CYAN    "\033[94m"
-#define PURPLE  "\033[95m"
-#define WHITE   "\033[97m"
-
 // Important macros (TODO: comment me)
 #define player (g.monsters[1])
 
