@@ -1,6 +1,7 @@
 FEATURES:
 * metal doors (type=111)
 * confusion de-aggroing enemies + set radius=0
+* color of all gorgons / purple enemies
 
 BUGFIXES:
 * elementals shouldn’t change terrain while frozen
