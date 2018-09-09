@@ -38,10 +38,10 @@ Example: activation radii 7 and 3, visualized using ice tiles.
 
 Slimes and zombies have an “infinite” radius: they are always active.
 
-Harpies, all mages, goblin bombers, evil eyes, blue dragons, earth dragons,
+Harpies, all mages, goblin bombers, evil eyes, non-red dragons,
 and mimics have a radius of 0: they will only move when aggroed.
 
-Green dragons and minotaurs have a radius of 7. Nightmares have a radius of 9.
+Minotaurs have a radius of 7. Nightmares have a radius of 9.
 Red dragons have a radius of 10.
 
 For all other enemies, the activation radius is zone-dependant. It’s 5 in Z2, 7
